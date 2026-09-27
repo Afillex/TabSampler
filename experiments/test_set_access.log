@@ -1,0 +1,20 @@
+# Every deliberate look at the test set, per ADR 0003.
+# Appended automatically by tabsampler.data.splits.record_test_set_access.
+# Columns: iso8601_utc | commit | reason
+2026-09-26T23:39:02+00:00 | 1342aa6 | eval-notes on 3 GuitarSet tracks via configs/phase0_eval_notes.yaml
+2026-09-26T23:39:46+00:00 | 1342aa6 | eval-notes on 360 GuitarSet tracks via configs/phase0_eval_notes.yaml
+2026-09-27T00:24:49+00:00 | 7b378f7 | eval-m1 (oracle + e2e) on 4 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T00:25:41+00:00 | 7b378f7 | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T00:36:35+00:00 | 1147495 | concatenated 6 GuitarSet mic clips into a 3-minute file to measure the spec 4 runtime target; runtime cannot leak label information, but the access is logged
+2026-09-27T12:18:18+00:00 | 057deb8 | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T12:33:16+00:00 | 057deb8 | measured node-lattice size (ADR 0018) on 60 GuitarSet tracks: decoder complexity instrumentation, no metric computed and no threshold chosen from it
+2026-09-27T12:38:50+00:00 | 057deb8 | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T12:44:41+00:00 | c032597 | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T12:50:37+00:00 | 8491406 | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T12:54:53+00:00 | dd61b12 | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T12:57:56+00:00 | 7867a2c | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T12:59:00+00:00 | a05e1e0 | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T13:05:56+00:00 | ac007a9 | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T14:33:14+00:00 | 2297863 | measured node-lattice size (ADR 0018) on 60 GuitarSet tracks via scripts/measure_lattice.py: decoder complexity instrumentation, no metric computed and no threshold chosen from it
+2026-09-27T14:35:29+00:00 | 2297863 | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml
+2026-09-27T14:39:57+00:00 | 013f1df | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m1_full_eval.yaml

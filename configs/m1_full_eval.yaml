@@ -1,0 +1,33 @@
+# M1: the full results table (spec 6, Phase 1 "done when").
+#
+# Run in BOTH modes (spec 3.2):
+#   oracle -- reference notes fed to the fingering stage. Measures fingering alone.
+#   e2e    -- transcriber notes. What a user actually gets.
+# The gap between them is what the transcriber costs.
+#
+# Cost weights are HAND-SET, not tuned (ADR 0012). Phase 1 has no legal validation
+# data: GuitarSet is test-only and the training corpora arrive at Phase 4. This is the
+# ground-zero number, and the README says so.
+
+hypothesis: >-
+  A hand-set cost model decoded with Viterbi recovers reference string assignments well
+  above chance in oracle mode, and its forward-backward posteriors are informative
+  enough to be worth calibrating. End-to-end results will be substantially worse,
+  bounded by the Phase 0 note F1 of 0.744.
+
+dataset:
+  name: guitarset
+  data_home: data/guitarset
+  channel: audio_mic
+
+transcriber:
+  exe: basic-pitch
+  cache_dir: cache/note_events
+  onset_threshold: 0.5
+  frame_threshold: 0.3
+  minimum_note_length_ms: 127.70
+  model_serialization: coreml
+  version_tag: basic-pitch-0.4.0
+
+onset_tolerance: 0.05
+seed: 0

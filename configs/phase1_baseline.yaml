@@ -1,0 +1,59 @@
+# Phase 1 baseline: hand-set cost weights (ADR 0012).
+#
+# These are NOT tuned. ADR 0012 records why: Phase 1 has no legal validation data,
+# because GuitarSet is test-only (ADR 0003) and GOAT/GAPS/Guitar-TECHS arrive at
+# Phase 4. Tuning is gated on DadaGP, which suffices since cost-weight tuning needs
+# only symbolic tabs. M1 is reported with these values, stated plainly.
+#
+# Each weight has a reason. "Hand-set" means chosen deliberately and written down.
+
+hypothesis: >-
+  A hand-set cost model decoded with Viterbi recovers the reference string assignment
+  well above chance in oracle mode, and produces tab that passes the ADR 0011
+  playability rules. This is the ground-zero number, not a tuned one.
+
+tuning:
+  # Standard tuning, low E to high e, as MIDI note numbers (ADR 0008).
+  open_pitches: [40, 45, 50, 55, 59, 64]
+  n_frets: 22
+  capo: 0
+
+grouping:
+  # Spec 2.2. Notes within this of a group's first onset sound together.
+  window_s: 0.03
+
+# The ENUMERATION bound, deliberately the permissive one. ADR 0011 says the finer rule
+# (4 frets below fret 12, 5 at fret 12 and above) belongs to the E3 metric, not to the
+# search. Set to 4 originally, which was wrong: GuitarSet's first track contains the
+# human-played chord [51, 55, 58, 62, 67, 70], whose only string assignment uses frets
+# 6-11 -- a span of 5 -- so max_span 4 made a real chord unfingerable and killed the
+# whole file. decode_best_effort relaxes per group beyond this when it has to, and
+# reports every relaxation.
+max_span: 5
+
+weights:
+  # Hand movement between consecutive shapes, per fret. The dominant term: guitarists
+  # stay in position, and position shifts are what a good transcription minimises.
+  move: 1.0
+  # Stretch within one shape, per fret. Same order as movement: a 4-fret stretch is
+  # about as costly as a 4-fret shift.
+  span: 1.0
+  # Neck height, per octave up the neck. Small: playing at fret 12 is mildly harder
+  # than at fret 2, but far less important than movement or stretch.
+  high: 0.1
+  # Reward per open string, subtracted from the cost. Modest on purpose -- too large
+  # and everything collapses into open position regardless of context.
+  open_reward: 0.25
+  # Spec 2.2's acoustic term. Identically zero until Phase 3 supplies
+  # -log P(string | audio); present so the interface does not change later.
+  acoustic: 0.0
+  # Forward-backward temperature. 1.0 means posteriors come straight from exp(-C);
+  # lower concentrates them on the Viterbi path, higher flattens them. Calibration
+  # (E5) is what should eventually set this.
+  temperature: 1.0
+
+# Notes whose posterior falls below this are marked uncertain in the rendered tab
+# (ADR 0013). Not tuned either.
+uncertainty_threshold: 0.6
+
+seed: 0

@@ -1,0 +1,19 @@
+# Environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+htmlcov/
+
+# Datasets and transcriber caches: never tracked (multi-GB, license-bound).
+# Anchored with a leading slash -- an unanchored "data/" would also ignore
+# src/tabsampler/data/, which is source code.
+/data/
+/cache/
+
+# Tooling artefacts
+graphify-out/
+.DS_Store

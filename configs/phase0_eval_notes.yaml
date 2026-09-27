@@ -1,0 +1,30 @@
+# Phase 0 gate: Basic Pitch note F1 on GuitarSet.
+#
+# The hypothesis goes here, before the run -- not after.
+hypothesis: >-
+  Basic Pitch, unmodified, achieves a plausible onset-only note F1 on GuitarSet's
+  microphone channel -- high enough to show the harness works end to end, and well
+  short of solved. A value near 0.0 or near 1.0 indicates a bug, not a result.
+
+dataset:
+  name: guitarset
+  data_home: data/guitarset
+  # ADR 0005. The hex-pickup channels are forbidden as input: one channel per string
+  # is the E2 ground truth.
+  channel: audio_mic
+
+transcriber:
+  # `uv tool install` puts this in ~/.local/bin, which is not on PATH by default.
+  # Replace with an absolute path if `basic-pitch` is not resolvable.
+  exe: basic-pitch
+  cache_dir: cache/note_events
+  # basic-pitch's own defaults, set explicitly so the run is reproducible.
+  onset_threshold: 0.5
+  frame_threshold: 0.3
+  minimum_note_length_ms: 127.70
+  model_serialization: coreml
+  version_tag: basic-pitch-0.4.0
+
+# MIREX's note-tracking tolerance (spec 3.1).
+onset_tolerance: 0.05
+seed: 0
