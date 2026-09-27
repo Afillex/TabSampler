@@ -44,7 +44,7 @@ Then read, in this order: `docs/spec.md` → `docs/plans/2026-09-27-rest-of-proj
 
 | | |
 |---|---|
-| Repo | `https://github.com/Afillex/TabSampler` — **private** (see D15 below) |
+| Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | `v0.0-phase0`, `v0.1-m1` |
 | Tests | 325, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
@@ -201,9 +201,10 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 
 - **D10 — the headline target. ADR 0016 proposes X = 10 points of oracle E2 and is filed as
   `proposed`, awaiting sign-off on that one number.** Everything else in it is derivation.
-- **D15 — licensing and publication.** There is no LICENSE file yet. Weight release has to
-  be decided **per training corpus**, since DadaGP and ProgGP are research-use-only. Settle
-  it before anything goes public.
+- **D15 — weight release, the half ADR 0020 left open.** The code is MIT and the repo is
+  public. Weights are a **per-corpus** decision, because DadaGP and ProgGP are
+  research-use-only: check the terms *before* training anything whose weights might be
+  published, not after.
 
 ## When you finish a session
 

@@ -758,15 +758,13 @@ mechanism GuitarSet has — do not weaken the guard to accommodate a second test
 
 ### D15 — licensing and publication, due before any public release
 
-Not a phase, but a spec decision with no owner until now. The repository is **private** (created so
-deliberately: D15 is undecided and there is no LICENSE file). The trigger for this ADR is
-**making the repository public, publishing weights, or publishing a demo** — whichever
-comes first.
+Not a phase, but a spec decision with no owner until now. **Partly settled by ADR 0020**,
+whose trigger — making the repository public — has fired: the code is MIT and the
+repository is public. What remains open is weight release.
 
 What it has to settle, and why each one is not obvious:
 
-- **Code licence.** Spec D15's cue is MIT or Apache-2.0. Cheap to decide, needed before
-  anyone can fork it.
+- ~~**Code licence.**~~ Settled: MIT (ADR 0020).
 - **Weights, per dataset.** This is the part that bites. DadaGP is research-use-by-request,
   ProgGP likewise, and SynthTab and GOAT have their own terms. A model trained on
   research-only data generally cannot be redistributed, so **weight release is decided per

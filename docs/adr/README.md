@@ -27,11 +27,12 @@ of the old record to point at its replacement.
 | [0017](0017-rhythm-for-exports.md) | Exports use a fixed 120 BPM grid and carry "rhythm is not transcribed" **in the file** | D5 (gap) | accepted |
 | [0018](0018-hand-position-carry.md) | Carry the hand position across all-open shapes; `transition_cost_from` added to the scorer contract | 2.1/2.2 (defect) | accepted |
 | [0019](0019-barre-chords-in-e3.md) | E3 counts **fingers**, not fretted notes, so barre chords are playable (supersedes ADR 0011's fourth rule) | D9 (defect) | accepted |
+| [0020](0020-licensing-and-publication.md) | **MIT for the code, public repo**; weights decided per training corpus | D15 (partial) | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),
 D13 (form of audio evidence, Phase 3), D14 (app surface — **now due, M1 is met**),
-D15 (licensing, before any release).
+D15 (licensing — **code and publication settled by ADR 0020**; weight release still open, per corpus).
 
 **D10 is proposed, not settled.** ADR 0016 proposes X = 10 points of oracle E2 and needs
 Ege's sign-off on that one number; everything else in it is derivation.
