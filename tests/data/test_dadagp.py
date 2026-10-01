@@ -103,6 +103,24 @@ def test_a_tempo_change_applies_from_where_it_occurs() -> None:
     assert onsets == pytest.approx([0.0, 0.5, 1.5])
 
 
+def test_a_tempo_change_to_zero_is_ignored_and_counted() -> None:
+    # 11 of 22,034 cleared songs contain bfx:tempo_change:0. Zero BPM is not a tempo, and
+    # it would divide by zero; the current tempo stands and the glitch is counted.
+    tracks, stats = parse_tokens(
+        song(
+            "clean0:note:s6:f0",
+            "wait:960",
+            "bfx:tempo_change:0",
+            "clean0:note:s6:f1",
+            "wait:960",
+            "clean0:note:s6:f2",
+        )
+    )
+    onsets = [group.onset for group, _ in tracks[0].steps]
+    assert onsets == pytest.approx([0.0, 0.5, 1.0])
+    assert stats.tempo_changes_ignored == 1
+
+
 def test_each_guitar_instrument_is_its_own_track() -> None:
     tracks, _ = parse_tokens(song("clean0:note:s6:f0", "distorted0:note:s6:f5", "wait:960"))
     assert sorted(t.instrument for t in tracks) == ["clean0", "distorted0"]

@@ -77,6 +77,7 @@ class ParseStats:
 
     notes_kept: int = 0
     notes_skipped: int = 0  # ties, dead notes and harmonics
+    tempo_changes_ignored: int = 0  # a change to zero BPM or below, which is not a tempo
     groups_kept: int = 0
     groups_dropped_negative_fret: int = 0
     groups_dropped_seventh_string: int = 0
@@ -141,6 +142,7 @@ def parse_tokens(
     last: _Note | None = None
     beats: dict[str, list[tuple[float, float, list[_Note]]]] = {}
     skipped = 0
+    tempo_ignored = 0
 
     def flush(duration: float) -> None:
         nonlocal skipped
@@ -168,7 +170,10 @@ def parse_tokens(
         elif head == "bfx":
             kind, _, value = rest.partition(":")
             if kind == "tempo_change":
-                tempo = float(value)
+                if float(value) > 0:
+                    tempo = float(value)
+                else:
+                    tempo_ignored += 1  # keep the current tempo rather than divide by zero
         elif head == "nfx":
             if last is not None and rest.split(":")[0] in NOT_AN_ONSET:
                 last.skipped = True
@@ -202,6 +207,7 @@ def parse_tokens(
     return tracks, ParseStats(
         notes_kept=kept_notes,
         notes_skipped=skipped,
+        tempo_changes_ignored=tempo_ignored,
         groups_kept=kept_groups,
         groups_dropped_negative_fret=counts["negative_fret"],
         groups_dropped_seventh_string=counts["seventh_string"],
