@@ -1,0 +1,32 @@
+# Stage 5: one GuitarSet evaluation of the DadaGP-fitted decoder (ADR 0023).
+#
+# Written and committed BEFORE the run. GuitarSet is evaluated once with this config and
+# never used to choose anything (ADR 0003): the fitted weights were adopted on DadaGP
+# validation, and the temperature was calibrated there too.
+
+hypothesis: >-
+  Replacing the hand-set cost weights with weights fitted by maximum likelihood on DadaGP
+  training, and the temperature calibrated on DadaGP validation, raises oracle exact tab F1
+  on GuitarSet above the hand-set baseline of 0.6599 and lowers end-to-end calibration error
+  below 0.3851. This is a transfer result: DadaGP is mostly distorted rock and metal tab,
+  GuitarSet is acoustic jazz, bossa nova, funk, rock and singer-songwriter playing. It is
+  reported against ADR 0016's M2 target of 0.760 but is not expected to reach it -- that
+  target was set for a learned fingering model, not for four refitted scalars. Guardrails:
+  E4 = 1.0000, E3 group rate not below 0.9970 oracle / 0.9896 end to end.
+
+dataset:
+  name: guitarset
+  data_home: data/guitarset
+  channel: audio_mic
+
+transcriber:
+  exe: basic-pitch
+  cache_dir: cache/note_events
+  onset_threshold: 0.5
+  frame_threshold: 0.3
+  minimum_note_length_ms: 127.70
+  model_serialization: coreml
+  version_tag: basic-pitch-0.4.0
+
+onset_tolerance: 0.05
+seed: 0
