@@ -28,6 +28,7 @@ of the old record to point at its replacement.
 | [0018](0018-hand-position-carry.md) | Carry the hand position across all-open shapes; `transition_cost_from` added to the scorer contract | 2.1/2.2 (defect) | accepted |
 | [0019](0019-barre-chords-in-e3.md) | E3 counts **fingers**, not fretted notes, so barre chords are playable (supersedes ADR 0011's fourth rule) | D9 (defect) | accepted |
 | [0020](0020-licensing-and-publication.md) | **MIT for the code, public repo**; weights decided per training corpus | D15 (partial) | accepted |
+| [0021](0021-dadagp-training-protocol.md) | **DadaGP v1.1 is the training corpus**: shipped split frozen by hash; clean standard 6-string songs only | D8 | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),
