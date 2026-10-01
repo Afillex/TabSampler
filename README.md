@@ -82,10 +82,13 @@ says the target is fixed only once a baseline exists, which is now.
 - **E5 is the weak result.** An ECE of 0.37 end to end means the posteriors are not
   honest yet, and goal 4 of spec 1 — being truthful about uncertainty — is not met.
   Temperature is untuned at 1.0; calibrating it is the obvious next experiment.
-- E3 is reported against ADR 0011's span thresholds, which are still **unvalidated**: the
-  very first GuitarSet track contains a human-played chord those rules call unplayable.
-  ADR 0019 fixed the finger rule, which needed no data; the thresholds still need DadaGP.
-  Read E3 as "passes our current rules".
+- **E3's group rate is a validated playability measure; its transition rate is not**
+  (ADR 0022). Checked on 16.8 million human chord shapes from DadaGP, 99.86% pass the chord
+  rules — so a group rate means what it says. But human tab passes the 12 frets/s speed
+  rule only 88% of the time, because the rule counts a finger reaching within one hand
+  position as the hand moving. Our output's ~0.91 transition rate is therefore *above*
+  human tab and says nothing about playability. It is reported, with that caveat, until a
+  hand-window model replaces it.
 
 ### Runtime
 

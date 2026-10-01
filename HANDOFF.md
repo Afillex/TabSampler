@@ -139,12 +139,11 @@ Still open:
   moves E3 and requires choosing between the ADR's text and the metric's behaviour.
 - **A still-ringing note does not reserve its string** against the next group (spec §2.2).
   Not yet owned; revisit if metrics show it matters.
-- **ADR 0011's span thresholds are unvalidated and probably too strict.** GuitarSet's
-  *first* track contains a human-played chord those rules call unplayable, and span pruning
-  measurements show span 5 is the smallest bound at which no real chord in a 60-track sample
-  is unfingerable — against 4 at the ADR's limit. ADR 0011 owes a validation against real tab.
-  **Do not edit ADR 0011**; supersede it when the data arrives, as ADR 0019 did for its
-  finger rule.
+- **E3's transition rule measures finger reach as hand movement** (ADR 0022). ADR 0011's
+  owed validation ran on 16.8M human chord shapes: the chord rules hold (99.86% pass, and
+  the "probably too strict" suspicion was wrong), but human tab passes the speed rule only
+  88% of the time, and 83% of the failures are moves of three frets or fewer between single
+  notes. Proposed fix: a hand *window*. The cost model's movement term has the same flaw.
 - **The config loaders have no tests.** `load_phase1_config` and `load_eval_config` are
   untested; the `max_fingers` rename was verified by hand only.
 - **`eval-m1` writes the config's hypothesis into `results.csv`**, so the Phase 1.5 rows

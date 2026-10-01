@@ -18,7 +18,7 @@ of the old record to point at its replacement.
 | [0008](0008-tunings.md) | User-chosen tuning and capo from day one; no auto-detection | D3 | accepted |
 | [0009](0009-timing-only-tab.md) | Time-positioned tab for v1, not rhythmic notation | D5 | accepted |
 | [0010](0010-chord-level-decoder-states.md) | Decoder states are chords, with span pruning | D6 | accepted |
-| [0011](0011-playability-rules.md) | Concrete E3 playability rules (validation pending DadaGP) | D9 | accepted; finger rule superseded by 0019 |
+| [0011](0011-playability-rules.md) | Concrete E3 playability rules (validation pending DadaGP) | D9 | accepted; finger rule superseded by 0019; validated by 0022 |
 | [0012](0012-cost-weights-hand-set-for-m1.md) | **M1 ships hand-set weights**; tuning gated on legal data | D7 | accepted |
 | [0013](0013-output-formats.md) | ASCII + JSON in Phase 1; MusicXML/GP on the app track | D4 | accepted |
 | [0014](0014-brute-force-oracle.md) | **The brute-force oracle is the decoder's specification** | 2.2 (gap) | accepted |
@@ -29,6 +29,7 @@ of the old record to point at its replacement.
 | [0019](0019-barre-chords-in-e3.md) | E3 counts **fingers**, not fretted notes, so barre chords are playable (supersedes ADR 0011's fourth rule) | D9 (defect) | accepted |
 | [0020](0020-licensing-and-publication.md) | **MIT for the code, public repo**; weights decided per training corpus | D15 (partial) | accepted |
 | [0021](0021-dadagp-training-protocol.md) | **DadaGP v1.1 is the training corpus**: shipped split frozen by hash; clean standard 6-string songs only | D8 | accepted |
+| [0022](0022-playability-rules-validated.md) | ADR 0011 validated on 16.8M human shapes: **chord rules hold (99.86%), the speed rule does not (88%)** | D9 | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),

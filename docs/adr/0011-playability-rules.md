@@ -1,8 +1,9 @@
 # ADR 0011: Concrete playability rules for E3
 
 Status: accepted (2026-09-27); the fourth group rule below is superseded by
-[ADR 0019](0019-barre-chords-in-e3.md), which counts fingers instead of fretted notes.
-Everything else here, including the validation owed, still stands.
+[ADR 0019](0019-barre-chords-in-e3.md), which counts fingers instead of fretted notes. The
+validation owed below was run in [ADR 0022](0022-playability-rules-validated.md): the chord
+rules hold on human tab, the speed rule does not.
 
 Decides spec D9.
 
