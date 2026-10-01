@@ -1,0 +1,132 @@
+"""Validate the E3 playability rules against real human tablature (ADR 0011's owed check).
+
+ADR 0011 says the share of real, human-made tab that passes the rules "should be close to
+100%; if it is not, the rules are wrong, not the tab". This measures that share on the
+DadaGP training split. It fits nothing: the rules are evaluated exactly as committed, and
+what to change in response is a separate decision.
+
+Hypothesis, written before the run: the span thresholds (4 frets below fret 12, 5 at or
+above) are too strict, so well under 100% of human chord shapes pass, and span is the
+dominant reason.
+
+Crowd-sourced tab contains mistakes, so not every failure indicts a rule. The failure
+breakdown is what makes the number interpretable.
+
+    uv run python scripts/validate_playability.py data/dadagp/DadaGP-v1.1.zip \\
+        data/dadagp/track_meta.json
+"""
+
+from __future__ import annotations
+
+import sys
+from collections import Counter
+from pathlib import Path
+
+from tabsampler.data.dadagp import ParseStats, load_tracks
+from tabsampler.data.splits import Split
+from tabsampler.eval.playability import (
+    PlayabilityRules,
+    fingers_needed,
+    group_is_playable,
+    hand_position,
+    transition_is_playable,
+)
+
+
+def main() -> None:
+    archive, meta = Path(sys.argv[1]), Path(sys.argv[2])
+    rules = PlayabilityRules()
+    no_barre = PlayabilityRules(allow_barre=False)
+
+    groups = passed = passed_without_barre = 0
+    reasons: Counter[str] = Counter()
+    spans_low: Counter[int] = Counter()  # span of human shapes whose lowest fret is below 12
+    spans_high: Counter[int] = Counter()
+    fingers: Counter[int] = Counter()
+    transitions = transitions_passed = carried = carried_passed = 0
+    parse = Counter[str]()
+    songs = tracks = 0
+
+    def on_song(_: str, stats: ParseStats) -> None:
+        nonlocal songs
+        songs += 1
+        for name in ParseStats.__dataclass_fields__:
+            parse[name] += getattr(stats, name)
+
+    for track in load_tracks(archive, Split.TRAIN, meta, on_song=on_song):
+        tracks += 1
+        previous = None
+        carried_hand: int | None = None
+        previous_onset = 0.0
+        for group, state in track.steps:
+            positions = state.positions
+            groups += 1
+            reason = group_is_playable(positions, rules)
+            if reason is None:
+                passed += 1
+            else:
+                reasons[reason.split(" ")[1] if reason[0].isdigit() else reason.split(" ")[0]] += 1
+            passed_without_barre += group_is_playable(positions, no_barre) is None
+            fretted = sorted(p.fret for p in positions if p.fret > 0)
+            if fretted:
+                span = fretted[-1] - fretted[0]
+                (spans_high if fretted[0] >= rules.high_neck_fret else spans_low)[span] += 1
+            fingers[fingers_needed(positions, rules)] += 1
+
+            if previous is not None:
+                seconds = group.onset - previous_onset
+                transitions += 1
+                transitions_passed += (
+                    transition_is_playable(previous, positions, seconds, rules) is None
+                )
+                # ADR 0011's text carries the hand across an all-open shape; the implemented
+                # rule does not. Measured both ways so the gap has a size.
+                here = hand_position(positions)
+                if carried_hand is not None and here is not None:
+                    carried += 1
+                    distance = abs(here - carried_hand)
+                    fast = distance > 0 and (
+                        seconds <= 0 or distance / seconds > rules.max_frets_per_second
+                    )
+                    carried_passed += not fast
+            here = hand_position(positions)
+            carried_hand = carried_hand if here is None else here
+            previous, previous_onset = positions, group.onset
+
+    def share(part: int, whole: int) -> str:
+        return f"{part / whole:.4f}" if whole else "n/a"
+
+    print(f"songs {songs}, tracks {tracks}, human chord shapes {groups}, transitions {transitions}")
+    print(f"parse: {dict(parse)}")
+    print()
+    print(f"E3 groups, rules as committed (barre modelled): {share(passed, groups)}")
+    print(f"E3 groups, without the barre rule (ADR 0011):   {share(passed_without_barre, groups)}")
+    print(f"failure reasons: {dict(reasons.most_common())}")
+    print()
+    for label, spans, limit in (
+        ("below fret 12", spans_low, rules.max_span_low),
+        ("at fret 12 and above", spans_high, rules.max_span_high),
+    ):
+        total = sum(spans.values())
+        over = sum(v for s, v in spans.items() if s > limit)
+        cumulative = 0
+        coverage: list[str] = []
+        for s in sorted(spans):
+            cumulative += spans[s]
+            coverage.append(f"<={s}: {cumulative / total:.4f}")
+        print(
+            f"span {label}: {total} fretted shapes, {over} over the limit of {limit} "
+            f"({share(over, total)})"
+        )
+        print("   cumulative share by span:", ", ".join(coverage[:10]))
+    print(f"fingers needed: {dict(sorted(fingers.items()))}")
+    print()
+    print(f"E3 transitions, as implemented:              {share(transitions_passed, transitions)}")
+    print(
+        f"E3 transitions, hand carried across open:    {share(carried_passed, carried)} "
+        f"({carried} moves between fretted positions)"
+    )
+
+
+if __name__ == "__main__":
+    main()
