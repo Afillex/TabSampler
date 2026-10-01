@@ -13,6 +13,11 @@ hypothesis: >-
   reported against ADR 0016's M2 target of 0.760 but is not expected to reach it -- that
   target was set for a learned fingering model, not for four refitted scalars. Guardrails:
   E4 = 1.0000, E3 group rate not below 0.9970 oracle / 0.9896 end to end.
+  REVISED BEFORE THE RUN, from DadaGP validation evidence and not from GuitarSet: the fitted
+  weights recover 11 points less of the human fingering than the hand-set ones on clean
+  guitar parts (0.8097 -> 0.6963) and gain only on distorted parts. GuitarSet is acoustic, so
+  the revised prediction is that oracle E2 FALLS below 0.6599. The original prediction above
+  is kept so the change is visible.
 
 dataset:
   name: guitarset
