@@ -57,6 +57,28 @@ weights are wrong. **Deliberately not fixed by reweighting**: that is tuning wit
 validation data (ADR 0012), and on one hand-picked clip it would be selection on an
 example. E2 rose, so the corpus does not agree the new output is worse.
 
+### Weights fitted on DadaGP — measured, not the default (ADR 0023)
+
+With DadaGP v1.1 as training data (ADR 0021), the four weights were fitted by maximum
+likelihood on 469,363 human chord shapes and the temperature was calibrated on validation.
+Every step was pre-registered in a committed script before it ran. On GuitarSet, evaluated
+once:
+
+| metric | hand-set (default) | fitted + T = 1.721 | |
+|---|---|---|---|
+| E2 oracle | 0.6599 | **0.6988** | +0.0389 |
+| E2 end-to-end | 0.4318 | **0.4603** | +0.0285 |
+| E3 chord shapes, oracle / e2e | 0.9970 / 0.9896 | 0.9961 / 0.9883 | below baseline |
+| E5 end-to-end | 0.3851 | **0.1411** | −63% |
+| E5 oracle | 0.1652 | **0.1286** | −22% |
+
+It is **not the default**, for a reason decided on DadaGP validation before GuitarSet was
+run: the fitted weights recover 11 points *less* of the human fingering on clean guitar
+parts (0.8097 → 0.6963) and gain only on distorted ones. It also breaches ADR 0016's E3
+guardrail by a tenth of a point and is 6.1 points short of the M2 target of 0.760.
+GuitarSet's verdict cannot be the reason to adopt it — that would be selecting on the test
+set. ADR 0023 lays out the two legitimate routes. `configs/fitted_dadagp.yaml` reproduces it.
+
 **E1 is two numbers, not one.** *Transcriber (raw)* scores the notes handed to the
 fingering stage; *pipeline (placed)* scores the notes that came out. They differ because
 placement drops notes the guitar cannot sound, which raises precision without touching
@@ -79,9 +101,10 @@ says the target is fixed only once a baseline exists, which is now.
   human actually used. Untuned, that is the ground-zero number ADR 0012 promised.
 - End to end, E2 is bounded by note F1: you cannot finger a note you did not hear. The
   transcriber's own F1 is 0.7437, which is the ceiling to argue about, not 0.7452.
-- **E5 is the weak result.** An ECE of 0.37 end to end means the posteriors are not
-  honest yet, and goal 4 of spec 1 — being truthful about uncertainty — is not met.
-  Temperature is untuned at 1.0; calibrating it is the obvious next experiment.
+- **E5 is the weak result of the default decoder.** An ECE of 0.39 end to end means its
+  posteriors are not honest yet, and goal 4 of spec 1 — being truthful about uncertainty —
+  is not met. The DadaGP-fitted decoder brings it to 0.14, which shows it is fixable;
+  calibrating the default's own temperature on DadaGP validation is the obvious next step.
 - **E3's group rate is a validated playability measure; its transition rate is not**
   (ADR 0022). Checked on 16.8 million human chord shapes from DadaGP, 99.86% pass the chord
   rules — so a group rate means what it says. But human tab passes the 12 frets/s speed

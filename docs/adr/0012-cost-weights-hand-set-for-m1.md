@@ -1,6 +1,8 @@
 # ADR 0012: M1 ships with hand-set cost weights; tuning is gated on legal data
 
-Status: accepted (2026-09-27)
+Status: accepted (2026-09-27). Its premise — that no legal tuning data exists — no longer
+holds: weights fitted on DadaGP are recorded in [ADR 0023](0023-fitted-cost-weights.md).
+The hand-set weights stay the default for the reason given there.
 
 Decides spec D7, and records a gap in the spec's Phase 1 plan.
 
