@@ -23,7 +23,7 @@ of the old record to point at its replacement.
 | [0013](0013-output-formats.md) | ASCII + JSON in Phase 1; MusicXML/GP on the app track | D4 | accepted |
 | [0014](0014-brute-force-oracle.md) | **The brute-force oracle is the decoder's specification** | 2.2 (gap) | accepted |
 | [0015](0015-no-cpp-decoder.md) | No C/C++ decoder port — decode is 3% of runtime | D16 | accepted |
-| [0016](0016-headline-target.md) | D10 target: **oracle E2 >= baseline + 10 points** at M2, with E3/E4/E5 guardrails | D10 | **proposed — needs Ege** |
+| [0016](0016-headline-target.md) | D10 target: **oracle E2 >= baseline + 10 points** at M2, with E3/E4/E5 guardrails | D10 | accepted |
 | [0017](0017-rhythm-for-exports.md) | Exports use a fixed 120 BPM grid and carry "rhythm is not transcribed" **in the file** | D5 (gap) | accepted |
 | [0018](0018-hand-position-carry.md) | Carry the hand position across all-open shapes; `transition_cost_from` added to the scorer contract | 2.1/2.2 (defect) | accepted |
 | [0019](0019-barre-chords-in-e3.md) | E3 counts **fingers**, not fretted notes, so barre chords are playable (supersedes ADR 0011's fourth rule) | D9 (defect) | accepted |
@@ -34,7 +34,6 @@ Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Pha
 D13 (form of audio evidence, Phase 3), D14 (app surface — **now due, M1 is met**),
 D15 (licensing — **code and publication settled by ADR 0020**; weight release still open, per corpus).
 
-**D10 is proposed, not settled.** ADR 0016 proposes X = 10 points of oracle E2 and needs
-Ege's sign-off on that one number; everything else in it is derivation.
+**D10 is settled** by ADR 0016: oracle E2 must reach baseline + 10 points (0.760) at M2.
 
 D16 (C++ decoder) is closed as will-not-do by ADR 0015.

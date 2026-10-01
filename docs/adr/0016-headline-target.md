@@ -1,6 +1,6 @@
 # ADR 0016: The D10 headline target
 
-Status: **proposed (2026-09-27) — awaiting Ege's sign-off on X**
+Status: accepted (2026-10-01) — X = 10 signed off by Ege
 
 Completes ADR 0004, which fixed the headline *metric* and deferred the *target* until a
 baseline existed. One exists now. ADR 0004 is not superseded: the metric is unchanged.
@@ -12,14 +12,15 @@ be set after M1 as "baseline + X points", because setting one before a baseline 
 inventing a number. Phase 1.5 then moved the baseline twice (ADR 0018, ADR 0019), so the
 figures below are the current ones, not M1's.
 
-**Baseline**, commit `a05e1e0`, all 360 GuitarSet tracks, hand-set weights:
+**Baseline**, all 360 GuitarSet tracks, hand-set weights, as recorded in
+`experiments/results.csv` and reproduced by the code at the initial public commit:
 
 | | oracle | end-to-end |
 |---|---|---|
 | E1 note F1, transcriber (raw) | 1.0000 | 0.7437 |
 | E1 note F1, pipeline (placed) | 1.0000 | 0.7452 |
 | **E2 exact tab F1** | **0.6599** | **0.4318** |
-| E3 playable groups / transitions | 0.9971 / 0.9134 | 0.9897 / 0.9164 |
+| E3 playable groups / transitions | 0.9970 / 0.9134 | 0.9896 / 0.9164 |
 | E4 pitch validity | 1.0000 | 1.0000 |
 | E5 calibration error | 0.1652 | 0.3851 |
 
@@ -46,7 +47,7 @@ track are correlated, so the effective sample is smaller; at a design effect of 
 standard error is about 0.006. **Half a point is noise. Two points is real but small** —
 ADR 0018 was worth +2.3 points and it was a bug fix, not a model.
 
-## Decision (proposed)
+## Decision
 
 **X = 10 points of oracle E2, at M2.**
 

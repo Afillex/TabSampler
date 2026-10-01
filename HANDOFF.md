@@ -197,10 +197,8 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 - **A 4-track smoke test gave oracle E2 = 0.90 where all 360 gave 0.64.** Never quote a number
   from a subset.
 
-## Two open items that need Ege, not you
+## Open item that needs Ege, not you
 
-- **D10 — the headline target. ADR 0016 proposes X = 10 points of oracle E2 and is filed as
-  `proposed`, awaiting sign-off on that one number.** Everything else in it is derivation.
 - **D15 — weight release, the half ADR 0020 left open.** The code is MIT and the repo is
   public. Weights are a **per-corpus** decision, because DadaGP and ProgGP are
   research-use-only: check the terms *before* training anything whose weights might be
