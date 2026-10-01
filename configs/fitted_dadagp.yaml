@@ -28,8 +28,10 @@ weights:
   # given the other three terms, not a standalone claim that players avoid open strings.
   open_reward: -1.1483
   acoustic: 0.0
-  # Set by stage 4's calibration on DadaGP validation; 1.0 until then.
-  temperature: 1.0
+  # Calibrated on DadaGP validation by per-note NLL (stage 4): calibration error there
+  # falls from 0.1431 at T = 1 to 0.0562. Path-level likelihood fixes the weights' scale
+  # for whole paths, but per-note posteriors still come out overconfident.
+  temperature: 1.7210
 
 uncertainty_threshold: 0.6
 seed: 0
