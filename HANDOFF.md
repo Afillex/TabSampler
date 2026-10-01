@@ -1,7 +1,8 @@
 # HANDOFF — read this first
 
 You are picking up Tab Sampler with no prior context. This file is the shortest path to
-being useful. Written 2026-09-27 after Milestone M1, updated the same day after Phase 1.5.
+being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-01, after the
+first DadaGP session.
 
 ## In one paragraph
 
@@ -11,8 +12,10 @@ every stage sits behind a `typing.Protocol` in `src/tabsampler/types.py` so one 
 swapped without touching the others. Phase 0 (an evaluation harness built before any model)
 and Phase 1 (a hand-set cost model decoded with Viterbi plus forward-backward posteriors)
 are both **done, measured and tagged**, and **Phase 1.5 has closed M1's known defects**
-(branch `phase-1.5`, ADRs 0016-0019). What remains is a learned fingering model, audio
-conditioning, and an app a guitarist can use.
+(ADRs 0016-0019). **DadaGP arrived on 2026-10-01**, so Phase 2 is unblocked: the training
+protocol is fixed (ADR 0021), ADR 0011's rules are validated on human tab (ADR 0022), and
+weights fitted on DadaGP are measured but not the default (ADR 0023). What remains is a
+fingering model good enough for M2, audio conditioning, and an app a guitarist can use.
 
 ## Rules that are not negotiable
 
@@ -36,9 +39,9 @@ make oracle                        # the correctness core. Must be green.
 
 `make check` piped into `tail` hides its exit code — check the status, not the output.
 
-Then read, in this order: `docs/spec.md` → `docs/plans/2026-09-27-rest-of-project.md` →
-`docs/devlog/2026-09-27-phase-1.5.md` (the most recent session) →
-`docs/devlog/2026-09-27-m1-retrospective.md` → `docs/adr/README.md`.
+Then read, in this order: `docs/spec.md` → `docs/plans/2026-10-01-phase-2.md` (the live
+plan) → `docs/devlog/2026-10-01.md` (the most recent session) →
+`docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`.
 
 ## Where things stand
 
@@ -46,9 +49,9 @@ Then read, in this order: `docs/spec.md` → `docs/plans/2026-09-27-rest-of-proj
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | `v0.0-phase0`, `v0.1-m1` |
-| Tests | 325, all offline — no test needs the dataset or the transcriber |
+| Tests | 389, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
-| Current phase | Phase 2, **blocked**. Phase 1.5 done; the app track (chunk B) is next |
+| Current phase | Phase 2, **unblocked**: plan in `docs/plans/2026-10-01-phase-2.md`, three decisions pending |
 
 **Current results** — 360 GuitarSet tracks, `audio_mic`, hand-set weights (not tuned).
 The `commit` column of `experiments/results.csv` references the pre-publication history,
@@ -74,16 +77,18 @@ and it got slightly worse in Phase 1.5.
 exactly. Placed = the pipeline's, after placement drops notes the guitar cannot sound. M1
 reported only the second and compared it with Phase 0's first.
 
-## The one thing blocking most of the remaining work
+## Training data: DadaGP, and how it may be used
 
-**Ege must send one email.** DadaGP and ProgGP are both symbolic Guitar Pro corpora,
-access-by-request for research use, and Pedro Sarmento is a contact on both. That single
-request gates **three** things: all of Phase 2, the cost-weight tuning still outstanding from
-M1 (ADR 0012), and ADR 0011's owed validation.
+**DadaGP v1.1 arrived on 2026-10-01; ProgGP did not.** The archive lives at
+`data/dadagp/DadaGP-v1.1.zip` (gitignored — **never commit it, the repo is public**), and
+`data/dadagp/track_meta.json` records which songs are clean standard-tuned guitar. Rebuild the
+latter with `scripts/dadagp_track_meta.py` (its docstring has the command).
 
-**If it has not been sent, say so at the top of the session** rather than starting Phase 2
-work that cannot finish. As of the Phase 1.5 session it had not been. Chunk A is now done;
-chunk B needs nothing external either.
+ADR 0021 is the protocol, and it is not optional: fit on DadaGP **training**, select and
+calibrate on DadaGP **validation**, evaluate on GuitarSet **once**, and never choose anything
+by looking at GuitarSet. The split is frozen by hash. Its artists overlap between halves,
+which is fine for a few scalars and **must be fixed before any model with capacity** (Phase 2
+plan, task C1).
 
 ## Five things that will trip you up
 
@@ -123,20 +128,14 @@ scored as unplayable (ADR 0019). Both moved reported numbers; see
 
 Still open:
 
-- **The hand-set weights are demonstrably wrong, and Phase 1.5 is what showed it.** `move`
-  is 1.0 per fret against `high` at 0.1 per *octave* — 120:1 — so once movement is charged
-  honestly the decoder parks the hand high up the neck rather than playing in open position.
-  ADR 0018 has the worked example. **Do not reweight without validation data** (ADR 0012);
-  this is the single most valuable thing the DadaGP request buys.
-- **E3's transition rule contradicts ADR 0011's own text.** The ADR says an all-open group
-  "carries the previous [hand position] forward rather than resetting to fret 0", but
-  `transition_is_playable` returns "playable" whenever either shape is all open. Reproduced:
-  fret 2 → open string → fret 20 at 50 ms spacing (18 frets in 0.1 s) scores 2/2
-  transitions, while the same move without the open string in between scores 0/1 with
-  "180.0 frets/s exceeds 12.0". So E3
-  under-reports fast jumps across an intervening open chord — the same defect ADR 0018 just
-  fixed in the cost model, still live in the metric. Unowned; needs its own task because it
-  moves E3 and requires choosing between the ADR's text and the metric's behaviour.
+- **Two decoders, one default, and a decision the test set may not make** (ADR 0023). The
+  hand-set weights are the default; weights fitted on DadaGP score +3.9 E2 and −63% E5 on
+  GuitarSet but are 11 points worse on clean DadaGP guitar and breach the E3 guardrail by a
+  tenth of a point. Adopting them *because* GuitarSet improved would be test-set selection.
+- **E3's transition rule does not carry the hand across an all-open shape**, contrary to
+  ADR 0011's text: fret 2 → open string → fret 20 in 0.1 s passes, the same move without
+  the open string fails. Superseded in importance by the next item, and fixed by the same
+  hand-window redesign (Phase 2 plan, task C2).
 - **A still-ringing note does not reserve its string** against the next group (spec §2.2).
   Not yet owned; revisit if metrics show it matters.
 - **E3's transition rule measures finger reach as hand movement** (ADR 0022). ADR 0011's
@@ -144,10 +143,9 @@ Still open:
   the "probably too strict" suspicion was wrong), but human tab passes the speed rule only
   88% of the time, and 83% of the failures are moves of three frets or fewer between single
   notes. Proposed fix: a hand *window*. The cost model's movement term has the same flaw.
-- **The config loaders have no tests.** `load_phase1_config` and `load_eval_config` are
-  untested; the `max_fingers` rename was verified by hand only.
-- **`eval-m1` writes the config's hypothesis into `results.csv`**, so the Phase 1.5 rows
-  carry M1's hypothesis text. The numbers and commits are right; that column is stale.
+- **`eval-m1` writes the eval config's hypothesis into `results.csv`.** Give every new
+  evaluation its own config with its own hypothesis, as `configs/m2_fitted_eval.yaml` does;
+  the Phase 1.5 rows still carry M1's hypothesis text.
 
 ## Things that are settled — don't relitigate them
 
@@ -196,8 +194,14 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 - **A 4-track smoke test gave oracle E2 = 0.90 where all 360 gave 0.64.** Never quote a number
   from a subset.
 
-## Open item that needs Ege, not you
+## Open items that need Ege, not you
 
+- **ADR 0023's route for the fitted weights**: honour the first pre-registered adoption rule,
+  or earn adoption on a validation proxy chosen in advance. Not: "GuitarSet improved".
+- **Whether the hand-set default gets its own calibrated temperature** — it would cut its E5
+  without changing a single fingering.
+- **The hand-window movement model** (ADR 0022's proposal, Phase 2 plan task C2) — it changes
+  E3, the cost model and the oracle.
 - **D15 — weight release, the half ADR 0020 left open.** The code is MIT and the repo is
   public. Weights are a **per-corpus** decision, because DadaGP and ProgGP are
   research-use-only: check the terms *before* training anything whose weights might be
