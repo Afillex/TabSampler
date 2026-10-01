@@ -1,0 +1,35 @@
+# Cost weights fitted by maximum likelihood on DadaGP training (ADR 0023).
+#
+# NOT the default. These improve pooled DadaGP validation recovery (0.6196 -> 0.6456) but are
+# 11 points WORSE than the hand-set weights on clean guitar parts (0.8097 -> 0.6963). The gain
+# is entirely distorted parts, which are 71% of DadaGP. configs/phase1_baseline.yaml stays the
+# default. Values rounded to 4 decimal places from the fit; see experiments/results.csv.
+
+hypothesis: >-
+  Weights fitted by maximum likelihood on DadaGP training, with the temperature calibrated on
+  DadaGP validation. Evaluated once on GuitarSet as a transfer result (configs/m2_fitted_eval.yaml).
+
+tuning:
+  open_pitches: [40, 45, 50, 55, 59, 64]
+  n_frets: 22
+  capo: 0
+
+grouping:
+  window_s: 0.03
+
+max_span: 5
+
+weights:
+  move: 0.5772
+  span: 0.7377
+  high: 0.3767
+  # Negative: fitted on DadaGP, open strings are penalised, not rewarded. The features are
+  # correlated (an open string also lowers mean fret and span), so this sign is a correction
+  # given the other three terms, not a standalone claim that players avoid open strings.
+  open_reward: -1.1483
+  acoustic: 0.0
+  # Set by stage 4's calibration on DadaGP validation; 1.0 until then.
+  temperature: 1.0
+
+uncertainty_threshold: 0.6
+seed: 0
