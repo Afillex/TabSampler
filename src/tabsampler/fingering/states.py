@@ -39,6 +39,32 @@ class StateStats:
     mean_states: float
 
 
+#: Frets one hand position covers, in span units: fret h to fret h + 4, as ADR 0011's span
+#: limit below fret 12. Fixed by decision, not fitted (ADR 0025).
+HAND_WINDOW = 4
+
+
+def shift_window(
+    previous_hand: int | None, fretted: Sequence[int], window: int = HAND_WINDOW
+) -> tuple[int | None, int]:
+    """Where the hand's window starts after a shape, and how far it had to move (ADR 0025).
+
+    The hand covers frets ``hand`` to ``hand + window`` and moves only when a fretted note
+    falls outside that range, by the least distance that brings the shape inside it. A
+    shape wider than the window anchors at its lowest fret. Open strings need no hand, so
+    an all-open shape (``fretted`` empty) leaves it where it was. ``fretted`` is ascending.
+    """
+    if not fretted:
+        return previous_hand, 0
+    low, high = fretted[0], fretted[-1]
+    if previous_hand is None:
+        return low, 0
+    if low >= previous_hand and high <= previous_hand + window:
+        return previous_hand, 0
+    new = low if low < previous_hand else min(low, high - window)
+    return new, abs(new - previous_hand)
+
+
 def carry_hand(previous_hand: int | None, state: ChordState) -> int | None:
     """Where the hand is after playing ``state``, given where it was before.
 
