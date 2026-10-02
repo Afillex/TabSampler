@@ -71,6 +71,7 @@ def main() -> None:
     parser.add_argument("--decoder-config", type=Path, required=True)
     parser.add_argument("--val-songs", type=int, default=300)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--split", choices=("shipped", "artist"), default="shipped")
     args = parser.parse_args()
 
     weights = load_phase1_config(args.decoder_config).weights
@@ -84,6 +85,7 @@ def main() -> None:
             tuning=DADAGP_TUNING,
             sample=args.val_songs,
             seed=args.seed,
+            scheme=args.split,
         )
         for s in human_sequences(track.steps, ctx)
     ]

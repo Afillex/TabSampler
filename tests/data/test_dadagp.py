@@ -17,7 +17,10 @@ import pytest
 
 from tabsampler.data.dadagp import (
     ARCHIVE_ROOT,
+    ARTIST_VALIDATION_SHA256,
     SPLIT_SHA256,
+    artist_of,
+    artist_split,
     load_tracks,
     parse_tokens,
 )
@@ -288,3 +291,76 @@ def test_the_committed_hashes_are_the_v1_1_release() -> None:
     # Pins the frozen split. Changing these is changing the corpus, which needs an ADR.
     assert SPLIT_SHA256[Split.TRAIN].startswith("471ec175")
     assert SPLIT_SHA256[Split.VALIDATION].startswith("7a7fe387")
+    assert ARTIST_VALIDATION_SHA256.startswith("538be675")
+
+
+# --------------------------------------------------------- artist-disjoint split (ADR 0024)
+
+
+def test_an_artist_is_the_folder_under_the_letter() -> None:
+    assert artist_of("M/Mago de Oz/Mago de Oz - Alma.gp4.tokens.txt") == "mago de oz"
+
+
+def test_case_variants_of_one_artist_share_a_side() -> None:
+    a = artist_split(["M/Mago de Oz/x.tokens.txt", "M/Mago de oz/y.tokens.txt"])
+    assert len(set(a.values())) == 1
+
+
+def test_no_artist_appears_on_both_sides() -> None:
+    keys = [f"A/Artist{i % 37}/Song{i}.tokens.txt" for i in range(500)]
+    assignment = artist_split(keys)
+    sides: dict[str, set[Split]] = {}
+    for key, side in assignment.items():
+        sides.setdefault(artist_of(key), set()).add(side)
+    assert all(len(s) == 1 for s in sides.values())
+    assert set(assignment.values()) == {Split.TRAIN, Split.VALIDATION}
+
+
+def test_the_artist_split_is_deterministic() -> None:
+    keys = [f"A/Artist{i}/Song.tokens.txt" for i in range(100)]
+    assert artist_split(keys) == artist_split(list(reversed(keys)))
+
+
+def test_the_loader_serves_the_artist_scheme(tmp_path: Path) -> None:
+    archive, meta = make_archive(tmp_path)
+    expected = hashes_of(archive)
+    train = {
+        t.song
+        for t in load_tracks(
+            archive,
+            Split.TRAIN,
+            meta,
+            expected_sha256=expected,
+            scheme="artist",
+            artist_sha256=None,
+        )
+    }
+    val = {
+        t.song
+        for t in load_tracks(
+            archive,
+            Split.VALIDATION,
+            meta,
+            expected_sha256=expected,
+            scheme="artist",
+            artist_sha256=None,
+        )
+    }
+    assert train | val == {"A/Artist/Song.gp4.tokens.txt", "B/Band/Tune.gp4.tokens.txt"}
+    assert not train & val
+
+
+def test_the_artist_scheme_refuses_a_changed_assignment(tmp_path: Path) -> None:
+    # The artist split is frozen by the hash of its validation list, like the shipped one.
+    archive, meta = make_archive(tmp_path)
+    with pytest.raises(ValueError, match="sha256"):
+        list(
+            load_tracks(
+                archive,
+                Split.TRAIN,
+                meta,
+                expected_sha256=hashes_of(archive),
+                scheme="artist",
+                artist_sha256="0" * 64,
+            )
+        )

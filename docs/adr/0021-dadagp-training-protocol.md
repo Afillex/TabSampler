@@ -1,6 +1,8 @@
 # ADR 0021: DadaGP v1.1 is the training corpus — its own split, frozen, clean guitar only
 
-Status: accepted (2026-10-01)
+Status: accepted (2026-10-01); its split is superseded for fitting by
+[ADR 0024](0024-artist-disjoint-split.md), which keeps no artist on both sides. The filter,
+note handling and evaluation rules here still stand.
 
 Implements ADR 0003's "tune on validation drawn from training sources" now that one exists.
 GuitarSet remains the only test set.

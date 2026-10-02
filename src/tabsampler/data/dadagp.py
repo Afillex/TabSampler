@@ -25,9 +25,10 @@ import json
 import random
 import re
 import zipfile
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from tabsampler.data.splits import Split, assert_tuning_allowed
 from tabsampler.types import MIDI_MAX, ChordState, NoteEvent, NoteGroup, Position, Tuning
@@ -60,6 +61,10 @@ SPLIT_SHA256: Mapping[Split, str] = {
     Split.TRAIN: "471ec175d1fcd93b76ff40b88313f923d80b08040583956e620a0a2552397462",
     Split.VALIDATION: "7a7fe3871da75afca5045d08d0837d7df57065ffe6292402f6b40d413ec396ce",
 }
+
+#: SHA-256 of the artist-disjoint split's validation keys, sorted and newline-joined
+#: (ADR 0024): 2,607 of 26,181 songs and 519 of 4,866 artists.
+ARTIST_VALIDATION_SHA256 = "538be675d39ffd4f5c43291ab613a6931342380761d16c4c4adc91124405b087"
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,6 +221,24 @@ def parse_tokens(
     )
 
 
+def artist_of(key: str) -> str:
+    """The artist folder of a token-file key, case-folded: folders that differ only by case
+    are one artist on a case-insensitive filesystem (ADR 0021)."""
+    return key.split("/")[1].casefold()
+
+
+def artist_split(
+    keys: Sequence[str], buckets: int = 10, validation_buckets: int = 1
+) -> dict[str, Split]:
+    """Whole artists to one side: about ``validation_buckets / buckets`` of artists go to
+    validation, chosen by a hash of the artist so the assignment never depends on order."""
+    out: dict[str, Split] = {}
+    for key in keys:
+        bucket = int(hashlib.sha256(artist_of(key).encode()).hexdigest(), 16) % buckets
+        out[key] = Split.VALIDATION if bucket < validation_buckets else Split.TRAIN
+    return out
+
+
 def _split_keys(raw: bytes) -> list[str]:
     """Typed boundary around the split file's JSON."""
     entries: list[dict[str, object]] = json.loads(raw)
@@ -237,10 +260,16 @@ def load_tracks(
     sample: int | None = None,
     seed: int = 0,
     on_song: Callable[[str, ParseStats], None] | None = None,
+    scheme: Literal["shipped", "artist"] = "shipped",
+    artist_sha256: str | None = ARTIST_VALIDATION_SHA256,
 ) -> Iterator[HumanTrack]:
     """Human fingerings for every cleared song in one DadaGP split.
 
     Args:
+        scheme: ``"shipped"`` is DadaGP's own song-level split (ADR 0021); ``"artist"``
+            reassigns the same songs so that no artist is on both sides (ADR 0024).
+        artist_sha256: The frozen hash of the artist split's validation keys; ``None``
+            skips the check, for tests that build their own archives.
         sample: Take this many cleared songs, chosen with ``seed``, instead of all of them.
         on_song: Called with each song's parse statistics, so a caller can report what
             was dropped without this function printing anything.
@@ -255,17 +284,35 @@ def load_tracks(
 
     cleared = _cleared(Path(meta_path))
     with zipfile.ZipFile(archive_path) as archive:
-        raw = archive.read(ARCHIVE_ROOT + SPLIT_FILES[split])
-        digest = hashlib.sha256(raw).hexdigest()
-        if digest != expected_sha256[split]:
-            raise ValueError(
-                f"{SPLIT_FILES[split]} has sha256 {digest}, not the frozen "
-                f"{expected_sha256[split]}: this is a different split (ADR 0021)"
-            )
+
+        def verified(side: Split) -> list[str]:
+            raw = archive.read(ARCHIVE_ROOT + SPLIT_FILES[side])
+            digest = hashlib.sha256(raw).hexdigest()
+            if digest != expected_sha256[side]:
+                raise ValueError(
+                    f"{SPLIT_FILES[side]} has sha256 {digest}, not the frozen "
+                    f"{expected_sha256[side]}: this is a different split (ADR 0021)"
+                )
+            return _split_keys(raw)
+
+        if scheme == "shipped":
+            listed = verified(split)
+        else:
+            union = verified(Split.TRAIN) + verified(Split.VALIDATION)
+            assignment = artist_split(union)
+            if artist_sha256 is not None:
+                validation = sorted(k for k, side in assignment.items() if side is Split.VALIDATION)
+                digest = hashlib.sha256("\n".join(validation).encode()).hexdigest()
+                if digest != artist_sha256:
+                    raise ValueError(
+                        f"artist split validation keys have sha256 {digest}, not the frozen "
+                        f"{artist_sha256}: this is a different split (ADR 0024)"
+                    )
+            listed = [k for k in union if assignment[k] is split]
         names = set(archive.namelist())
         # 32 of the 26,181 listed files are absent from the v1.1 archive: folders whose
         # names differ only in case collapsed into one on a case-insensitive filesystem.
-        keys = [k for k in _split_keys(raw) if k in cleared and ARCHIVE_ROOT + k in names]
+        keys = [k for k in listed if k in cleared and ARCHIVE_ROOT + k in names]
         if sample is not None:
             keys = sorted(random.Random(seed).sample(keys, min(sample, len(keys))))
         for key in keys:
