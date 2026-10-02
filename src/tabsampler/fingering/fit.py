@@ -37,7 +37,7 @@ from scipy.special import logsumexp  # pyright: ignore[reportUnknownVariableType
 
 from tabsampler.decode.viterbi import build_lattice
 from tabsampler.fingering.costs import FRETS_PER_OCTAVE, count_open, mean_fretted_fret
-from tabsampler.fingering.states import carry_hand
+from tabsampler.fingering.states import shift_window
 from tabsampler.types import ChordState, Context, CostWeights, NoteGroup
 
 #: Order of the weight vector, and of every feature vector.
@@ -112,15 +112,13 @@ def _shape_features(state: ChordState) -> Vector:
 
 
 def path_features(states: Sequence[ChordState]) -> Vector:
-    """``Phi`` of one path: the shape features summed, plus hand movement with the carry."""
+    """``Phi`` of one path: the shape features summed, plus the hand window's movement."""
     total = np.zeros(4)
     hand: int | None = None
     for state in states:
         total += _shape_features(state)
-        here = state.hand_position
-        if hand is not None and here is not None:
-            total[0] += abs(here - hand)
-        hand = carry_hand(hand, state)
+        hand, moved = shift_window(hand, state.fretted_frets)
+        total[0] += moved
     return total
 
 
@@ -147,12 +145,11 @@ def sequence_features(sequence: HumanSequence, ctx: Context) -> SequenceFeatures
         ok = np.ones((len(previous), len(current)), dtype=bool)
         for i, prior in enumerate(previous):
             for j, node in enumerate(current):
-                if carry_hand(prior.carried_hand, node.state) != node.carried_hand:
+                new, moved = shift_window(prior.carried_hand, node.state.fretted_frets)
+                if new != node.carried_hand:
                     ok[i, j] = False
                     continue
-                here = node.state.hand_position
-                if prior.carried_hand is not None and here is not None:
-                    move[i, j] = abs(here - prior.carried_hand)
+                move[i, j] = moved
         movement.append(move)
         allowed.append(ok)
     return SequenceFeatures(

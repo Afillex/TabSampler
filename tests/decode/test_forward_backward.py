@@ -82,9 +82,12 @@ def test_a_node_transition_that_would_teleport_the_hand_costs_infinity() -> None
     teleports = LatticeNode(open_shape, 11)  # a hand position nothing put it in
     assert node_transition_cost(prior, inherits, SCORER) == 0.0
     assert node_transition_cost(prior, teleports, SCORER) == math.inf
-    # A fretted successor sets its own hand, so every predecessor reaches it.
-    fretted = LatticeNode(ChordState(positions=(Position(0, 9),)), 9)
-    assert node_transition_cost(prior, fretted, SCORER) == pytest.approx(4.0)
+    # A note outside the window (frets 5-9) moves it just enough: fret 12 -> window 8-12.
+    fretted = LatticeNode(ChordState(positions=(Position(0, 12),)), 8)
+    assert node_transition_cost(prior, fretted, SCORER) == pytest.approx(3.0)
+    # ... and a node claiming the old point-model hand (12) is unreachable from here.
+    point = LatticeNode(ChordState(positions=(Position(0, 12),)), 12)
+    assert node_transition_cost(prior, point, SCORER) == math.inf
 
 
 def test_infinite_transitions_do_not_poison_the_posteriors() -> None:

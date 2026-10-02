@@ -102,11 +102,11 @@ def build_lattice(
             )
         level: list[LatticeNode] = []
         for state in states:
-            here = state.hand_position
-            if here is not None:
-                level.append(LatticeNode(state, here))
-            else:
-                level.extend(LatticeNode(state, hand) for hand in carried)
+            # The window a shape is played in depends on where the hand came from, for
+            # fretted shapes as well as all-open ones (ADR 0025), so each state gets one
+            # node per distinct window it can be reached in.
+            hands = dict.fromkeys(carry_hand(hand, state) for hand in carried)
+            level.extend(LatticeNode(state, hand) for hand in hands)
         lattice.append(tuple(level))
         # dict.fromkeys dedups while preserving order, and the order it sees is the
         # sorted state order, so the lattice stays deterministic run to run.

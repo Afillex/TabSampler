@@ -66,15 +66,14 @@ def shift_window(
 
 
 def carry_hand(previous_hand: int | None, state: ChordState) -> int | None:
-    """Where the hand is after playing ``state``, given where it was before.
+    """Where the hand's window starts after playing ``state``, given where it was before.
 
-    Hand position is the lowest fretted fret (spec 2.2). An all-open shape has none of
-    its own and **inherits** the previous one rather than resetting to fret 0, which is
-    what makes ``fret 2 -> open chord -> fret 10`` cost eight frets of movement instead
-    of nothing (ADR 0018). ``None`` means the hand has not been anywhere yet.
+    The hand is a 4-fret window (ADR 0025, see :func:`shift_window`): a finger reaching
+    inside it does not move it, and an all-open shape **inherits** the previous position
+    rather than resetting to fret 0 (ADR 0018). ``None`` means the hand has not been
+    anywhere yet.
     """
-    here = state.hand_position
-    return previous_hand if here is None else here
+    return shift_window(previous_hand, state.fretted_frets)[0]
 
 
 def enumerate_states(group: NoteGroup, tuning: Tuning, max_span: int) -> tuple[ChordState, ...]:

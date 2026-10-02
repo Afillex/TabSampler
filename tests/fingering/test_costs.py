@@ -107,10 +107,14 @@ def test_transition_cost_grows_with_distance() -> None:
     assert d1 < d5 < d10
 
 
-def test_transition_cost_is_symmetric() -> None:
+def test_the_window_makes_up_and_down_moves_differ() -> None:
+    # A hand is placed at its lowest fretted note and covers 4 frets above it (ADR 0025).
+    # From fret 3 (frets 3-7), reaching fret 9 moves the window up 2, to 5-9. From fret 9
+    # (frets 9-13), reaching fret 3 moves it down 6. The old point model was symmetric.
     s = scorer()
     a, b = state((0, 3)), state((1, 9))
-    assert s.transition_cost(a, b) == s.transition_cost(b, a)
+    assert s.transition_cost(a, b) == pytest.approx(2.0 * s.weights.move)
+    assert s.transition_cost(b, a) == pytest.approx(6.0 * s.weights.move)
 
 
 def test_transition_to_or_from_an_all_open_state_is_free() -> None:
@@ -126,13 +130,19 @@ def test_transition_to_or_from_an_all_open_state_is_free() -> None:
 
 def test_movement_is_charged_across_an_intervening_open_chord() -> None:
     s = scorer()
-    # fret 2 -> all-open -> fret 10. The hand really moves 8 frets.
+    # fret 2 -> all-open -> fret 10. The window starting at 2 covers frets 2-6, so reaching
+    # fret 10 moves it 4, to 6-10 (ADR 0025); the open chord in between changes nothing.
     assert s.transition_cost_from(2, state((1, 0))) == 0.0  # nothing to move to
-    assert s.transition_cost_from(2, state((0, 10))) == pytest.approx(8.0 * s.weights.move)
+    assert s.transition_cost_from(2, state((0, 10))) == pytest.approx(4.0 * s.weights.move)
     # An all-open shape carries the previous position forward rather than resetting to 0.
     assert s.carry(previous_hand=2, curr=state((1, 0))) == 2
-    assert s.carry(previous_hand=2, curr=state((0, 10))) == 10
+    assert s.carry(previous_hand=2, curr=state((0, 10))) == 6
     assert s.carry(previous_hand=None, curr=state((1, 0))) is None
+
+
+def test_a_reach_inside_the_window_costs_nothing() -> None:
+    s = scorer()
+    assert s.transition_cost_from(5, state((0, 8))) == 0.0
 
 
 def test_transition_cost_is_transition_cost_from_the_previous_hand_position() -> None:

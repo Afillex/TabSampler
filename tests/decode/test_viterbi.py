@@ -141,10 +141,9 @@ def test_the_hand_does_not_teleport_across_an_intervening_open_chord() -> None:
     assert path[2].positions[0] == Position(4, 21)  # not Position(5, 16)
 
 
-def test_the_lattice_only_augments_all_open_states() -> None:
-    # The cheap fix (ADR 0018): a shape with any fretted note determines its own hand
-    # position and needs exactly one node. Augmenting every node would multiply the
-    # state space by max_fret + 1.
+def test_the_first_level_places_each_window_at_its_shapes_lowest_fret() -> None:
+    # Nothing precedes group 0, so every fretted shape there starts its hand window at its
+    # own lowest fret and gets exactly one node (ADR 0025). Later levels can carry more.
     fretted = group(56)  # no open string sounds MIDI 56
     (level,) = build_lattice([fretted], CTX)
     assert len(level) == len(enumerate_states(fretted, STANDARD, CTX.max_span))
@@ -167,25 +166,24 @@ def _state_and_node_counts(groups: list[NoteGroup]) -> tuple[int, int]:
 
 
 def test_node_count_stays_close_to_state_count() -> None:
-    # The augmentation is only worth having if it is cheap. Viterbi is O(T*S^2), so nodes
-    # per group must stay near states per group, not near the max_fret + 1 = 23x that
-    # augmenting every node would cost. An E-minor pentatonic run up and back: measured
-    # 1.31x here, and 1.07x over 6607 groups of real GuitarSet reference notes (ADR 0018).
+    # Under the hand window (ADR 0025) a fretted shape can be played from several windows,
+    # so the lattice is larger than under the old point model (1.31x here then). Measured
+    # 3.75x on this E-minor pentatonic run; full augmentation by hand position would be 23x.
     pitches = [40, 43, 45, 47, 50, 52, 55, 57, 59, 62, 64, 62, 59, 57, 55, 52, 50, 47, 45, 43]
     groups = [group(p, onset=i * 0.25) for i, p in enumerate(pitches)]
     n_states, n_nodes = _state_and_node_counts(groups)
-    assert n_nodes <= 1.5 * n_states, f"{n_nodes} nodes for {n_states} states"
+    assert n_nodes <= 6 * n_states, f"{n_nodes} nodes for {n_states} states"
 
 
 def test_the_pathological_input_is_nothing_but_open_string_pitches() -> None:
     # The carried set grows only through groups that *can* be played all-open, so the
     # worst input is a line of nothing but open-string pitches. Cycling all six measures
-    # 2.92x -- higher than any mixed line, and the number to quote as the worst case.
-    # Full augmentation would be max_fret + 1 = 23x. This guards the growth staying
-    # structural; it is not a target.
+    # 4.44x under the hand window (2.92x under the old point model) -- higher than any
+    # mixed line, and the number to quote as the worst case. Full augmentation would be
+    # max_fret + 1 = 23x. This guards the growth staying structural; it is not a target.
     groups = [group(p, onset=i * 0.5) for i, p in enumerate([40, 45, 50, 55, 59, 64] * 8)]
     n_states, n_nodes = _state_and_node_counts(groups)
-    assert n_nodes <= 3.5 * n_states, f"{n_nodes} nodes for {n_states} states"
+    assert n_nodes <= 6 * n_states, f"{n_nodes} nodes for {n_states} states"
 
 
 def test_the_carried_hand_set_saturates_rather_than_growing_with_the_piece() -> None:

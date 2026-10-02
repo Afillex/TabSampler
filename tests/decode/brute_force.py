@@ -39,13 +39,17 @@ def path_cost(
     C = sum of emission costs + sum of movement costs, where movement is charged against
     **where the hand was**, not against the previous shape.
 
-    The hand starts nowhere, so the first group is charged no movement. A shape with a
-    fretted note puts the hand at its lowest fretted fret (spec 2.2); an all-open shape
-    has no hand position of its own and leaves the hand where it was, so the movement
-    across it is charged to the next fretted shape (ADR 0018).
+    The hand is a 4-fret window, written out here from ADR 0025's text and not imported, so
+    this stays an independent check on the decoder *and* on the cost model's movement term:
 
-    The carry is spelled out here rather than imported from
-    ``tabsampler.fingering.states``, so that this stays an independent check on it.
+    - the hand starts nowhere, and the first fretted shape places it at its lowest fret,
+      for free;
+    - open strings need no hand, so an all-open shape leaves it where it was;
+    - a shape whose fretted notes all lie within frets ``hand`` to ``hand + 4`` costs no
+      movement: a finger reaches, the hand stays;
+    - otherwise the window moves by the least distance that brings the shape inside it --
+      down to the lowest note, or up until the highest fits -- and a shape wider than the
+      window anchors at its lowest fret. Movement costs ``move`` per fret moved.
     """
     total = 0.0
     for group, state in zip(groups, path, strict=True):
@@ -53,9 +57,18 @@ def path_cost(
 
     hand: int | None = None
     for state in path:
-        total += scorer.transition_cost_from(hand, state)
-        if state.hand_position is not None:
-            hand = state.hand_position
+        fretted = sorted(p.fret for p in state.positions if p.fret > 0)
+        if not fretted:
+            continue  # open strings need no hand; it stays where it was
+        low, high = fretted[0], fretted[-1]
+        if hand is None:
+            hand = low  # the first fretted shape places the hand, at no cost
+            continue
+        if hand <= low and high <= hand + 4:
+            continue  # inside the 4-fret window: a finger reaches, the hand does not move
+        new = low if low < hand else min(low, high - 4)
+        total += scorer.weights.move * abs(new - hand)  # type: ignore[attr-defined]
+        hand = new
     return total
 
 

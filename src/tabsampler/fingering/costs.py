@@ -35,7 +35,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from tabsampler.fingering.states import carry_hand
+from tabsampler.fingering.states import carry_hand, shift_window
 from tabsampler.types import (
     ChordState,
     Context,
@@ -88,13 +88,13 @@ class HandSetScorer:
 
         This is what the decoder calls. Passing a hand position rather than a shape is
         what lets an all-open shape carry the hand forward instead of erasing it
-        (ADR 0018). ``previous_hand`` is None before the first fretted shape, and an
-        all-open ``curr`` needs no move, so both cost nothing.
+        (ADR 0018). The hand is a 4-fret window and moves only when ``curr`` has a
+        fretted note outside it, by the least distance that brings ``curr`` inside
+        (ADR 0025), so a finger reaching within one position costs nothing.
+        ``previous_hand`` is None before the first fretted shape, and an all-open ``curr``
+        needs no move, so both cost nothing.
         """
-        here = curr.hand_position
-        if previous_hand is None or here is None:
-            return 0.0
-        return self.weights.move * abs(here - previous_hand)
+        return self.weights.move * shift_window(previous_hand, curr.fretted_frets)[1]
 
     def transition_cost(self, prev: ChordState, curr: ChordState) -> float:
         """How far the hand must move between two consecutive shapes.
