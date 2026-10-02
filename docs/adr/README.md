@@ -32,6 +32,7 @@ of the old record to point at its replacement.
 | [0022](0022-playability-rules-validated.md) | ADR 0011 validated on 16.8M human shapes: **chord rules hold (99.86%), the speed rule does not (88%)** | D9 | accepted |
 | [0023](0023-fitted-cost-weights.md) | Weights fitted on DadaGP: **+3.9 E2 and −63% E5 on GuitarSet, but not the default** — worse on clean guitar | D7 | accepted; premise lifted by 0023 |
 | [0024](0024-artist-disjoint-split.md) | **Artist-disjoint DadaGP split** for every fit: 519 artists / 2,607 songs to validation, frozen by hash | D8 | accepted |
+| [0025](0025-hand-window.md) | **The hand is a 4-fret window**: decoder, cost model and E3 (gate missed at 0.9795, kept by Ege's decision) | 2.2 / D9 | accepted |
 | [0026](0026-default-temperature.md) | Calibrate the default decoder's temperature on artist validation | D7 | proposed |
 | [0027](0027-fitted-weights-fair-test.md) | Fitted weights replace the default **only if** they win on clean parts, distorted parts **and** E3 | D7 | proposed |
 

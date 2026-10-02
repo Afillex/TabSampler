@@ -1,6 +1,7 @@
 # ADR 0018: Carry the hand position across all-open shapes
 
-Status: accepted (2026-09-27)
+Status: accepted (2026-09-27); its definition of hand position (the lowest fretted fret) is
+superseded by [ADR 0025](0025-hand-window.md)'s 4-fret window. The carry and the lattice design stand.
 
 Closes the first known defect from M1 (`docs/devlog/2026-09-27-m1-retrospective.md`).
 Extends the `FingeringScorer` contract from ADR 0007 / spec 2.1.

@@ -1,6 +1,7 @@
 # ADR 0022: ADR 0011's chord rules hold on human tab; its speed rule does not
 
-Status: accepted (2026-10-01)
+Status: accepted (2026-10-01); the hand window it proposed is implemented in
+[ADR 0025](0025-hand-window.md). Its caveat on E3's transition rate still applies.
 
 Discharges the validation ADR 0011 owed. Does not change any rule; it changes what E3's
 transition rate may be claimed to mean.

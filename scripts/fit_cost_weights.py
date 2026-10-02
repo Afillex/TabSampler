@@ -100,6 +100,11 @@ def main() -> None:
     parser.add_argument("--val-songs", type=int, default=300)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--split", choices=("shipped", "artist"), default="shipped")
+    parser.add_argument(
+        "--skip-halves",
+        action="store_true",
+        help="Skip the two half-sample stability fits (they inform, no rule uses them).",
+    )
     args = parser.parse_args()
 
     hand_set = load_phase1_config("configs/phase1_baseline.yaml").weights
@@ -145,7 +150,7 @@ def main() -> None:
     print(f"lattices built in {time.perf_counter() - started:.0f}s")
 
     fits = {}
-    for name in ("A", "B", "all"):
+    for name in ("all",) if args.skip_halves else ("A", "B", "all"):
         started = time.perf_counter()
         fits[name] = fit_weights(feats[name], hand_set)
         r = fits[name]
@@ -172,6 +177,8 @@ def main() -> None:
             f"distorted {shares['distorted'][0]:.4f} ({shares['distorted'][1]} notes)   "
             f"decoded E3 chord shapes {e3:.4f}"
         )
+    if args.skip_halves:
+        return
     a, b = (weights_to_vector(fits[h].weights) for h in ("A", "B"))
     worst = float(np.max(np.abs(a - b) / np.maximum(np.abs(a), 1e-9)))
     print(f"half A vs half B, largest relative difference: {worst:.3f}")

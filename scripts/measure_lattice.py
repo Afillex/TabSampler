@@ -62,7 +62,7 @@ def measure_guitarset(n_tracks: int, ctx: Context, window_s: float) -> None:
     from tabsampler.fingering.candidates import group_notes
 
     record_test_set_access(
-        f"measured node-lattice size (ADR 0018) on {n_tracks} GuitarSet tracks via "
+        f"measured node-lattice size (ADR 0018, ADR 0025) on {n_tracks} GuitarSet tracks via "
         f"scripts/measure_lattice.py: decoder complexity instrumentation, no metric "
         f"computed and no threshold chosen from it"
     )
