@@ -8,8 +8,8 @@ from tabsampler.eval.playability import (
     PlayabilityRules,
     fingers_needed,
     group_is_playable,
+    hand_move_is_playable,
     playability_rate,
-    transition_is_playable,
 )
 from tabsampler.types import NoteEvent, Position, TabNote
 
@@ -167,33 +167,36 @@ def test_rules_are_data_and_can_be_relaxed() -> None:
 # ------------------------------------------------------------------ transition rules
 
 
-def test_staying_in_position_passes() -> None:
-    assert transition_is_playable(pos((0, 5)), pos((1, 5)), 0.25, RULES) is None
+def test_a_reach_inside_one_position_is_not_a_hand_move() -> None:
+    # 5 -> 7 in a sixteenth note used to read as 16 frets/s (ADR 0022). Now: no move.
+    reason, hand = hand_move_is_playable(5, pos((0, 7)), 0.125, RULES)
+    assert reason is None and hand == 5
 
 
 def test_a_slow_long_jump_passes() -> None:
-    # 10 frets in 2 s is 5 frets/s, inside the 12 frets/s limit.
-    assert transition_is_playable(pos((0, 2)), pos((1, 12)), 2.0, RULES) is None
+    reason, hand = hand_move_is_playable(2, pos((1, 12)), 2.0, RULES)
+    assert reason is None and hand == 8
 
 
 def test_the_same_jump_played_fast_fails() -> None:
-    # 10 frets in 0.1 s is 100 frets/s.
-    reason = transition_is_playable(pos((0, 2)), pos((1, 12)), 0.1, RULES)
-    assert reason is not None
-    assert "frets/s" in reason
+    reason, _ = hand_move_is_playable(2, pos((1, 12)), 0.1, RULES)
+    assert reason is not None and "frets/s" in reason
 
 
 def test_a_jump_with_no_time_between_groups_fails() -> None:
-    assert transition_is_playable(pos((0, 2)), pos((1, 12)), 0.0, RULES) is not None
+    reason, _ = hand_move_is_playable(2, pos((1, 12)), 0.0, RULES)
+    assert reason is not None
 
 
-def test_no_movement_with_no_time_still_passes() -> None:
-    assert transition_is_playable(pos((0, 5)), pos((1, 5)), 0.0, RULES) is None
+def test_a_jump_across_an_open_string_is_still_a_jump() -> None:
+    # fret 2 -> open -> fret 20 in 0.1 s: the open string must not reset the hand.
+    tab = [tabnote(0.00, 0, 2), tabnote(0.05, 1, 0), tabnote(0.10, 0, 20)]
+    assert playability_rate(tab, RULES).transition_rate < 1.0
 
 
-def test_a_transition_involving_an_all_open_shape_passes() -> None:
-    assert transition_is_playable(pos((0, 2)), pos((1, 0)), 0.01, RULES) is None
-    assert transition_is_playable(pos((1, 0)), pos((0, 12)), 0.01, RULES) is None
+def test_a_shape_with_two_notes_on_one_string_still_moves_the_hand() -> None:
+    reason, hand = hand_move_is_playable(5, pos((0, 3), (0, 12)), 5.0, RULES)
+    assert hand == 3 and reason is None
 
 
 # ------------------------------------------------------------------ whole tab

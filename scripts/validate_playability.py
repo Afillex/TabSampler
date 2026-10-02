@@ -9,6 +9,11 @@ Hypothesis, written before the run: the span thresholds (4 frets below fret 12, 
 above) are too strict, so well under 100% of human chord shapes pass, and span is the
 dominant reason.
 
+Rerun for ADR 0025 (2026-10-02): the transition rule is now the hand window. Acceptance,
+fixed in ADR 0022 before this run: human tab passes the transition rule at >= 0.99.
+If it does not, the result is recorded and reported; neither the window nor the speed
+limit is tuned to pass.
+
 Crowd-sourced tab contains mistakes, so not every failure indicts a rule. The failure
 breakdown is what makes the number interpretable.
 
@@ -28,9 +33,9 @@ from tabsampler.eval.playability import (
     PlayabilityRules,
     fingers_needed,
     group_is_playable,
-    hand_position,
-    transition_is_playable,
+    hand_move_is_playable,
 )
+from tabsampler.fingering.states import shift_window
 
 
 def main() -> None:
@@ -43,7 +48,7 @@ def main() -> None:
     spans_low: Counter[int] = Counter()  # span of human shapes whose lowest fret is below 12
     spans_high: Counter[int] = Counter()
     fingers: Counter[int] = Counter()
-    transitions = transitions_passed = carried = carried_passed = 0
+    transitions = transitions_passed = 0
     parse = Counter[str]()
     songs = tracks = 0
 
@@ -55,8 +60,8 @@ def main() -> None:
 
     for track in load_tracks(archive, Split.TRAIN, meta, on_song=on_song):
         tracks += 1
-        previous = None
-        carried_hand: int | None = None
+        hand: int | None = None
+        first = True
         previous_onset = 0.0
         for group, state in track.steps:
             positions = state.positions
@@ -73,25 +78,16 @@ def main() -> None:
                 (spans_high if fretted[0] >= rules.high_neck_fret else spans_low)[span] += 1
             fingers[fingers_needed(positions, rules)] += 1
 
-            if previous is not None:
-                seconds = group.onset - previous_onset
+            if first:
+                hand = shift_window(None, fretted)[0]
+                first = False
+            else:
                 transitions += 1
-                transitions_passed += (
-                    transition_is_playable(previous, positions, seconds, rules) is None
+                reason, hand = hand_move_is_playable(
+                    hand, positions, group.onset - previous_onset, rules
                 )
-                # ADR 0011's text carries the hand across an all-open shape; the implemented
-                # rule does not. Measured both ways so the gap has a size.
-                here = hand_position(positions)
-                if carried_hand is not None and here is not None:
-                    carried += 1
-                    distance = abs(here - carried_hand)
-                    fast = distance > 0 and (
-                        seconds <= 0 or distance / seconds > rules.max_frets_per_second
-                    )
-                    carried_passed += not fast
-            here = hand_position(positions)
-            carried_hand = carried_hand if here is None else here
-            previous, previous_onset = positions, group.onset
+                transitions_passed += reason is None
+            previous_onset = group.onset
 
     def share(part: int, whole: int) -> str:
         return f"{part / whole:.4f}" if whole else "n/a"
@@ -121,11 +117,8 @@ def main() -> None:
         print("   cumulative share by span:", ", ".join(coverage[:10]))
     print(f"fingers needed: {dict(sorted(fingers.items()))}")
     print()
-    print(f"E3 transitions, as implemented:              {share(transitions_passed, transitions)}")
-    print(
-        f"E3 transitions, hand carried across open:    {share(carried_passed, carried)} "
-        f"({carried} moves between fretted positions)"
-    )
+    print(f"E3 transitions, hand window (ADR 0025): {share(transitions_passed, transitions)}")
+    print("acceptance (ADR 0022, fixed in advance): >= 0.99")
 
 
 if __name__ == "__main__":

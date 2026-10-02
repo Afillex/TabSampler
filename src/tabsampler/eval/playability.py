@@ -13,7 +13,10 @@ Rules, from ADR 0011, passed in as data so they can change without editing this 
 - open strings are free and excluded from the span;
 - at most 4 **fingers** (ADR 0019, superseding ADR 0011's count of fretted *notes*);
 - one note per string;
-- hand movement at most 12 frets per second between consecutive groups.
+- hand movement at most 12 frets per second, where the hand is a 4-fret window that
+  moves only when a note falls outside it and is carried across all-open shapes
+  (ADR 0025, replacing ADR 0011's lowest-fret rule, which ADR 0022 showed counted a
+  finger reaching as the hand moving).
 
 ADR 0011 counted fretted notes and so called every full barre chord unplayable. ADR 0019
 counts fingers instead: one finger covers every string at the **lowest** fretted fret, and
@@ -40,6 +43,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
+from tabsampler.fingering.states import HAND_WINDOW, shift_window
 from tabsampler.types import Position, TabNote
 
 #: (onset in seconds, the positions sounding at that onset)
@@ -138,12 +142,6 @@ def fingers_needed(positions: Sequence[Position], rules: PlayabilityRules) -> in
     return 1 + above
 
 
-def hand_position(positions: Sequence[Position]) -> int | None:
-    """Lowest fretted fret, or None for an all-open shape (spec 2.2)."""
-    fretted = fretted_frets(positions)
-    return fretted[0] if fretted else None
-
-
 def group_is_playable(positions: Sequence[Position], rules: PlayabilityRules) -> str | None:
     """None if the shape is playable, else a short reason."""
     strings = [p.string for p in positions]
@@ -162,28 +160,23 @@ def group_is_playable(positions: Sequence[Position], rules: PlayabilityRules) ->
     return None
 
 
-def transition_is_playable(
-    previous: Sequence[Position],
-    current: Sequence[Position],
-    seconds: float,
-    rules: PlayabilityRules,
-) -> str | None:
-    """None if the hand can make the move in ``seconds``, else a short reason.
+def hand_move_is_playable(
+    hand: int | None, positions: Sequence[Position], seconds: float, rules: PlayabilityRules
+) -> tuple[str | None, int | None]:
+    """Whether the hand can make the move this shape needs in ``seconds``, and where it ends.
 
-    An all-open shape has no hand position, so nothing has to move.
+    The hand is a window (ADR 0025): a finger reaching inside it is not a move, and an
+    all-open shape leaves it where it was. Returns (reason or None, the new hand).
     """
-    a, b = hand_position(previous), hand_position(current)
-    if a is None or b is None:
-        return None
-    distance = abs(b - a)
+    new_hand, distance = shift_window(hand, fretted_frets(positions), HAND_WINDOW)
     if distance == 0:
-        return None
+        return None, new_hand
     if seconds <= 0.0:
-        return f"{distance}-fret jump with no time between groups"
+        return f"{distance}-fret jump with no time between groups", new_hand
     speed = distance / seconds
     if speed > rules.max_frets_per_second:
-        return f"{speed:.1f} frets/s exceeds {rules.max_frets_per_second}"
-    return None
+        return f"{speed:.1f} frets/s exceeds {rules.max_frets_per_second}", new_hand
+    return None, new_hand
 
 
 def group_tab_by_onset(tab: Sequence[TabNote], window_s: float = 0.03) -> list[Shape]:
@@ -227,10 +220,12 @@ def playability_rate(
             failures.append(f"group @{onset:.3f}s: {reason}")
 
     transitions_pass = 0
+    # The hand is carried through the whole tab, across all-open shapes (ADR 0025).
+    hand = shift_window(None, fretted_frets(shapes[0][1]))[0] if shapes else None
     for index in range(1, len(shapes)):
-        prev_onset, prev_positions = shapes[index - 1]
+        prev_onset = shapes[index - 1][0]
         onset, positions = shapes[index]
-        reason = transition_is_playable(prev_positions, positions, onset - prev_onset, active)
+        reason, hand = hand_move_is_playable(hand, positions, onset - prev_onset, active)
         if reason is None:
             transitions_pass += 1
         else:
