@@ -575,4 +575,6 @@ for comparison and every guardrail of ADR 0016 stated, including any breach.
 - [x] Write `docs/devlog/2026-10-02.md` (done, measured, rulings, open questions); update
 `HANDOFF.md` and the Phase 2 plan's C1/C2/C5 checkboxes; check that no local tooling files
 are tracked.
-- [ ] `make check`, `make oracle`, then `git checkout main && git merge --ff-only hand-window && git push origin main`.
+- [x] `make check`, `make oracle`, then `git checkout main && git merge --ff-only hand-window && git push origin main`.
+  *(Done 2026-10-03 by Ege's decision as a history wording clean-up and a force-push instead
+  of a fast-forward; see `HANDOFF.md`.)*

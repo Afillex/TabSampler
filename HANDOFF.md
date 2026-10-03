@@ -59,7 +59,11 @@ session) → `docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`
 **Current results** — 360 GuitarSet tracks, `audio_mic`, the default decoder: hand-set
 weights, the hand window, T = 2.9974. Rows before 2026-10-01 have a `commit` column that
 references the pre-publication history, which was squashed into the initial commit; the
-rows are still the record of which runs produced which numbers. Reproduce the current ones
+rows are still the record of which runs produced which numbers. Likewise, commit ids
+recorded on 2026-10-02 and 10-03 — in `results.csv`, `experiments/test_set_access.log`,
+ADRs 0026–0028 and that devlog — name commits from before a wording clean-up of the
+history on 2026-10-03. Each has a counterpart with the same message, in the same order,
+with the same code. Reproduce the current ones
 with `uv run tabsampler eval-m1 --config configs/m2_window_eval.yaml`. The previous default
 (hand as a point, T = 1) is in brackets:
 
