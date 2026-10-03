@@ -88,6 +88,13 @@ def main() -> None:
         help="Skip the two half-sample stability fits (they inform, no rule uses them).",
     )
     parser.add_argument(
+        "--part",
+        choices=("all", "clean", "distorted"),
+        default="all",
+        help="Fit on one style's training parts only (ADR 0032); validation is always "
+        "scored on every part, reported by part.",
+    )
+    parser.add_argument(
         "--per-song-out",
         type=Path,
         default=None,
@@ -100,12 +107,13 @@ def main() -> None:
     ctx = Context(tuning=DADAGP_TUNING, max_span=5)
 
     started = time.perf_counter()
-    print(f"split scheme: {args.split}")
+    print(f"split scheme: {args.split}; training parts: {args.part}")
     train = [
         (song, s)
-        for song, _, s in sequences_for(
+        for song, part, s in sequences_for(
             args.archive, args.meta, Split.TRAIN, args.train_songs, args.seed, ctx, args.split
         )
+        if args.part in ("all", part)
     ]
     val_parts = [
         PartSequence(song, part, s)
