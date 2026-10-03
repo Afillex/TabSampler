@@ -1,6 +1,7 @@
 # ADR 0034: Two richer feature groups for the cost model — strings and fret regions
 
-Status: proposed (2026-10-03) — pre-registration; accepted with its results
+Status: accepted (2026-10-03) — **one group kept, for distorted only, and not adopted:
+both decoders are unchanged**
 
 Starts Phase 2 task C3 (`docs/plans/2026-10-01-phase-2.md`): richer features in the same
 CRF, one feature group per experiment, each kept only if it improves validation recovery.
@@ -62,3 +63,27 @@ group that does not help costs nothing: its weights stay at zero.
 
 **Harder.** Eleven weights instead of four to read and explain; and a contract field that
 may stay at zero in the shipped configs if no group earns its place.
+
+## Results (2026-10-03)
+
+Each against the same style's four-weight fit, on that style's parts of the 300
+artist-validation songs (delta, 95% song-level paired interval):
+
+| feature group | clean parts | distorted parts |
+|---|---|---|
+| strings | 0.8616 → 0.8512, −0.0104 [−0.0244, +0.0026]: **not kept** | 0.6480 → 0.6669, +0.0190 [−0.0052, +0.0420]: **not kept** |
+| fret regions | 0.8616 → 0.8638, +0.0022 [−0.0006, +0.0056]: **not kept** | 0.6480 → 0.6735, +0.0256 [+0.0027, +0.0478]: **kept** |
+
+Both groups raised the likelihood of human fingerings on validation (the per-string group
+by more), and neither the per-string hypothesis nor the clean-region one held: likelihood is
+what the fit maximises, recovery is what the keep rule judges, and here they parted.
+
+**Fret regions are kept for distorted guitar but not adopted.** Against the decoder they
+would replace — the hand-set weights, which the distorted four-weight fit already lost to
+in ADR 0032 — they recover far more of the human fingering, 0.5705 → 0.6735 (+0.1030,
+[+0.0494, +0.1552]), but lower the decoded chord-shape rate by 0.00062, beyond the 0.0005
+ADR 0032 allows. It is the same verdict, for the same reason, as the four-weight fit.
+
+So `configs/decoder_clean.yaml` and `configs/decoder_distorted.yaml` are unchanged, and so
+are their temperatures. The new weights stay in the contract at zero, ready for the next
+feature groups. The 11-weight code reproduced the four-weight clean fit song for song.
