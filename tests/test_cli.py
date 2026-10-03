@@ -5,6 +5,8 @@ from __future__ import annotations
 import inspect
 from pathlib import Path
 
+import pytest
+
 from tabsampler import cli
 
 
@@ -25,3 +27,28 @@ def test_make_eval_m1_names_the_decoder_its_hypothesis_describes() -> None:
     recipe = makefile.split("\neval-m1:", 1)[1].split("\n\n", 1)[0]
     assert "--config configs/m1_full_eval.yaml" in recipe
     assert "--decoder-config configs/phase1_baseline.yaml" in recipe
+
+
+def test_a_validation_run_does_not_touch_the_test_set_log(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Player 00 is validation data (ADR 0037): reading it is not a look at the test set.
+    from typer.testing import CliRunner
+
+    looks: list[str] = []
+
+    class Stopped(Exception):
+        pass
+
+    def stop(*_: object, **__: object) -> None:
+        raise Stopped
+
+    monkeypatch.setattr(cli, "record_test_set_access", looks.append)
+    monkeypatch.setattr(cli, "load_dataset", stop)  # stop before any audio is read
+    runner = CliRunner()
+    result = runner.invoke(cli.app, ["eval-m1", "--split", "validation", "--dry-run"])
+    assert isinstance(result.exception, Stopped)
+    assert looks == []
+    result = runner.invoke(cli.app, ["eval-m1", "--split", "test", "--dry-run"])
+    assert isinstance(result.exception, Stopped)
+    assert len(looks) == 1 and "300 GuitarSet test tracks" in looks[0]

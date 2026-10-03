@@ -34,3 +34,21 @@ def test_a_report_survives_a_round_trip_through_plain_data() -> None:
     items = [PartSequence("s", "clean", one_note(64, Position(5, 0)))]
     report = recover(items, HandSetScorer(), CTX)
     assert RecoveryReport.from_dict(report.to_dict()) == report
+
+
+def test_per_track_counts_pool_to_the_reported_f1() -> None:
+    # GuitarSet tracks are compared by E2's F1: per track, 2 x matches over estimated plus
+    # reference notes, so the pooled ratio is exactly the micro-averaged F1 (ADR 0037).
+    import pytest
+
+    from tabsampler.eval.metrics import PRF
+    from tabsampler.eval.playability import PlayabilityReport
+    from tabsampler.eval.recovery import add_track
+
+    report = RecoveryReport()
+    shapes = PlayabilityReport(n_groups=10, n_groups_pass=9, n_transitions=9, n_transitions_pass=9)
+    add_track(report, "t0", "e2e", PRF(0.82, 0.8, 0.81, n_ref=100, n_est=98, n_match=80), shapes)
+    add_track(report, "t1", "e2e", PRF(0.6, 0.6, 0.6, n_ref=50, n_est=50, n_match=30), shapes)
+    assert report.share("e2e") == pytest.approx(2 * (80 + 30) / ((100 + 98) + (50 + 50)))
+    assert report.chord_shape_rate("e2e") == pytest.approx(18 / 20)
+    assert report.song_counts("e2e") == {"t0": (160, 198), "t1": (60, 100)}

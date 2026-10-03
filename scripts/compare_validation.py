@@ -28,7 +28,11 @@ def main() -> None:
     parser.add_argument("new", type=Path, help="the decoder being judged")
     args = parser.parse_args()
     a, b = (RecoveryReport.from_dict(json.loads(p.read_text())) for p in (args.base, args.new))
-    for part in (None, "clean", "distorted"):
+    parts = sorted(set(a.shapes) | set(b.shapes))
+    # DadaGP reports split by style and pool meaningfully; GuitarSet ones split by mode
+    # (oracle, end to end), and pooling the two modes would mean nothing.
+    order: list[str | None] = [None, *parts] if set(parts) <= {"clean", "distorted"} else [*parts]
+    for part in order:
         songs = a.song_counts(part)
         if not songs:
             continue

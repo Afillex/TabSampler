@@ -7,6 +7,7 @@ writing ``experiments/results.csv`` and printing. ``eval/``, ``decode/`` and
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, Any
@@ -51,6 +52,7 @@ from tabsampler.eval.harness import (
 )
 from tabsampler.eval.metrics import pitch_validity_rate, tab_notes_to_placed
 from tabsampler.eval.playability import playability_rate
+from tabsampler.eval.recovery import RecoveryReport, add_track
 from tabsampler.eval.synthetic import round_trip_accuracy, sample_playable_path
 from tabsampler.fingering.candidates import group_notes
 from tabsampler.fingering.costs import HandSetScorer
@@ -200,15 +202,30 @@ def eval_m1(
         int | None, typer.Option("--limit", help="First N tracks only (smoke test).")
     ] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Do not append results rows.")] = False,
+    split: Annotated[
+        str,
+        typer.Option(
+            "--split",
+            help="test: players 01-05, a logged look (ADR 0003); "
+            "validation: player 00, free to choose with (ADR 0037).",
+        ),
+    ] = "test",
+    per_track_out: Annotated[
+        Path | None,
+        typer.Option("--per-track-out", help="Write per-track E2 and E3 counts as JSON."),
+    ] = None,
 ) -> None:
     """E1-E5 and E7 on GuitarSet, in oracle and end-to-end mode. The M1 gate."""
+    if split not in ("test", "validation"):
+        raise typer.BadParameter(f"--split must be test or validation, not {split!r}")
     cfg = load_eval_config(config)
     dec = load_phase1_config(decoder)
     console.print(f"[bold]config[/bold] {config}  [bold]decoder[/bold] {decoder}")
     console.print(f"[bold]hypothesis[/bold] {cfg.hypothesis.strip()}")
     console.print(f"[bold]decoder weights[/bold] {describe_weights(dec.weights)}")
 
-    track_ids = list(guitarset_test_ids())
+    on_test = split == "test"
+    track_ids = list(guitarset_test_ids() if on_test else guitarset_validation_ids())
     total = len(track_ids)
     if limit is not None:
         track_ids = track_ids[:limit]
@@ -216,10 +233,13 @@ def eval_m1(
             f"[yellow]limit={limit}: {len(track_ids)} of {total} tracks. "
             f"A smoke test, not a result.[/yellow]"
         )
+    console.print(f"[bold]split[/bold] {split}: {len(track_ids)} GuitarSet tracks")
 
-    record_test_set_access(
-        f"eval-m1 (oracle + e2e) on {len(track_ids)} GuitarSet tracks via {config}"
-    )
+    # Only the test players are a look at the test set; player 00 is validation (ADR 0037).
+    if on_test:
+        record_test_set_access(
+            f"eval-m1 (oracle + e2e) on {len(track_ids)} GuitarSet test tracks via {config}"
+        )
 
     dataset = load_dataset(cfg.dataset.data_home)
     tracks: dict[str, Any] = dataset.load_tracks()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
@@ -296,6 +316,15 @@ def eval_m1(
         f"is the Phase 0 E7 in results.csv.[/dim]"
     )
 
+    if per_track_out is not None:
+        per_track = RecoveryReport()
+        for mode, report in reports.items():
+            for result in report.tracks:
+                add_track(per_track, result.track_id, mode, result.e2, result.e3)
+        per_track_out.parent.mkdir(parents=True, exist_ok=True)
+        per_track_out.write_text(json.dumps({"decoder": str(decoder), **per_track.to_dict()}))
+        console.print(f"[green]wrote per-track counts to {per_track_out}[/green]")
+
     if dry_run:
         console.print("[yellow]--dry-run: no results rows written.[/yellow]")
         return
@@ -308,7 +337,7 @@ def eval_m1(
                 config=f"{config} + {decoder}",
                 hypothesis=cfg.hypothesis,
                 dataset=cfg.dataset.name,
-                split=Split.TEST.value,
+                split=(Split.TEST if on_test else Split.VALIDATION).value,
                 mode=mode,
                 seed=cfg.seed,
                 e1=report.e1_onset.f1,

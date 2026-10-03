@@ -13,7 +13,12 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from tabsampler.decode.viterbi import viterbi
-from tabsampler.eval.playability import PlayabilityRules, group_is_playable
+from tabsampler.eval.metrics import PRF
+from tabsampler.eval.playability import (
+    PlayabilityReport,
+    PlayabilityRules,
+    group_is_playable,
+)
 from tabsampler.fingering.candidates import candidates
 from tabsampler.fingering.fit import HumanSequence
 from tabsampler.types import Context, FingeringScorer
@@ -105,3 +110,18 @@ def recover(
                 notes[1] += 1
                 report.single_candidate += len(candidates(note.pitch, ctx.tuning)) == 1
     return report
+
+
+def add_track(
+    report: RecoveryReport, track_id: str, mode: str, e2: PRF, e3: PlayabilityReport
+) -> None:
+    """One GuitarSet track's E2 and E3 counts, in the report's per-song form (ADR 0037).
+
+    E2 is an F1, so a track contributes ``2 x matches`` over ``estimated + reference``
+    notes: pooled over tracks, that ratio is exactly the micro-averaged F1 the harness
+    reports. The mode (``oracle`` or ``e2e``) takes the place of a part.
+    """
+    report.per_song.setdefault(track_id, {})[mode] = [2 * e2.n_match, e2.n_est + e2.n_ref]
+    shapes = report.shapes.setdefault(mode, [0, 0])
+    shapes[0] += e3.n_groups_pass
+    shapes[1] += e3.n_groups

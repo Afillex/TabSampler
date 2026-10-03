@@ -119,3 +119,26 @@ def test_the_speed_estimate_compares_against_the_limit_it_replaced(
     speed.main()
     out = capsys.readouterr().out
     assert "at 12 frets/s" in out
+
+
+def test_the_comparison_reads_modes_when_the_parts_are_oracle_and_e2e(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    compare = load("compare_validation")
+    for name in ("a", "b"):
+        (tmp_path / f"{name}.json").write_text(
+            json.dumps(
+                {
+                    "per_song": {"00_x": {"oracle": [5, 10], "e2e": [8, 20]}},
+                    "shapes": {"oracle": [9, 10], "e2e": [9, 10]},
+                    "single_candidate": 0,
+                }
+            )
+        )
+    monkeypatch.setattr(
+        sys, "argv", ["compare", str(tmp_path / "a.json"), str(tmp_path / "b.json")]
+    )
+    compare.main()
+    lines = capsys.readouterr().out.splitlines()
+    starts = [line.split(":")[0].strip() for line in lines if not line.startswith(" ")]
+    assert starts == ["e2e", "oracle"]
