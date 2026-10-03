@@ -1,7 +1,8 @@
 # ADR 0025: The hand is a 4-fret window, not a point
 
 Status: accepted (2026-10-02) — **its acceptance gate was missed, and Ege accepted it anyway,
-knowingly; both are recorded below**
+knowingly; both are recorded below**. Its anchoring of a shape wider than the window is
+superseded by [ADR 0030](0030-hand-stretch.md), which lets such a shape stretch the hand.
 
 Implements the fix ADR 0022 proposed. Supersedes **ADR 0018's definition of hand position**
 (the lowest fretted fret) while keeping its lattice design — a node is still a shape plus the

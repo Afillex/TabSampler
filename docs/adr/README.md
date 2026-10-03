@@ -32,12 +32,12 @@ of the old record to point at its replacement.
 | [0022](0022-playability-rules-validated.md) | ADR 0011 validated on 16.8M human shapes: **chord rules hold (99.86%), the speed rule does not (88%)** | D9 | accepted; its window implemented in 0025 |
 | [0023](0023-fitted-cost-weights.md) | Weights fitted on DadaGP: **+3.9 E2 and −63% E5 on GuitarSet, but not the default** — worse on clean guitar | D7 | accepted; open question settled by 0027 |
 | [0024](0024-artist-disjoint-split.md) | **Artist-disjoint DadaGP split** for every fit: 519 artists / 2,607 songs to validation, frozen by hash | D8 | accepted |
-| [0025](0025-hand-window.md) | **The hand is a 4-fret window**: decoder, cost model and E3 (gate missed at 0.9795, kept by Ege's decision) | 2.2 / D9 | accepted; second check in 0028 |
+| [0025](0025-hand-window.md) | **The hand is a 4-fret window**: decoder, cost model and E3 (gate missed at 0.9795, kept by Ege's decision) | 2.2 / D9 | accepted; second check in 0028; wide-shape anchoring superseded by 0030 |
 | [0026](0026-default-temperature.md) | Default decoder's temperature calibrated on artist validation: **T = 2.9974, ECE −62%** | D7 | accepted |
 | [0027](0027-fitted-weights-fair-test.md) | Fair test for fitted weights: **failed** (clean and E3 lose) — hand-set stays the default | D7 | accepted |
 | [0028](0028-hand-window-kept.md) | The hand window stays after **missing its validation check** by 0.0023 on distorted parts (Ege's decision) | 2.2 / D9 | accepted |
 | [0029](0029-e3-move-timing.md) | E3 times a hand move from the **last fretted group**, not from an open group in between: human tab 0.9795 → 0.9823 | D9 (defect) | accepted |
-| [0030](0030-hand-stretch.md) | A chord wider than the window **stretches the hand** instead of anchoring it (supersedes one sentence of 0025) | 2.2 / D9 | proposed |
+| [0030](0030-hand-stretch.md) | A chord wider than the window **stretches the hand** instead of anchoring it (supersedes one sentence of 0025); recovery unchanged | 2.2 / D9 | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),

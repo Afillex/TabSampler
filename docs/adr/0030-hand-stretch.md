@@ -1,6 +1,6 @@
 # ADR 0030: A chord wider than the window stretches the hand
 
-Status: proposed (2026-10-03) — pre-registration; accepted with its result
+Status: accepted (2026-10-03) — the check held on recovery
 
 Supersedes **one sentence of [ADR 0025](0025-hand-window.md)**: "a shape wider than the
 window anchors at its lowest fret". The 4-fret window, its rest width and everything else
@@ -73,3 +73,18 @@ reported, not acted on.
 after a wide chord; the growth is measured on DadaGP validation, not GuitarSet. E3's
 transition rate moves slightly, and GuitarSet's figures are refreshed only at the next
 GuitarSet run.
+
+## Result (2026-10-03)
+
+| hand-set weights, T 2.9974, 300 artist-validation songs | clean | distorted | all |
+|---|---|---|---|
+| window (ADR 0025) | 0.8257 | 0.5705 | 0.6379 |
+| **stretch (this ADR)** | **0.8257** | **0.5705** | **0.6379** |
+| paired delta, 95% interval | 0.0000 [0, 0] | 0.0000 [0, 0] | 0.0000 [0, 0] |
+
+**Recovery did not change at all**: the same 322,703 of 505,847 notes, because the decoder
+almost never chooses a shape wider than four frets, so no best path moved. Human tab's E3
+transition rate stayed at 0.9823 to four places. Lattice nodes per state on the same
+songs: 2.730 → 2.844; `bench_decode.py`: `viterbi` 34.3 ms and `decode` 120.1 ms per 500
+groups. The stretch is kept, as decided: it removes a modelling error rather than adding
+accuracy.
