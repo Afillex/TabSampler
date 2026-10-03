@@ -6,6 +6,10 @@
 # only symbolic tabs. M1 is reported with these values, stated plainly.
 #
 # Each weight has a reason. "Hand-set" means chosen deliberately and written down.
+#
+# DadaGP has since arrived (ADR 0021). Weights fitted on it lost the fair test fixed in
+# advance (ADR 0027), so the four weights below stay hand-set. The temperature is the one
+# value set from data: calibrated on DadaGP validation (ADR 0026).
 
 hypothesis: >-
   A hand-set cost model decoded with Viterbi recovers the reference string assignment
@@ -48,9 +52,11 @@ weights:
   # -log P(string | audio); present so the interface does not change later.
   acoustic: 0.0
   # Forward-backward temperature. 1.0 means posteriors come straight from exp(-C);
-  # lower concentrates them on the Viterbi path, higher flattens them. Calibration
-  # (E5) is what should eventually set this.
-  temperature: 2.9974  # calibrated on DadaGP artist validation (ADR 0026): ECE 0.2017 -> 0.0767
+  # lower concentrates them on the Viterbi path, higher flattens them. It changes the
+  # posteriors only, never the fingering. Calibrated by per-note NLL on 300 DadaGP
+  # artist-disjoint validation songs (ADR 0026): calibration error 0.2017 at 1.0, 0.0767
+  # here.
+  temperature: 2.9974
 
 # Notes whose posterior falls below this are marked uncertain in the rendered tab
 # (ADR 0013). Not tuned either.
