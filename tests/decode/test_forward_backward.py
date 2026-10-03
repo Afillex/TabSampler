@@ -11,7 +11,7 @@ import math
 
 import numpy as np
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 
 from tabsampler.decode.forward_backward import (
     _cost_arrays,
@@ -151,6 +151,39 @@ def test_log_partition_matches_a_direct_sum_over_paths(groups: list[NoteGroup]) 
 
     direct = sum(math.exp(-path_cost(groups, p, SCORER, CTX) / 1.0) for p in all_paths(groups, CTX))
     assert log_partition(groups, SCORER, CTX, temperature=1.0) == pytest.approx(
+        math.log(direct), abs=1e-9
+    )
+
+
+@pytest.mark.oracle
+@settings(
+    max_examples=40,
+    deadline=None,
+    suppress_health_check=[
+        HealthCheck.too_slow,
+        HealthCheck.data_too_large,
+        HealthCheck.filter_too_much,
+    ],
+)
+@given(groups=group_sequence(max_groups=4, max_notes=2))
+def test_log_partition_matches_a_direct_sum_when_shapes_are_wider_than_the_hand(
+    groups: list[NoteGroup],
+) -> None:
+    # As above, at span 6: some shapes do not fit in the 4-fret hand (ADR 0025).
+    from tabsampler.fingering.states import HAND_WINDOW, enumerate_states
+
+    from .brute_force import all_paths, path_cost
+
+    wide = Context(tuning=STANDARD, max_span=6)
+    assume(
+        any(
+            state.span > HAND_WINDOW
+            for g in groups
+            for state in enumerate_states(g, STANDARD, wide.max_span)
+        )
+    )
+    direct = sum(math.exp(-path_cost(groups, p, SCORER, wide)) for p in all_paths(groups, wide))
+    assert log_partition(groups, SCORER, wide, temperature=1.0) == pytest.approx(
         math.log(direct), abs=1e-9
     )
 

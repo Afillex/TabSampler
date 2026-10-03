@@ -8,12 +8,12 @@ fail, nothing downstream means anything.
 from __future__ import annotations
 
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 
 from tabsampler.decode.viterbi import build_lattice, viterbi
 from tabsampler.errors import UnfingerableGroupError
 from tabsampler.fingering.costs import HandSetScorer
-from tabsampler.fingering.states import enumerate_states
+from tabsampler.fingering.states import HAND_WINDOW, enumerate_states
 from tabsampler.types import Context, NoteEvent, NoteGroup, Position, Tuning
 
 from .brute_force import brute_force_min, path_cost
@@ -72,6 +72,42 @@ def test_the_returned_path_is_a_minimiser_even_when_paths_tie(
     _, expected = brute_force_min(groups, SCORER, CTX)
     path, _ = viterbi(groups, SCORER, CTX)
     assert path_cost(groups, path, SCORER, CTX) == pytest.approx(expected, abs=1e-9)
+
+
+# The hand covers 4 frets (ADR 0025). At span 6 some candidate shapes do not fit inside it
+# and are anchored at their lowest fret. The shipped config allows span 5 and best-effort
+# decoding relaxes further, so the oracle must see such shapes too.
+WIDE = Context(tuning=STANDARD, max_span=6)
+WIDE_SETTINGS = settings(
+    max_examples=40,
+    deadline=None,
+    suppress_health_check=[
+        HealthCheck.too_slow,
+        HealthCheck.data_too_large,
+        HealthCheck.filter_too_much,
+    ],
+)
+
+
+def has_a_shape_wider_than_the_hand(groups: list[NoteGroup]) -> bool:
+    return any(
+        state.span > HAND_WINDOW
+        for g in groups
+        for state in enumerate_states(g, STANDARD, WIDE.max_span)
+    )
+
+
+@pytest.mark.oracle
+@WIDE_SETTINGS
+@given(groups=group_sequence(max_groups=4, max_notes=2))
+def test_viterbi_matches_brute_force_when_shapes_are_wider_than_the_hand(
+    groups: list[NoteGroup],
+) -> None:
+    assume(has_a_shape_wider_than_the_hand(groups))
+    _, expected = brute_force_min(groups, SCORER, WIDE)
+    path, got = viterbi(groups, SCORER, WIDE)
+    assert got == pytest.approx(expected, abs=1e-9)
+    assert path_cost(groups, path, SCORER, WIDE) == pytest.approx(got, abs=1e-9)
 
 
 # ============================================================ structure and edges
