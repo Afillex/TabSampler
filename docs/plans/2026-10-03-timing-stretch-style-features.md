@@ -1074,7 +1074,8 @@ def fit_weights(
 
 ### Task 11: Close out
 
-- [ ] Devlog `docs/devlog/2026-10-03.md`; `HANDOFF.md`; Phase 2 plan boxes (C3 progress, C5);
+- [x] Devlog `docs/devlog/2026-10-03.md`; `HANDOFF.md`; Phase 2 plan boxes (C3 progress, C5);
   check that no local tooling files are tracked.
-- [ ] `make check`, `make oracle`; independent review of the whole branch; one fix pass;
-  then merge into `main` and push.
+- [x] `make check`, `make oracle`; independent review of the whole branch; one fix pass;
+  then merge into `main` and push. *(Merged locally; the push waits until the default is
+  re-decided on a held-out GuitarSet player, Ege's decision of 2026-10-03.)*
