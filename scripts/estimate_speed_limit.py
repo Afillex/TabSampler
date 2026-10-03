@@ -23,10 +23,11 @@ import numpy as np
 
 from tabsampler.data.dadagp import load_tracks
 from tabsampler.data.splits import Split
-from tabsampler.eval.playability import PlayabilityRules, hand_moves
+from tabsampler.eval.playability import hand_moves
 from tabsampler.eval.speed import speed_limit_for
 
 TARGET = 0.9986  # ADR 0022: the chord rules' pass rate on human tab
+OLD_LIMIT = 12.0  # ADR 0011's limit, the one this experiment replaced (not today's default)
 CHECK = 0.9976  # ADR 0031: the validation side may fall short of it by 0.1 point
 
 
@@ -80,7 +81,7 @@ def main() -> None:
 
     raw = speed_limit_for(TARGET, train.speeds, train.free, train.transitions)
     limit = float(math.ceil(raw))
-    current = PlayabilityRules().max_frets_per_second
+    current = OLD_LIMIT
     print()
     print(f"training limit for {TARGET}: {raw:.2f} frets/s, rounded up to {limit:.0f}")
     print(f"training pass rate   at {current:.0f} frets/s: {train.pass_rate(current):.4f}")

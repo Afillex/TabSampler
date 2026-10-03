@@ -100,3 +100,22 @@ def test_the_comparison_prints_exact_chord_shape_counts(
     out = capsys.readouterr().out
     assert "58148/58163 -> 58142/58163" in out
     assert "drop +0.000103" in out
+
+
+def test_the_speed_estimate_compares_against_the_limit_it_replaced(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # After ADR 0031 the default limit is 48; the baseline this experiment reports
+    # against must stay ADR 0011's 12, not whatever the default is today.
+    speed = load("estimate_speed_limit")
+
+    def fake_collect(*_: object) -> object:
+        side = speed.Side()
+        side.add([(0, 0.5)] * 900 + [(2, 0.5)] * 90 + [(4, 0.05)] * 10)
+        return side
+
+    monkeypatch.setattr(speed, "collect", fake_collect)
+    monkeypatch.setattr(sys, "argv", ["estimate_speed_limit.py", "archive.zip", "meta.json"])
+    speed.main()
+    out = capsys.readouterr().out
+    assert "at 12 frets/s" in out
