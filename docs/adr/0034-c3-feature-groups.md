@@ -74,9 +74,14 @@ artist-validation songs (delta, 95% song-level paired interval):
 | strings | 0.8616 → 0.8512, −0.0104 [−0.0244, +0.0026]: **not kept** | 0.6480 → 0.6669, +0.0190 [−0.0052, +0.0420]: **not kept** |
 | fret regions | 0.8616 → 0.8638, +0.0022 [−0.0006, +0.0056]: **not kept** | 0.6480 → 0.6735, +0.0256 [+0.0027, +0.0478]: **kept** |
 
-Both groups raised the likelihood of human fingerings on validation (the per-string group
-by more), and neither the per-string hypothesis nor the clean-region one held: likelihood is
-what the fit maximises, recovery is what the keep rule judges, and here they parted.
+Neither the per-string hypothesis nor the clean-region one held. The per-string group did
+raise the likelihood of human fingerings on validation, all parts together (negative
+log-likelihood per group: clean-style fits 0.6492 → 0.6311, distorted-style 0.5690 →
+0.5516), without a recovery gain the bootstrap could trust: likelihood is what the fit
+maximises, recovery is what the keep rule judges, and here they parted. The region group
+barely moved the likelihood (0.6492 → 0.6473; 0.5690 → 0.5698). *(This paragraph was
+corrected before review: it first said both groups raised the likelihood, which the
+distorted region fit did not.)*
 
 **Fret regions are kept for distorted guitar but not adopted.** Against the decoder they
 would replace — the hand-set weights, which the distorted four-weight fit already lost to
