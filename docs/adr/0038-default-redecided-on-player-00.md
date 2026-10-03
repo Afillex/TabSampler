@@ -1,6 +1,6 @@
 # ADR 0038: The default decoder, re-decided on the validation player
 
-Status: proposed (2026-10-03) — pre-registration; accepted with its result
+Status: accepted (2026-10-03) — **the default returns to the hand-set weights**
 
 Follows [ADR 0032](0032-style-decoders.md), which made weights fitted on clean DadaGP parts
 the default, and [ADR 0037](0037-guitarset-validation-player.md), which made GuitarSet's
@@ -51,3 +51,28 @@ decides on player 00's numbers alone, whatever the prediction says.
 
 Whichever wins is the first default chosen on GuitarSet-like playing. Its test figure on
 players 01–05 is still not an independent check (ADR 0037); the next decision is.
+
+## Result (2026-10-03)
+
+Player 00, 60 tracks, 13,223 reference notes; track-level paired bootstrap, exact counts:
+
+| | A, hand-set | B, clean-fitted | B − A, 95% interval |
+|---|---|---|---|
+| **E2 oracle** | 0.8065 | 0.8297 | +0.0232 [−0.0030, +0.0513] |
+| **E3 chord shapes, oracle** | 6543 / 6607 | 6538 / 6607 | drop 0.00076 (0.0005 allowed) |
+| E2 end to end | 0.4861 | 0.4830 | −0.0031 [−0.0259, +0.0212] |
+| E3 transitions, oracle / e2e | 0.9997 / 0.9952 | 0.9998 / 0.9948 | |
+| E5, oracle / e2e (their own temperatures) | 0.2336 / 0.1309 | 0.0249 / 0.2715 | |
+
+**B fails both conditions**: its gain's interval includes zero, and it lowers the
+chord-shape rate by 0.00076, more than the 0.0005 allowed. So `configs/decoder_clean.yaml` holds the hand-set
+weights again, with **T = 1.5728**, calibrated for them on DadaGP's clean validation parts
+(calibration error 0.2153 at 2.9974 → 0.0941). On player 00 that default scores oracle /
+end-to-end E5 0.1178 / 0.2100, and E2 as A above. The clean-fitted weights are kept in
+`configs/fitted_clean_dadagp.yaml` so their published GuitarSet figures stay reproducible.
+
+**The prediction held only through the rule.** On player 00 the clean fit's point estimate
+was *better* by 2.3 points — the opposite of its −1.9 over all 360 tracks — so the other
+five players must favour the hand-set weights more strongly. Players differ, which is one
+more reason a single held-out player is a noisy guide, and why the rule asks a challenger
+for a clear win.

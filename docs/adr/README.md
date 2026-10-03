@@ -39,13 +39,13 @@ of the old record to point at its replacement.
 | [0029](0029-e3-move-timing.md) | E3 times a hand move from the **last fretted group**, not from an open group in between: human tab 0.9795 → 0.9823 | D9 (defect) | accepted |
 | [0030](0030-hand-stretch.md) | A chord wider than the window **stretches the hand** instead of anchoring it (supersedes one sentence of 0025); recovery unchanged | 2.2 / D9 | accepted; a claim corrected by 0036 |
 | [0031](0031-e3-speed-limit.md) | E3's speed limit set from human tab: **48 frets/s**; 0.9988 of unseen artists' transitions pass | D9 | accepted; wording corrected by 0036 |
-| [0032](0032-style-decoders.md) | Clean and distorted guitar get **a decoder each**; clean-fitted weights win on clean parts (0.8257 → 0.8616) and become the default; distorted keeps hand-set (chord shapes −0.00065) | D7 | accepted |
+| [0032](0032-style-decoders.md) | Clean and distorted guitar get **a decoder each**; clean-fitted weights win on clean parts (0.8257 → 0.8616) and become the default; distorted keeps hand-set (chord shapes −0.00065) | D7 | accepted; clean weights re-decided by 0038 |
 | [0033](0033-per-style-temperature.md) | Each style's decoder gets **its own temperature**: clean T = 1.1975, distorted T = 4.2982 | D7 | accepted |
 | [0034](0034-c3-feature-groups.md) | Two richer feature groups — **per-string preference** and **fret regions**: only regions, for distorted, kept; not adopted (chord shapes −0.00062) | D7 | accepted |
 | [0035](0035-e3-transition-baseline.md) | ADR 0016's **transition guardrail gets a baseline** under the new E3 rule: 0.9996 oracle, 0.9969 end to end | D10 | accepted |
 | [0036](0036-corrections-to-0030-and-0031.md) | Corrections after review: **48 frets/s passes 98.6% of real hand moves** (99.88% of transitions); the stretch relaxes | D9 | accepted |
 | [0037](0037-guitarset-validation-player.md) | **GuitarSet's player 00 becomes validation data**; players 01–05 stay test-only (amends 0003) | D8 | accepted |
-| [0038](0038-default-redecided-on-player-00.md) | The default decoder **re-decided on player 00**: the clean fit must beat the hand-set weights there to stay | D7 | proposed |
+| [0038](0038-default-redecided-on-player-00.md) | The default decoder **re-decided on player 00**: the clean fit did not clearly win (+0.023, interval [−0.003, +0.051]) — **hand-set again**, T = 1.5728 | D7 | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),

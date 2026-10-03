@@ -1,7 +1,8 @@
 # ADR 0032: Clean and distorted guitar get a decoder each
 
 Status: accepted (2026-10-03) — **clean passed its fair test; distorted failed it on the
-chord-shape condition**
+chord-shape condition**. The clean decoder's weights were re-decided on GuitarSet's
+validation player by [ADR 0038](0038-default-redecided-on-player-00.md): hand-set again.
 
 Carries out the style item of Phase 2 task C3 (`docs/plans/2026-10-01-phase-2.md`): "fit on
 clean and distorted parts separately and measure each on its own validation parts", and

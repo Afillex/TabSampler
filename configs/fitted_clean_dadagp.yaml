@@ -1,0 +1,42 @@
+# Weights fitted on the clean parts of 600 artist-split DadaGP training songs (ADR 0032),
+# with the temperature calibrated for them on clean validation parts (ADR 0033).
+#
+# NOT the default since ADR 0038. They were the default from ADR 0032 until GuitarSet's
+# validation player 00 re-decided it: +0.0232 oracle E2 against the hand-set weights with a
+# 95% paired interval of -0.0030 to +0.0513, and a chord-shape rate 0.00076 lower. Kept so
+# the GuitarSet figures measured with them (commit 0dd856d) can be reproduced.
+
+hypothesis: >-
+  Cost weights fitted on clean DadaGP parts (ADR 0032), with the temperature calibrated for
+  them on clean validation parts (ADR 0033); the default until ADR 0038.
+
+tuning:
+  # Standard tuning, low E to high e, as MIDI note numbers (ADR 0008).
+  open_pitches: [40, 45, 50, 55, 59, 64]
+  n_frets: 22
+  capo: 0
+
+grouping:
+  window_s: 0.03
+
+# The enumeration bound, as configs/phase1_baseline.yaml explains; decode_best_effort
+# relaxes it per group when a chord needs more and reports it.
+max_span: 5
+
+weights:
+  move: 1.2316
+  span: 0.7279
+  high: 0.8867
+  # Slightly negative: fitted on clean parts, an open string is mildly penalised once the
+  # other three terms are in place -- a correction given them, not a claim on its own.
+  open_reward: -0.1702
+  acoustic: 0.0
+  # Calibrated by per-note NLL on the clean parts of 300 artist-validation songs (ADR 0033).
+  # Calibration error 0.2478 at the pooled 2.9974, 0.0757 here -- measured on the songs it
+  # was fitted on.
+  temperature: 1.1975
+
+# Notes whose posterior falls below this are marked uncertain (ADR 0013). Not tuned.
+uncertainty_threshold: 0.6
+
+seed: 0

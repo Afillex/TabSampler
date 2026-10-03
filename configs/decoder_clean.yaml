@@ -1,14 +1,15 @@
 # Decoder for clean or acoustic guitar -- the CLI's default (ADR 0032).
 #
-# Weights fitted by maximum likelihood on the clean parts of 600 artist-split DadaGP
-# training songs, rounded to 4 decimal places. They passed ADR 0032's fair test on clean
-# artist-validation parts: recovery of the human fingering 0.8257 -> 0.8616 against the
-# hand-set weights (95% song-level paired interval +0.0134 to +0.0622), decoded chord-shape
-# rate 0.99974 -> 0.99964 (allowed drop 0.0005).
+# Hand-set weights (ADR 0012) since ADR 0038. ADR 0032 had put weights fitted on clean
+# DadaGP parts here, chosen on DadaGP validation (+0.0359 there); re-decided on GuitarSet's
+# validation player 00 (ADR 0037), they were +0.0232 better in oracle E2 but with a 95%
+# paired interval of -0.0030 to +0.0513, and lowered the chord-shape rate by 0.00076 --
+# so by ADR 0038's rule, fixed before the runs, the hand-set weights came back.
 
 hypothesis: >-
-  The default decoder, for clean or acoustic guitar: cost weights fitted on clean DadaGP
-  parts (ADR 0032), with the temperature calibrated for this style (ADR 0033).
+  The default decoder, for clean or acoustic guitar: hand-set cost weights, re-chosen on
+  GuitarSet's validation player (ADR 0038), with a temperature calibrated for them on
+  clean DadaGP parts (ADR 0033's method).
 
 tuning:
   # Standard tuning, low E to high e, as MIDI note numbers (ADR 0008).
@@ -24,17 +25,15 @@ grouping:
 max_span: 5
 
 weights:
-  move: 1.2316
-  span: 0.7279
-  high: 0.8867
-  # Slightly negative: fitted on clean parts, an open string is mildly penalised once the
-  # other three terms are in place -- a correction given them, not a claim on its own.
-  open_reward: -0.1702
+  move: 1.0
+  span: 1.0
+  high: 0.1
+  open_reward: 0.25
   acoustic: 0.0
-  # Calibrated by per-note NLL on the clean parts of 300 artist-validation songs (ADR 0033).
-  # Calibration error 0.2478 at the pooled 2.9974, 0.0757 here -- measured on the songs it
-  # was fitted on.
-  temperature: 1.1975
+  # Calibrated for these weights by per-note NLL on the clean parts of 300 artist-validation
+  # DadaGP songs (ADR 0033's method, ADR 0038): calibration error 0.2153 at the pooled
+  # 2.9974, 0.0941 here -- measured on the songs it was fitted on.
+  temperature: 1.5728
 
 # Notes whose posterior falls below this are marked uncertain (ADR 0013). Not tuned.
 uncertainty_threshold: 0.6
