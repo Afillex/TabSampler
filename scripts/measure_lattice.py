@@ -58,18 +58,15 @@ def report(label: str, groups: Sequence[NoteGroup], ctx: Context) -> None:
 
 def measure_guitarset(n_tracks: int, ctx: Context, window_s: float) -> None:
     from tabsampler.data.guitarset import load_dataset, reference_notes
-    from tabsampler.data.splits import guitarset_test_ids, record_test_set_access
+    from tabsampler.data.splits import guitarset_validation_ids
     from tabsampler.fingering.candidates import group_notes
 
-    record_test_set_access(
-        f"measured node-lattice size (ADR 0018, ADR 0025) on {n_tracks} GuitarSet tracks via "
-        f"scripts/measure_lattice.py: decoder complexity instrumentation, no metric "
-        f"computed and no threshold chosen from it"
-    )
+    # The validation player's tracks (ADR 0037) -- the same first 60 tracks this always
+    # read, which are now validation data, so measuring them needs no test-set look.
     dataset = load_dataset(Path("data/guitarset"))
     tracks: dict[str, Any] = dataset.load_tracks()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
     groups: list[NoteGroup] = []
-    for track_id in list(guitarset_test_ids())[:n_tracks]:
+    for track_id in list(guitarset_validation_ids())[:n_tracks]:
         for group in group_notes(reference_notes(tracks[track_id]), window_s=window_s):
             if enumerate_states(group, ctx.tuning, ctx.max_span):
                 groups.append(group)

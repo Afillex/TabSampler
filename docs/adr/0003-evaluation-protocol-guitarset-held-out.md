@@ -1,6 +1,7 @@
 # ADR 0003: GuitarSet is held out entirely as a test set
 
-Status: accepted (2026-09-27)
+Status: accepted (2026-09-27); amended by [ADR 0037](0037-guitarset-validation-player.md):
+GuitarSet's player 00 is validation data, players 01–05 stay test-only.
 
 Decides spec D8. **This is the most consequential decision in the project.**
 

@@ -10,7 +10,7 @@ of the old record to point at its replacement.
 |---|---|---|---|
 | [0001](0001-python-version-and-isolated-transcriber.md) | Python 3.13 core; basic-pitch isolated on 3.11 behind a subprocess and cache | — (forced) | accepted |
 | [0002](0002-v1-input-scope.md) | v1 accepts isolated guitar audio only | D1 | accepted |
-| [0003](0003-evaluation-protocol-guitarset-held-out.md) | **GuitarSet is test-only**, enforced in `data/splits.py` | D8 | accepted |
+| [0003](0003-evaluation-protocol-guitarset-held-out.md) | **GuitarSet is test-only**, enforced in `data/splits.py` | D8 | accepted; amended by 0037 |
 | [0004](0004-headline-metric.md) | Headline = end-to-end Exact Tab F1 on GuitarSet; target set after M1 | D10 | accepted |
 | [0005](0005-guitarset-audio-channel.md) | Evaluate on `audio_mic`; hex channels forbidden as input | — (gap) | accepted |
 | [0006](0006-reference-pitch-rounding.md) | Round float MIDI to int for the reference tab; keep floats for E1 | — (gap) | accepted |
@@ -44,6 +44,7 @@ of the old record to point at its replacement.
 | [0034](0034-c3-feature-groups.md) | Two richer feature groups — **per-string preference** and **fret regions**: only regions, for distorted, kept; not adopted (chord shapes −0.00062) | D7 | accepted |
 | [0035](0035-e3-transition-baseline.md) | ADR 0016's **transition guardrail gets a baseline** under the new E3 rule: 0.9996 oracle, 0.9969 end to end | D10 | accepted |
 | [0036](0036-corrections-to-0030-and-0031.md) | Corrections after review: **48 frets/s passes 98.6% of real hand moves** (99.88% of transitions); the stretch relaxes | D9 | accepted |
+| [0037](0037-guitarset-validation-player.md) | **GuitarSet's player 00 becomes validation data**; players 01–05 stay test-only (amends 0003) | D8 | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),

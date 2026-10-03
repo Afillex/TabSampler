@@ -36,6 +36,7 @@ from tabsampler.data.splits import (
     Split,
     assert_tuning_allowed,
     guitarset_test_ids,
+    guitarset_validation_ids,
     record_test_set_access,
 )
 from tabsampler.decode.robust import Degradation, decode_best_effort
@@ -498,7 +499,11 @@ def diagnose(
 def check_split() -> None:
     """Verify the split snapshot loads and that tuning on it is refused."""
     ids = guitarset_test_ids()
+    held = guitarset_validation_ids()
     console.print(f"[green]{len(ids)} GuitarSet test tracks[/green] ({ids[0]} ... {ids[-1]})")
+    console.print(
+        f"[green]{len(held)} GuitarSet validation tracks[/green], player {held[0][:2]} (ADR 0037)"
+    )
     try:
         assert_tuning_allowed(Split.TEST)
     except TestSetMisuseError as exc:

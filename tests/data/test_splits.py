@@ -13,10 +13,14 @@ import pytest
 
 from tabsampler.data.splits import (
     EXPECTED_GUITARSET_TRACKS,
+    VALIDATION_PLAYER,
     Split,
     assert_tuning_allowed,
     guitarset_test_ids,
+    guitarset_track_ids,
+    guitarset_validation_ids,
     record_test_set_access,
+    split_by_player,
 )
 from tabsampler.errors import TestSetMisuseError
 
@@ -30,27 +34,57 @@ def snapshot(tmp_path: Path, ids: list[str], name: str = "ids.txt") -> Path:
 # --------------------------------------------------------------- the split itself
 
 
+def test_the_validation_player_is_fixed_by_adr_0037() -> None:
+    # Chosen by rule, the lowest ID, before any per-player figure was seen.
+    assert VALIDATION_PLAYER == "00"
+
+
+def test_validation_is_player_00s_sixty_tracks() -> None:
+    ids = guitarset_validation_ids()
+    assert len(ids) == 60
+    assert all(i.startswith("00_") for i in ids)
+
+
+def test_the_test_set_is_the_other_five_players() -> None:
+    ids = guitarset_test_ids()
+    assert len(ids) == 300
+    assert not any(i.startswith("00_") for i in ids)
+
+
+def test_validation_and_test_partition_the_corpus() -> None:
+    validation, test = set(guitarset_validation_ids()), set(guitarset_test_ids())
+    assert not validation & test
+    assert validation | test == set(guitarset_track_ids())
+
+
+def test_a_player_with_the_wrong_track_count_is_refused() -> None:
+    # A partial download would otherwise split unevenly and silently shrink one side.
+    ids = sorted([f"00_t{i:02d}" for i in range(59)] + [f"01_t{i:02d}" for i in range(60)])
+    with pytest.raises(ValueError, match="60"):
+        split_by_player(ids, "00")
+
+
 def test_ids_are_sorted_unique_and_non_empty(tmp_path: Path) -> None:
     p = snapshot(tmp_path, ["00_a_comp", "00_b_solo", "01_a_comp"])
-    ids = guitarset_test_ids(p, expected_count=3)
+    ids = guitarset_track_ids(p, expected_count=3)
     assert list(ids) == sorted(set(ids))
     assert len(ids) == 3
 
 
 def test_split_is_deterministic_across_calls(tmp_path: Path) -> None:
     p = snapshot(tmp_path, ["00_a_comp", "01_b_solo"])
-    assert guitarset_test_ids(p, expected_count=2) == guitarset_test_ids(p, expected_count=2)
+    assert guitarset_track_ids(p, expected_count=2) == guitarset_track_ids(p, expected_count=2)
 
 
 def test_returns_a_tuple_so_a_caller_cannot_mutate_the_split(tmp_path: Path) -> None:
     p = snapshot(tmp_path, ["00_a_comp"])
-    assert isinstance(guitarset_test_ids(p, expected_count=1), tuple)
+    assert isinstance(guitarset_track_ids(p, expected_count=1), tuple)
 
 
 def test_comments_and_blank_lines_are_ignored(tmp_path: Path) -> None:
     p = tmp_path / "c.txt"
     p.write_text("# GuitarSet test ids\n\n00_a_comp\n\n01_b_solo\n")
-    assert guitarset_test_ids(p, expected_count=2) == ("00_a_comp", "01_b_solo")
+    assert guitarset_track_ids(p, expected_count=2) == ("00_a_comp", "01_b_solo")
 
 
 # --------------------------------------------------------------- snapshot integrity
@@ -58,19 +92,19 @@ def test_comments_and_blank_lines_are_ignored(tmp_path: Path) -> None:
 
 def test_a_missing_snapshot_raises_with_instructions(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError, match="download_guitarset"):
-        guitarset_test_ids(tmp_path / "absent.txt")
+        guitarset_track_ids(tmp_path / "absent.txt")
 
 
 def test_an_unsorted_snapshot_is_rejected(tmp_path: Path) -> None:
     p = snapshot(tmp_path, ["01_b_solo", "00_a_comp"])
     with pytest.raises(ValueError, match="sorted"):
-        guitarset_test_ids(p, expected_count=2)
+        guitarset_track_ids(p, expected_count=2)
 
 
 def test_a_snapshot_with_duplicates_is_rejected(tmp_path: Path) -> None:
     p = snapshot(tmp_path, ["00_a_comp", "00_a_comp"])
     with pytest.raises(ValueError, match="duplicate"):
-        guitarset_test_ids(p, expected_count=2)
+        guitarset_track_ids(p, expected_count=2)
 
 
 def test_an_empty_snapshot_is_rejected(tmp_path: Path) -> None:
@@ -78,7 +112,7 @@ def test_an_empty_snapshot_is_rejected(tmp_path: Path) -> None:
     p = tmp_path / "e.txt"
     p.write_text("# nothing here\n")
     with pytest.raises(ValueError, match="empty"):
-        guitarset_test_ids(p)
+        guitarset_track_ids(p)
 
 
 def test_a_truncated_snapshot_is_rejected(tmp_path: Path) -> None:
@@ -86,7 +120,7 @@ def test_a_truncated_snapshot_is_rejected(tmp_path: Path) -> None:
     # has, and every metric is then computed over a silently different corpus.
     p = snapshot(tmp_path, ["00_a_comp", "01_b_solo"])
     with pytest.raises(ValueError, match="expected 360"):
-        guitarset_test_ids(p, expected_count=EXPECTED_GUITARSET_TRACKS)
+        guitarset_track_ids(p, expected_count=EXPECTED_GUITARSET_TRACKS)
 
 
 def test_guitarset_has_360_excerpts() -> None:
