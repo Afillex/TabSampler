@@ -264,3 +264,14 @@ def test_long_sequences_do_not_blow_up() -> None:
     path, cost = viterbi(groups, SCORER, CTX)
     assert len(path) == 200
     assert cost == pytest.approx(path_cost(groups, path, SCORER, CTX), abs=1e-6)
+
+
+def test_a_seven_string_tuning_decodes_with_the_default_weights() -> None:
+    # ADR 0008 supports any tuning; ADR 0034's per-string weights, all zero by default,
+    # must not break it. G4 (67) can sit on the seventh string, the high e.
+    import math
+
+    seven = Tuning(open_pitches=(35, 40, 45, 50, 55, 59, 64))
+    ctx = Context(tuning=seven, max_span=4)
+    path, cost = viterbi([group(67), group(35, onset=0.5)], SCORER, ctx)
+    assert len(path) == 2 and math.isfinite(cost)

@@ -232,3 +232,11 @@ def test_region_weights_count_fretted_notes_by_region() -> None:
     base = HandSetScorer().emission_cost(notes, shape, ctx())
     regions = HandSetScorer(weights=CostWeights(low_region=1.0, high_region=10.0))
     assert regions.emission_cost(notes, shape, ctx()) == pytest.approx(base + 11.0)
+
+
+def test_a_string_bias_refuses_a_guitar_with_more_strings_than_it_has() -> None:
+    seven = Tuning(open_pitches=(35, 40, 45, 50, 55, 59, 64))
+    shape = state((6, 3))  # G4 on the seventh string
+    biased = HandSetScorer(weights=CostWeights(string_bias=(0.0, 0.1, 0.0, 0.0, 0.0, 0.0)))
+    with pytest.raises(ValueError, match="six"):
+        biased.emission_cost(NoteGroup.of([n(67)]), shape, Context(tuning=seven, max_span=4))

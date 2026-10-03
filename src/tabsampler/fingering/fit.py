@@ -157,6 +157,11 @@ def _shape_features(state: ChordState) -> Vector:
     """Emission features of one shape. ``w . this`` is ``HandSetScorer.emission_cost``."""
     strings = [0.0] * 5
     for position in state.positions:
+        if position.string > 5:
+            raise ValueError(
+                f"a note is on string {position.string}: the fitter's per-string features "
+                "assume a six-string guitar, as DadaGP's cleared songs are (ADR 0034)"
+            )
         if position.string > 0:
             strings[position.string - 1] += 1.0
     return np.array(

@@ -13,7 +13,7 @@ import math
 
 import numpy as np
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 
 from tabsampler.decode.forward_backward import log_partition
 from tabsampler.fingering.costs import HandSetScorer
@@ -158,6 +158,45 @@ def test_expected_features_match_a_brute_force_sum_over_paths(groups: list[NoteG
     assert gradient == pytest.approx(feats.observed - expected, abs=1e-8)
 
 
+WIDE = Context(tuning=STANDARD, max_span=6)
+
+
+@pytest.mark.oracle
+@settings(
+    max_examples=40,
+    deadline=None,
+    suppress_health_check=[
+        HealthCheck.too_slow,
+        HealthCheck.data_too_large,
+        HealthCheck.filter_too_much,
+    ],
+)
+@given(groups=group_sequence(max_groups=4, max_notes=2))
+def test_expected_features_match_brute_force_when_shapes_are_wider_than_the_hand(
+    groups: list[NoteGroup],
+) -> None:
+    # As above, at span 6, where a shape can stretch the hand (ADR 0030): the fitter's
+    # features must still agree with the oracle's independent reading of the ADR.
+    lattice = [enumerate_states(g, STANDARD, WIDE.max_span) for g in groups]
+    assume(any(state.span > 4 for level in lattice for state in level))
+    weights = WEIGHTS[2]
+    w = weights_to_vector(weights)
+    states = tuple(level[0] for level in lattice)
+    seq = HumanSequence(groups=tuple(groups), states=states, spans=(6,) * len(groups))
+    feats = sequence_features(seq, WIDE)
+    _, gradient = nll_and_gradient(w, [feats])
+
+    scorer = HandSetScorer(weights=weights)
+    total = 0.0
+    expected = np.zeros(len(WEIGHT_NAMES))
+    for path in itertools.product(*lattice):
+        weight = math.exp(-path_cost(groups, list(path), scorer, WIDE))
+        total += weight
+        expected += weight * path_features(path)
+    expected /= total
+    assert gradient == pytest.approx(feats.observed - expected, abs=1e-8)
+
+
 # ------------------------------------------------------------------ the optimisation
 
 
@@ -186,16 +225,22 @@ def test_fitting_lowers_the_nll_and_lands_on_a_stationary_point() -> None:
 
 
 def test_fitting_a_subset_leaves_the_other_weights_untouched() -> None:
+    # Started away from zero, so a fitter that reset the inactive weights would be caught.
     groups = [group(52 + (i % 7), onset=i * 0.5) for i in range(12)]
     feats = [sequence_features(human(groups), CTX)]
-    result = fit_weights(feats, CostWeights(), active=FEATURE_GROUPS["base"])
-    assert result.weights.string_bias == (0.0,) * 6
-    assert (result.weights.low_region, result.weights.high_region) == (0.0, 0.0)
-    both = fit_weights(
-        feats, CostWeights(), active=FEATURE_GROUPS["base"] + FEATURE_GROUPS["string"]
+    initial = CostWeights(
+        string_bias=(0.0, 0.3, -0.2, 0.1, 0.0, 0.4), low_region=0.25, high_region=-0.15
     )
-    assert any(both.weights.string_bias[1:])
-    assert (both.weights.low_region, both.weights.high_region) == (0.0, 0.0)
+    base_only = fit_weights(feats, initial, active=FEATURE_GROUPS["base"])
+    assert base_only.weights.string_bias == initial.string_bias
+    assert base_only.weights.low_region == initial.low_region
+    assert base_only.weights.high_region == initial.high_region
+    with_strings = fit_weights(
+        feats, initial, active=FEATURE_GROUPS["base"] + FEATURE_GROUPS["string"]
+    )
+    assert with_strings.weights.string_bias != initial.string_bias
+    assert with_strings.weights.low_region == initial.low_region
+    assert with_strings.weights.high_region == initial.high_region
 
 
 def test_a_human_state_missing_from_the_lattice_is_refused() -> None:
@@ -247,3 +292,13 @@ def test_a_group_the_lattice_cannot_express_splits_the_sequence() -> None:
     ]
     sequences = human_sequences(steps, ctx, max_relaxed_span=8)
     assert [len(s.groups) for s in sequences] == [1, 2, 1]
+
+
+def test_the_fitter_refuses_a_guitar_with_more_than_six_strings() -> None:
+    # The per-string features are five biases against the low E: a six-string model.
+    seven = Tuning(open_pitches=(35, 40, 45, 50, 55, 59, 64))
+    g = group(67)
+    on_seventh = next(s for s in enumerate_states(g, seven, 4) if s.positions[0].string == 6)
+    sequence = HumanSequence(groups=(g,), states=(on_seventh,), spans=(4,))
+    with pytest.raises(ValueError, match="six"):
+        sequence_features(sequence, Context(tuning=seven, max_span=4))

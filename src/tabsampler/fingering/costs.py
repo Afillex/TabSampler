@@ -69,6 +69,26 @@ LOW_REGION_TOP = 4
 HIGH_REGION_BOTTOM = 12
 
 
+def string_cost(weights: CostWeights, state: ChordState) -> float:
+    """ADR 0034's per-string term: nothing unless a bias is set, and then six strings only.
+
+    Any tuning decodes with the default, all-zero biases (ADR 0008). A non-zero bias was
+    fitted on six-string guitar, so a note on a seventh string is refused, not guessed.
+
+    Raises:
+        ValueError: if a bias is set and a note lies beyond the six strings it covers.
+    """
+    if not any(weights.string_bias):
+        return 0.0
+    highest = max(p.string for p in state.positions)
+    if highest >= len(weights.string_bias):
+        raise ValueError(
+            f"string_bias holds a weight for each of six strings, but a note is on string "
+            f"{highest}; the per-string weights were fitted on six-string guitar (ADR 0034)"
+        )
+    return sum(weights.string_bias[p.string] for p in state.positions)
+
+
 def count_low_region(state: ChordState) -> int:
     return sum(1 for fret in state.fretted_frets if fret <= LOW_REGION_TOP)
 
@@ -96,7 +116,7 @@ class HandSetScorer:
             + w.high * (mean_fretted_fret(state) / FRETS_PER_OCTAVE)
             - w.open_reward * count_open(state)
             # ADR 0034's feature groups: zero unless a config sets them.
-            + sum(w.string_bias[p.string] for p in state.positions)
+            + string_cost(w, state)
             + w.low_region * count_low_region(state)
             + w.high_region * count_high_region(state)
             # The acoustic term (spec 2.2's lambda_ac) enters at Phase 3, when a
