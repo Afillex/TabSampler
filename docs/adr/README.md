@@ -40,7 +40,7 @@ of the old record to point at its replacement.
 | [0030](0030-hand-stretch.md) | A chord wider than the window **stretches the hand** instead of anchoring it (supersedes one sentence of 0025); recovery unchanged | 2.2 / D9 | accepted |
 | [0031](0031-e3-speed-limit.md) | E3's speed limit set from human tab: **48 frets/s**, 0.9988 of unseen artists' moves pass | D9 | accepted |
 | [0032](0032-style-decoders.md) | Clean and distorted guitar get **a decoder each**; clean-fitted weights win on clean parts (0.8257 → 0.8616) and become the default; distorted keeps hand-set (chord shapes −0.00065) | D7 | accepted |
-| [0033](0033-per-style-temperature.md) | Each style's decoder gets **its own temperature**, calibrated on that style's validation parts | D7 | proposed |
+| [0033](0033-per-style-temperature.md) | Each style's decoder gets **its own temperature**: clean T = 1.1975, distorted T = 4.2982 | D7 | accepted |
 | [0034](0034-c3-feature-groups.md) | Two richer feature groups — **per-string preference** and **fret regions** — each kept only if it raises a style's validation recovery | D7 | proposed |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,

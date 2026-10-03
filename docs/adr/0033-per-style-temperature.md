@@ -1,6 +1,6 @@
 # ADR 0033: Each style's decoder gets its own temperature
 
-Status: proposed (2026-10-03) — pre-registration; accepted with its result
+Status: accepted (2026-10-03) — hypothesis held
 
 Follows [ADR 0026](0026-default-temperature.md) (one temperature, T = 2.9974, calibrated on
 all artist-validation parts) and [ADR 0032](0032-style-decoders.md) (a decoder per style).
@@ -45,3 +45,23 @@ wherever the figure is quoted.
 
 **Harder.** Two numbers to keep in step with their weights: whenever a style's weights
 change, its temperature is recalibrated (Phase 2 task C5).
+
+## Result (2026-10-03)
+
+| each style's decoder, on its own validation parts | T | calibration error | per-note NLL |
+|---|---|---|---|
+| clean (clean-fitted weights), at the pooled T | 2.9974 | 0.2478 | 0.6463 |
+| **clean, own T** | **1.1975** | **0.0757** | **0.4842** |
+| distorted (hand-set weights), at the pooled T | 2.9974 | 0.0785 | 0.7576 |
+| **distorted, own T** | **4.2982** | **0.0601** | **0.7493** |
+
+**Held on both counts**: clean needs a much lower temperature than distorted (1.1975 against
+4.2982), and each style's own temperature lowers its calibration error. The pooled 2.9974
+was close to right for distorted playing, which dominated the pool, and badly wrong for the
+clean decoder, which it made far too unsure of itself.
+
+One thing the table does not show: for the clean decoder, T = 1 gives a *lower* calibration
+error (0.0559) than the likelihood-optimal 1.1975, though a worse likelihood (0.5056). The
+method fixed above chooses by likelihood, the proper scoring rule, and is kept; the gap is
+recorded, not acted on. All figures are in-sample, on the songs the temperatures were
+fitted on.

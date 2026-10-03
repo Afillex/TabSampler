@@ -31,8 +31,10 @@ weights:
   # other three terms are in place -- a correction given them, not a claim on its own.
   open_reward: -0.1702
   acoustic: 0.0
-  # ADR 0026's pooled temperature until ADR 0033 calibrates one for this style.
-  temperature: 2.9974
+  # Calibrated by per-note NLL on the clean parts of 300 artist-validation songs (ADR 0033).
+  # Calibration error 0.2478 at the pooled 2.9974, 0.0757 here -- measured on the songs it
+  # was fitted on.
+  temperature: 1.1975
 
 # Notes whose posterior falls below this are marked uncertain (ADR 0013). Not tuned.
 uncertainty_threshold: 0.6
