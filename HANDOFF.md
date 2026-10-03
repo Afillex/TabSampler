@@ -2,7 +2,7 @@
 
 You are picking up Tab Sampler with no prior context. This file is the shortest path to
 being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-03, after the
-style-decoder session.
+held-out-player session.
 
 ## In one paragraph
 
@@ -17,8 +17,9 @@ protocol is fixed (ADR 0021) and every fit now uses an artist-disjoint split (AD
 both halves of E3 are measured against human tab (ADRs 0022, 0031, 0036); the hand is a 4-fret
 window that a wide chord can stretch (ADRs 0025, 0030); and clean and distorted guitar have
 a decoder each (ADR 0032) with their own temperatures (ADR 0033) — the clean one, fitted on
-clean DadaGP playing, is the default. The first richer features did not earn a place (ADR
-0034). **The main open problem is validation itself**: DadaGP's clean parts have now
+clean DadaGP playing, became the default and was then re-decided away (ADR 0038). The
+first richer features did not earn a place (ADR 0034). **GuitarSet's player 00 is now
+validation data and players 01–05 the test set (ADR 0037)**, because DadaGP's clean parts
 mispredicted GuitarSet three times. What remains beyond that is a fingering model good
 enough for M2, audio conditioning, and an app a guitarist can use.
 
@@ -38,7 +39,7 @@ enough for M2, audio conditioning, and an app a guitarist can use.
 
 ```bash
 make install                       # uv sync --all-groups, Python 3.13
-make check                         # lint + pyright --strict + 441 tests. Must be green.
+make check                         # lint + pyright --strict + 456 tests. Must be green.
 make oracle                        # the correctness core. Must be green.
 ```
 
@@ -54,38 +55,39 @@ recent session) → `docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/REA
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | `v0.0-phase0`, `v0.1-m1` |
-| Tests | 441, all offline — no test needs the dataset or the transcriber |
+| Tests | 456, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
-| Current phase | Phase 2, **in progress**: C3 under way; validation that predicts GuitarSet first |
+| Current phase | Phase 2, **in progress**: C3 under way; choose on player 00, judge on players 01–05 |
 
-**Current results** — 360 GuitarSet tracks, `audio_mic`, the default decoder
-`configs/decoder_clean.yaml`: weights fitted on clean DadaGP playing, T = 1.1975, the hand
-window with the stretch. Rows before 2026-10-01 have a `commit` column that
+**Current results** — GuitarSet's test players 01–05, 300 tracks, `audio_mic`, the default
+decoder `configs/decoder_clean.yaml`: hand-set weights, T = 1.5728, the hand window with the
+stretch. **These 300 tracks were part of every earlier 360-track run (ADR 0037)**, so a
+figure on them is a baseline, not an independent confirmation, until decisions are made on
+player 00 alone. Rows before 2026-10-01 have a `commit` column that
 references the pre-publication history, which was squashed into the initial commit; the
 rows are still the record of which runs produced which numbers. Likewise, commit ids
 recorded on 2026-10-02 and 10-03 — in `results.csv`, `experiments/test_set_access.log`,
 ADRs 0026–0028 and that devlog — name commits from before a wording clean-up of the
 history on 2026-10-03. Each has a counterpart with the same message, in the same order,
 with the same code. Reproduce the current ones with
-`uv run tabsampler eval-m1 --config configs/m2_style_eval.yaml`. The previous default
-(hand-set weights, T = 2.9974) is in brackets:
+`uv run tabsampler eval-m1 --config configs/m2_heldout_eval.yaml`. The previous default
+(clean-fitted weights, `configs/fitted_clean_dadagp.yaml`) is in brackets:
 
 | | oracle | end-to-end |
 |---|---|---|
-| E1 note F1, transcriber (raw) | 1.0000 | 0.7437 |
-| E1 note F1, pipeline (placed) | 1.0000 | 0.7452 |
-| **E2 exact tab F1 (headline)** | **0.6689** (0.6878) | **0.4439** (0.4396) |
-| E3 playable groups | 0.9957 (0.9967) | 0.9889 (0.9904) |
-| E3 playable transitions, 48 frets/s rule | 0.9996 | 0.9969 |
+| E1 note F1, transcriber (raw) | 1.0000 | 0.7493 |
+| E1 note F1, pipeline (placed) | 1.0000 | 0.7507 |
+| **E2 exact tab F1 (headline)** | **0.6559** (0.6258) | **0.4277** (0.4337) |
+| E3 playable groups | 0.9980 (0.9970) | 0.9912 (0.9899) |
+| E3 playable transitions, 48 frets/s rule | 0.9997 (0.9995) | 0.9984 (0.9974) |
 | E4 pitch validity | 1.0000 | 1.0000 |
-| E5 calibration error | **0.1008** (0.1651) | 0.3027 (0.1272) |
+| E5 calibration error | **0.0794** (0.1260) | 0.2189 (0.3117) |
 
 E1 = 1.0 in oracle mode is a plumbing check, not a result. **E4 = 1.0 is an invariant, not a
 score: anything below 1.0 is a bug**, because it means a (string, fret) pair does not sound
-the pitch we claimed. **Both chord-shape rates are below ADR 0016's guardrails** (by
-0.0013 and 0.0007), M2's target of 0.760 is 9.1 points away, and the headline fell 1.9
-points where validation predicted a rise. The transition rates are the guardrail's new
-baseline (ADR 0035) and are not comparable with older rows.
+the pitch we claimed. **Every ADR 0016 value holds on the 300** for the default; M2's
+target of 0.760 is 10.4 points away. Player 00, the validation player, is much easier
+(oracle E2 0.81), so its absolute figures do not carry over to the test players.
 
 **E1 is two numbers now.** Raw = the transcriber's score, and it reproduces Phase 0's 0.7437
 exactly. Placed = the pipeline's, after placement drops notes the guitar cannot sound. M1
@@ -151,13 +153,9 @@ across open strings from the wrong group (ADR 0029); E3's unmeasured speed limit
 
 Still open:
 
-- **DadaGP validation does not predict GuitarSet.** Three times its clean parts were a poor
-  guide (ADR 0023; the hand window; the clean decoder, +3.6 on validation and −1.9 on
-  GuitarSet). Ege decided on 2026-10-03 to hold out GuitarSet's player 00 as validation;
-  the next plan does it and re-decides the default there. Until then, `main` on GitHub
-  still has the previous default: this branch is merged locally, not pushed.
-- **Both chord-shape guardrails are breached** on GuitarSet (0.9957 / 0.9889). It cannot be
-  diagnosed on GuitarSet; on DadaGP validation the clean decoder's rate is 0.99964.
+- **Validation is one player.** 60 tracks give wide intervals, and player 00 favoured the
+  clean fit where the other players do not (ADR 0038): treat a validation result as
+  evidence, not proof, and keep asking a challenger for a clear win.
 - **A still-ringing note does not reserve its string** against the next group (spec §2.2).
   Not yet owned; revisit if metrics show it matters.
 - **`eval-m1` writes the eval config's hypothesis into `results.csv`.** Give every new
@@ -239,8 +237,9 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 
 ## Open items that need Ege, not you
 
-- **Pushing**: this branch waits, merged locally, until the next plan has re-decided the
-  default on the held-out player; say so if it should go public sooner.
+- **What next, in what order**: richer features with regularisation (the `high` / string
+  overlap), a temperature calibrated on player 00 itself, and the 0.0005 chord-shape
+  allowance.
 - **The chord-shape allowance (0.0005)**: it has blocked every fitted distorted model, each
   7.7 to 10.3 points better at recovering human fingerings.
 - **The clean temperature**: T = 1 has a lower calibration error (0.0559) than the

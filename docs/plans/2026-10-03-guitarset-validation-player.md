@@ -4,6 +4,9 @@
 > reported number is pre-registered in a commit made before it runs, with its tolerance and
 > noise estimate stated in advance.
 
+**Status:** executed 2026-10-03; results and slips in `docs/devlog/2026-10-03.md`
+(second part).
+
 **Goal:** give the project validation data that resembles its test set — GuitarSet's player
 00 — re-decide the default decoder on it, and re-base the test set on the other five
 players.
@@ -58,18 +61,18 @@ renamed from today's `guitarset_test_ids`); `split_by_player(ids, player) -> tup
 ...], tuple[str, ...]]` (validation, test), refusing a player with other than 60 tracks;
 `guitarset_validation_ids(snapshot=None)` (60) and `guitarset_test_ids(snapshot=None)` (300).
 
-- [ ] Write ADR 0037 (accepted: Ege's decision) — the player chosen by rule as the lowest
+- [x] Write ADR 0037 (accepted: Ege's decision) — the player chosen by rule as the lowest
   ID, before any per-player figure is seen; ADR 0016's values kept and judged on the 300;
   every new test figure shown beside the same decoder's 360-track figure where one exists;
   the contamination caveat. Point ADR 0003's status line at it.
-- [ ] Failing tests: the real snapshot gives 60 validation tracks, all `00_`, and 300 test
+- [x] Failing tests: the real snapshot gives 60 validation tracks, all `00_`, and 300 test
   tracks, none `00_`; the two partition the corpus; a fixture where one player has 59 tracks
   is refused; the validation player is pinned at `"00"`.
-- [ ] Implement; rename the reader; fix the module comment's arithmetic (360 = 6 players × 5
+- [x] Implement; rename the reader; fix the module comment's arithmetic (360 = 6 players × 5
   styles × 3 progressions × 2 tempi × comp/solo, not "6 × 2 × 5 × 3"); `check-split` prints
   both counts; `eval-notes` reads `guitarset_test_ids()`; `scripts/measure_lattice.py` reads
   the validation player and no longer logs a test-set access.
-- [ ] `make check`; commit `Hold out GuitarSet's player 00 as validation (ADR 0037)`.
+- [x] `make check`; commit `Hold out GuitarSet's player 00 as validation (ADR 0037)`.
 
 ### Task 2: `eval-m1 --split validation` and per-track counts
 
@@ -80,16 +83,16 @@ renamed from today's `guitarset_test_ids`); `split_by_player(ids, player) -> tup
 e2: PRF, e3: PlayabilityReport) -> None` — per track and mode, `[2 × matches, estimated +
 reference notes]`, whose pooled ratio is the micro-averaged E2 F1, and chord-shape counts.
 
-- [ ] Failing tests: `add_track` pools to the reported F1; a validation run writes no
+- [x] Failing tests: `add_track` pools to the reported F1; a validation run writes no
   test-set log line (the access logger is replaced in the test); `compare_validation`
   compares by mode when the parts are `oracle`/`e2e`.
-- [ ] Implement `--split {test,validation}` (default test; rows record the split) and
+- [x] Implement `--split {test,validation}` (default test; rows record the split) and
   `--per-track-out PATH`.
-- [ ] `make check`; commit `Evaluate on the validation player and write per-track counts`.
+- [x] `make check`; commit `Evaluate on the validation player and write per-track counts`.
 
 ### Task 3: Re-decide the default on player 00 (ADR 0038)
 
-- [ ] Write ADR 0038 as proposed: candidates — the clean-fitted weights (today's default)
+- [x] Write ADR 0038 as proposed: candidates — the clean-fitted weights (today's default)
   and the hand-set weights, both with the window and the stretch. **Rule:** the clean-fitted
   weights stay the default iff, on player 00's 60 tracks in oracle mode, E2 is higher than
   the hand-set weights' with the 95% track-level paired interval wholly above zero, and the
@@ -97,20 +100,20 @@ reference notes]`, whose pooled ratio is the micro-averaged E2 F1, and chord-sha
   takes the hand-set weights and a temperature calibrated for them on DadaGP clean parts by
   ADR 0033's method. Prediction, with the contamination caveat: the clean fit loses, as it
   did on all 360 tracks. Commit before the runs.
-- [ ] Run `eval-m1 --split validation` for both decoders with `--per-track-out`; compare;
+- [x] Run `eval-m1 --split validation` for both decoders with `--per-track-out`; compare;
   apply the rule; if reverted, calibrate and write the config; results rows; accept ADR 0038.
 
 ### Task 4: The latest figures on the 300 test tracks
 
 ⚠️ Reads the test set — logged, nothing chosen from it.
 
-- [ ] Pre-register `configs/m2_heldout_eval.yaml`: the default as Task 3 leaves it, and the
+- [x] Pre-register `configs/m2_heldout_eval.yaml`: the default as Task 3 leaves it, and the
   other candidate, on players 01–05; prediction: each within 0.01 of its 360-track figure.
-- [ ] Run both; refresh the README in the same commit — the 300-track table, the 360-track
+- [x] Run both; refresh the README in the same commit — the 300-track table, the 360-track
   figures kept as history, ADR 0016's values judged on the 300, the contamination caveat.
 
 ### Task 5: Close out
 
-- [ ] Devlog, HANDOFF, plan boxes; check that no local tooling files are tracked.
+- [x] Devlog, HANDOFF, plan boxes; check that no local tooling files are tracked.
 - [ ] `make check`, `make oracle`; independent review; one fix pass; merge into `main` and
   push both this branch and the one held back on 2026-10-03.
