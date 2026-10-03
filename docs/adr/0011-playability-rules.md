@@ -4,7 +4,9 @@ Status: accepted (2026-09-27); the fourth group rule below is superseded by
 [ADR 0019](0019-barre-chords-in-e3.md), which counts fingers instead of fretted notes. The
 validation owed below was run in [ADR 0022](0022-playability-rules-validated.md): the chord
 rules hold on human tab, the speed rule does not. The transition rule's hand position is
-superseded by [ADR 0025](0025-hand-window.md)'s 4-fret window, carried across open shapes.
+superseded by [ADR 0025](0025-hand-window.md)'s 4-fret window, carried across open shapes,
+its timing by [ADR 0029](0029-e3-move-timing.md), and its 12 frets-per-second limit by
+[ADR 0031](0031-e3-speed-limit.md)'s 48, measured on human tab.
 
 Decides spec D9.
 
