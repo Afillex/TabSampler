@@ -15,3 +15,13 @@ def test_every_command_defaults_to_the_clean_guitar_decoder() -> None:
     assert inspect.signature(cli.eval_m1).parameters["decoder"].default == clean
     assert inspect.signature(cli.transcribe).parameters["config"].default == clean
     assert inspect.signature(cli.diagnose).parameters["decoder"].default == clean
+
+
+def test_make_eval_m1_names_the_decoder_its_hypothesis_describes() -> None:
+    # configs/m1_full_eval.yaml's hypothesis is about a hand-set cost model. Without an
+    # explicit --decoder-config the target would run the CLI default -- since ADR 0032 the
+    # clean-fitted decoder -- and write a row whose hypothesis describes another model.
+    makefile = (Path(__file__).resolve().parents[1] / "Makefile").read_text()
+    recipe = makefile.split("\neval-m1:", 1)[1].split("\n\n", 1)[0]
+    assert "--config configs/m1_full_eval.yaml" in recipe
+    assert "--decoder-config configs/phase1_baseline.yaml" in recipe

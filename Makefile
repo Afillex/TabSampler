@@ -33,4 +33,4 @@ check-split:
 
 # M1 gate: E1-E5 and E7 on GuitarSet in oracle and end-to-end mode.
 eval-m1:
-	uv run tabsampler eval-m1 --config configs/m1_full_eval.yaml
+	uv run tabsampler eval-m1 --config configs/m1_full_eval.yaml --decoder-config configs/phase1_baseline.yaml
