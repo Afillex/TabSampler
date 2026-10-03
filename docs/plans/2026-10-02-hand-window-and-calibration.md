@@ -3,6 +3,9 @@
 > Tasks run in order; steps use checkbox (`- [ ]`) syntax. Every run that produces a
 > reported number is pre-registered in a commit made before it runs.
 
+**Status:** executed 2026-10-02 to 10-03. Results, missed checks and Ege's decisions are in
+`docs/devlog/2026-10-02.md`.
+
 **Goal:** fix the phantom-movement flaw ADR 0022 found, give DadaGP an artist-disjoint split,
 calibrate the default decoder's confidence, and give the fitted weights the fair test ADR 0023
 asked for — then measure the default once on GuitarSet.
@@ -65,17 +68,17 @@ existing one-off script.
 
 **Files:** none changed.
 
-- [ ] **Step 1: Verify the branch is green**
+- [x] **Step 1: Verify the branch is green**
 
 Run: `make check; echo EXIT=$?` and `make oracle; echo EXIT=$?`
 Expected: both `EXIT=0`.
 
-- [ ] **Step 2: Confirm nothing from the dataset is tracked**
+- [x] **Step 2: Confirm nothing from the dataset is tracked**
 
 Run: `git ls-files | grep -Ei "dadagp.*\.zip|track_meta|^data/" ; echo "none expected"`
 Expected: only `none expected` printed.
 
-- [ ] **Step 3: Merge and push**
+- [x] **Step 3: Merge and push**
 
 ```bash
 git checkout main
@@ -85,7 +88,7 @@ git branch -d dadagp-fit
 git checkout -b hand-window
 ```
 
-- [ ] **Step 4: Confirm CI**
+- [x] **Step 4: Confirm CI**
 
 Run: `gh run list --repo Afillex/TabSampler --limit 1`
 Expected: `completed success` for the merge commit.
@@ -106,7 +109,7 @@ Expected: `completed success` for the merge commit.
   `load_tracks(..., scheme: Literal["shipped", "artist"] = "shipped")`;
   constant `ARTIST_VALIDATION_SHA256: str`.
 
-- [ ] **Step 1: Write the failing tests** (append to `tests/data/test_dadagp.py`)
+- [x] **Step 1: Write the failing tests** (append to `tests/data/test_dadagp.py`)
 
 ```python
 from tabsampler.data.dadagp import artist_of, artist_split
@@ -147,12 +150,12 @@ def test_the_loader_serves_the_artist_scheme(tmp_path: Path) -> None:
     assert not train & val
 ```
 
-- [ ] **Step 2: Run them and watch them fail**
+- [x] **Step 2: Run them and watch them fail**
 
 Run: `uv run pytest tests/data/test_dadagp.py -q`
 Expected: collection error, `ImportError: cannot import name 'artist_of'`.
 
-- [ ] **Step 3: Implement** (in `src/tabsampler/data/dadagp.py`)
+- [x] **Step 3: Implement** (in `src/tabsampler/data/dadagp.py`)
 
 ```python
 def artist_of(key: str) -> str:
@@ -180,12 +183,12 @@ to `split`. If `artist_sha256` is not `None`, compute
 `ValueError` mentioning "sha256" on mismatch. Start with `ARTIST_VALIDATION_SHA256 = ""` and
 skip the check when it is empty, until Step 5 fills it.
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `uv run pytest tests/data/test_dadagp.py -q`
 Expected: all pass.
 
-- [ ] **Step 5: Freeze the real split**
+- [x] **Step 5: Freeze the real split**
 
 Run:
 ```bash
@@ -202,16 +205,16 @@ Paste the printed digest into `ARTIST_VALIDATION_SHA256`, remove the empty-strin
 add `assert ARTIST_VALIDATION_SHA256.startswith("<first 8 hex chars printed>")` to
 `test_the_committed_hashes_are_the_v1_1_release`.
 
-- [ ] **Step 6: Add `--split {shipped,artist}` to both scripts**, passed through as `scheme=`.
+- [x] **Step 6: Add `--split {shipped,artist}` to both scripts**, passed through as `scheme=`.
 The fit script also prints recovery by part (`clean` vs `distorted`, from
 `track.instrument`), as the 2026-10-01 exploratory check did.
 
-- [ ] **Step 7: Write ADR 0024** — whole artists to one side by SHA-256 bucket of the
+- [x] **Step 7: Write ADR 0024** — whole artists to one side by SHA-256 bucket of the
 case-folded artist folder, 1 bucket in 10 to validation, frozen by the digest from Step 5;
 used for every fit from now on. Report the song and note counts on each side. Add it to
 `docs/adr/README.md`.
 
-- [ ] **Step 8: Re-baseline on the new validation side** (pre-registered: commit before running)
+- [x] **Step 8: Re-baseline on the new validation side** (pre-registered: commit before running)
 
 Commit first, then run:
 `uv run python scripts/fit_cost_weights.py data/dadagp/DadaGP-v1.1.zip data/dadagp/track_meta.json --split artist --train-songs 600 --val-songs 300`
@@ -219,7 +222,7 @@ Record hand-set and fitted recovery (all / clean / distorted) as results rows,
 `split=validation`, dataset `dadagp-v1.1 artist-disjoint`. These are the baselines Task 6
 compares against.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/tabsampler/data/dadagp.py tests/data/test_dadagp.py scripts/ docs/adr/ experiments/results.csv
@@ -240,7 +243,7 @@ git commit -m "Add an artist-disjoint DadaGP split as ADR 0024"
   returning (new hand, frets moved); `fretted` is ascending.
   `carry_hand(previous_hand, state)` keeps its signature and becomes `shift_window(previous_hand, state.fretted_frets)[0]`.
 
-- [ ] **Step 1: Write the failing tests** (append to `tests/fingering/test_states.py`)
+- [x] **Step 1: Write the failing tests** (append to `tests/fingering/test_states.py`)
 
 ```python
 from tabsampler.fingering.states import HAND_WINDOW, shift_window
@@ -283,12 +286,12 @@ def test_the_distance_is_never_negative() -> None:
             assert moved >= 0
 ```
 
-- [ ] **Step 2: Run and watch them fail**
+- [x] **Step 2: Run and watch them fail**
 
 Run: `uv run pytest tests/fingering/test_states.py -q`
 Expected: `ImportError: cannot import name 'HAND_WINDOW'`.
 
-- [ ] **Step 3: Implement** (in `states.py`, above `carry_hand`)
+- [x] **Step 3: Implement** (in `states.py`, above `carry_hand`)
 
 ```python
 #: Frets one hand position covers, in span units: fret h to fret h + 4, as ADR 0011's span
@@ -319,7 +322,7 @@ def shift_window(
 and replace `carry_hand`'s body with `return shift_window(previous_hand, state.fretted_frets)[0]`,
 updating its docstring to cite ADR 0025 instead of the lowest-fret rule.
 
-- [ ] **Step 4: Run** `uv run pytest tests/fingering/test_states.py -q` — Expected: PASS.
+- [x] **Step 4: Run** `uv run pytest tests/fingering/test_states.py -q` — Expected: PASS.
 Other suites will now fail where they pinned the old rule; Tasks 4 and 5 own them. Do not
 commit until Task 5 is green.
 
@@ -338,7 +341,7 @@ commit until Task 5 is green.
 - Produces: `hand_move_is_playable(hand: int | None, positions: Sequence[Position], seconds: float, rules: PlayabilityRules) -> tuple[str | None, int | None]`
   (reason or None, new hand). **Removes** `transition_is_playable`.
 
-- [ ] **Step 1: Write the failing tests** — replace the six transition tests in
+- [x] **Step 1: Write the failing tests** — replace the six transition tests in
 `tests/eval/test_playability.py` with:
 
 ```python
@@ -377,9 +380,9 @@ def test_a_shape_with_two_notes_on_one_string_still_moves_the_hand() -> None:
     assert hand == 3 and reason is None
 ```
 
-- [ ] **Step 2: Run** `uv run pytest tests/eval/test_playability.py -q` — Expected: ImportError.
+- [x] **Step 2: Run** `uv run pytest tests/eval/test_playability.py -q` — Expected: ImportError.
 
-- [ ] **Step 3: Implement** in `playability.py`:
+- [x] **Step 3: Implement** in `playability.py`:
 
 ```python
 def hand_move_is_playable(
@@ -407,10 +410,10 @@ then `reason, hand = hand_move_is_playable(hand, positions, onset - prev_onset, 
 Delete `transition_is_playable` and the old `hand_position` helper if nothing else uses it
 (`grep -rn hand_position src tests scripts`).
 
-- [ ] **Step 4: Update `scripts/validate_playability.py`** to use `hand_move_is_playable`
+- [x] **Step 4: Update `scripts/validate_playability.py`** to use `hand_move_is_playable`
 with a carried hand, and delete its separate "carried" variant (the rule now carries).
 
-- [ ] **Step 5: Run the acceptance check** (pre-registered: commit the script change first)
+- [x] **Step 5: Run the acceptance check** (pre-registered: commit the script change first)
 
 Run: `uv run python scripts/validate_playability.py data/dadagp/DadaGP-v1.1.zip data/dadagp/track_meta.json`
 **Acceptance, fixed in ADR 0022: human tab passes the transition rule at ≥ 0.99.**
@@ -432,7 +435,7 @@ the window or the speed limit to pass.
 - Consumes: `shift_window`, `carry_hand` (Task 3).
 - Produces: `HandSetScorer.transition_cost_from(previous_hand, curr)` = `move * shift_window(previous_hand, curr.fretted_frets)[1]`.
 
-- [ ] **Step 1: Rewrite the oracle first, from the ADR text, not the code.** In
+- [x] **Step 1: Rewrite the oracle first, from the ADR text, not the code.** In
 `tests/decode/brute_force.py::path_cost`, replace the hand loop with:
 
 ```python
@@ -455,7 +458,7 @@ the window or the speed limit to pass.
 Keep `transition_cost_from` out of the oracle on purpose: it must check the scorer, not
 reuse it. (The oracle's scorer is always `HandSetScorer`.)
 
-- [ ] **Step 2: Update the cost tests** in `tests/fingering/test_costs.py`:
+- [x] **Step 2: Update the cost tests** in `tests/fingering/test_costs.py`:
 `test_movement_is_charged_across_an_intervening_open_chord` now expects
 `s.transition_cost_from(2, state((0, 10))) == pytest.approx(4.0 * s.weights.move)` and
 `s.carry(previous_hand=2, curr=state((0, 10))) == 6`, with a comment that the window starting
@@ -467,9 +470,9 @@ def test_a_reach_inside_the_window_costs_nothing() -> None:
     assert s.transition_cost_from(5, state((0, 8))) == 0.0
 ```
 
-- [ ] **Step 3: Run** `make oracle` — Expected: FAIL (decoder still on the old rule).
+- [x] **Step 3: Run** `make oracle` — Expected: FAIL (decoder still on the old rule).
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 - `costs.py`: `transition_cost_from` returns
   `self.weights.move * shift_window(previous_hand, curr.fretted_frets)[1]`.
 - `viterbi.py::build_lattice`: every state now takes one node per distinct carried hand:
@@ -483,23 +486,23 @@ def test_a_reach_inside_the_window_costs_nothing() -> None:
   in `sequence_features`, `new, moved = shift_window(prior.carried_hand, node.state.fretted_frets)`,
   forbidden if `new != node.carried_hand`, else `move[i, j] = moved`.
 
-- [ ] **Step 5: Run** `make oracle` and `uv run pytest tests/decode tests/fingering -q`
+- [x] **Step 5: Run** `make oracle` and `uv run pytest tests/decode tests/fingering -q`
 Expected: PASS. If the oracle disagrees, the decoder is wrong (ADR 0014).
 
-- [ ] **Step 6: Replace the node-count guards** in `tests/decode/test_viterbi.py`
+- [x] **Step 6: Replace the node-count guards** in `tests/decode/test_viterbi.py`
 (`test_the_lattice_only_augments_all_open_states`, the 1.5× and 3.5× guards) after measuring:
 run `uv run python scripts/measure_lattice.py --guitarset 60` (logged access, complexity only),
 record the ratios in ADR 0025, and guard the pentatonic passage at `n_nodes <= 6 * n_states`
 with the measured value in the comment.
 
-- [ ] **Step 7: Benchmark** with `scripts/bench_decode.py` against `main`, as its docstring
+- [x] **Step 7: Benchmark** with `scripts/bench_decode.py` against `main`, as its docstring
 shows. **Acceptance:** spec §4 still met — a 3-minute file decodes far inside 60 s. Record
 `viterbi` and `decode` times in ADR 0025.
 
-- [ ] **Step 8: Regenerate the golden clip** and diff it by eye: the phrase should no longer
+- [x] **Step 8: Regenerate the golden clip** and diff it by eye: the phrase should no longer
 pre-position the hand high (ADR 0018's worked example). Record what changed in ADR 0025.
 
-- [ ] **Step 9: Write ADR 0025** (hand window, supersedes ADR 0018's lowest-fret hand
+- [x] **Step 9: Write ADR 0025** (hand window, supersedes ADR 0018's lowest-fret hand
 position and ADR 0011's transition rule), with Task 4's acceptance result, Step 6–8
 measurements. Add it to the index. `make check`, then commit:
 
@@ -515,12 +518,12 @@ git commit -m "Model the hand as a 4-fret window in E3, the cost model and the d
 **Files:** `experiments/results.csv`, `docs/adr/0025-hand-window.md` (results appendix
 written before ADR 0025 is accepted).
 
-- [ ] **Step 1: Pre-register** in the commit message of an empty commit:
+- [x] **Step 1: Pre-register** in the commit message of an empty commit:
 `git commit --allow-empty -m "Pre-register: the hand window does not lower hand-set recovery on clean or distorted artist-disjoint validation parts"`.
 **Rule:** the window stays only if hand-set recovery does not fall on *either* part versus
 Task 2's baseline. If it falls, report and stop for Ege's call.
 
-- [ ] **Step 2: Run** `uv run python scripts/fit_cost_weights.py ... --split artist` and
+- [x] **Step 2: Run** `uv run python scripts/fit_cost_weights.py ... --split artist` and
 record hand-set recovery (all / clean / distorted) as results rows.
 
 ---
@@ -531,7 +534,7 @@ record hand-set recovery (all / clean / distorted) as results rows.
 `docs/adr/0026-default-temperature.md`, `docs/adr/0027-fitted-weights-fair-test.md`,
 `experiments/results.csv`.
 
-- [ ] **Step 1: Pre-register both** by committing ADRs 0026 and 0027 as `proposed`:
+- [x] **Step 1: Pre-register both** by committing ADRs 0026 and 0027 as `proposed`:
 - 0026 hypothesis: temperature scaling on artist-disjoint validation lowers the hand-set
   decoder's per-note calibration error; single variable T.
 - 0027 **fair test, fixed now**: refit weights (window model, artist-disjoint training)
@@ -539,12 +542,12 @@ record hand-set recovery (all / clean / distorted) as results rows.
   fingerings than hand-set on clean parts, (b) recover more on distorted parts, and (c) the
   decoded output's E3 group rate is not below hand-set's. All three, or no change.
 
-- [ ] **Step 2: Calibrate the default**:
+- [x] **Step 2: Calibrate the default**:
 `uv run python scripts/calibrate_temperature.py data/dadagp/DadaGP-v1.1.zip data/dadagp/track_meta.json --decoder-config configs/phase1_baseline.yaml --split artist`
 Write the fitted T into `configs/phase1_baseline.yaml` with a comment citing ADR 0026; add a
 results row.
 
-- [ ] **Step 3: Refit** with `scripts/fit_cost_weights.py --split artist`, calibrate its T,
+- [x] **Step 3: Refit** with `scripts/fit_cost_weights.py --split artist`, calibrate its T,
 write both into `configs/fitted_dadagp.yaml`, and add `--e3` reporting of the decoded
 validation output's group rate to the fit script (one line: `group_is_playable` over each
 Viterbi path). Apply ADR 0027's rule exactly; accept both ADRs with their results.
@@ -555,21 +558,21 @@ Viterbi path). Apply ADR 0027's rule exactly; accept both ADRs with their result
 
 ⚠️ Reads the test set — once, logged, nothing chosen from it.
 
-- [ ] **Step 1: Pre-register** `configs/m2_window_eval.yaml` (copy `configs/m2_fitted_eval.yaml`,
+- [x] **Step 1: Pre-register** `configs/m2_window_eval.yaml` (copy `configs/m2_fitted_eval.yaml`,
 new hypothesis: the window model with calibrated temperature changes E2 and lowers E5 for the
 default decoder; prediction written in the file). Commit.
 
-- [ ] **Step 2: Run** `uv run tabsampler eval-m1 --config configs/m2_window_eval.yaml --decoder-config configs/phase1_baseline.yaml`
+- [x] **Step 2: Run** `uv run tabsampler eval-m1 --config configs/m2_window_eval.yaml --decoder-config configs/phase1_baseline.yaml`
 (or `configs/fitted_dadagp.yaml` if ADR 0027 adopted it — the default is whichever ADR 0027 left).
 
-- [ ] **Step 3: Refresh the README results table in the same commit**, with the old row kept
+- [x] **Step 3: Refresh the README results table in the same commit**, with the old row kept
 for comparison and every guardrail of ADR 0016 stated, including any breach.
 
 ---
 
 ### Task 9: Close out
 
-- [ ] Write `docs/devlog/2026-10-02.md` (done, measured, rulings, open questions); update
+- [x] Write `docs/devlog/2026-10-02.md` (done, measured, rulings, open questions); update
 `HANDOFF.md` and the Phase 2 plan's C1/C2/C5 checkboxes; check that no local tooling files
 are tracked.
 - [ ] `make check`, `make oracle`, then `git checkout main && git merge --ff-only hand-window && git push origin main`.

@@ -1,8 +1,8 @@
 # HANDOFF — read this first
 
 You are picking up Tab Sampler with no prior context. This file is the shortest path to
-being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-01, after the
-first DadaGP session.
+being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-03, after the
+hand-window session.
 
 ## In one paragraph
 
@@ -12,10 +12,13 @@ every stage sits behind a `typing.Protocol` in `src/tabsampler/types.py` so one 
 swapped without touching the others. Phase 0 (an evaluation harness built before any model)
 and Phase 1 (a hand-set cost model decoded with Viterbi plus forward-backward posteriors)
 are both **done, measured and tagged**, and **Phase 1.5 has closed M1's known defects**
-(ADRs 0016-0019). **DadaGP arrived on 2026-10-01**, so Phase 2 is unblocked: the training
-protocol is fixed (ADR 0021), ADR 0011's rules are validated on human tab (ADR 0022), and
-weights fitted on DadaGP are measured but not the default (ADR 0023). What remains is a
-fingering model good enough for M2, audio conditioning, and an app a guitarist can use.
+(ADRs 0016-0019). **DadaGP arrived on 2026-10-01** and Phase 2 is under way: the training
+protocol is fixed (ADR 0021) and every fit now uses an artist-disjoint split (ADR 0024);
+ADR 0011's chord rules are validated on human tab (ADR 0022); the hand is modelled as a
+4-fret window (ADR 0025); the default keeps hand-set weights, because fitted ones lost a
+fair test fixed in advance (ADR 0027), and has a calibrated temperature (ADR 0026). What
+remains is a fingering model good enough for M2, audio conditioning, and an app a
+guitarist can use.
 
 ## Rules that are not negotiable
 
@@ -33,15 +36,15 @@ fingering model good enough for M2, audio conditioning, and an app a guitarist c
 
 ```bash
 make install                       # uv sync --all-groups, Python 3.13
-make check                         # lint + pyright --strict + 325 tests. Must be green.
+make check                         # lint + pyright --strict + 403 tests. Must be green.
 make oracle                        # the correctness core. Must be green.
 ```
 
 `make check` piped into `tail` hides its exit code — check the status, not the output.
 
 Then read, in this order: `docs/spec.md` → `docs/plans/2026-10-01-phase-2.md` (the live
-plan) → `docs/devlog/2026-10-01.md` (the most recent session) →
-`docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`.
+plan; C1, C2 and C5 are done, C3 is next) → `docs/devlog/2026-10-02.md` (the most recent
+session) → `docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`.
 
 ## Where things stand
 
@@ -49,29 +52,32 @@ plan) → `docs/devlog/2026-10-01.md` (the most recent session) →
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | `v0.0-phase0`, `v0.1-m1` |
-| Tests | 389, all offline — no test needs the dataset or the transcriber |
+| Tests | 403, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
-| Current phase | Phase 2, **unblocked**: plan in `docs/plans/2026-10-01-phase-2.md`, three decisions pending |
+| Current phase | Phase 2, **in progress**: `docs/plans/2026-10-01-phase-2.md`, task C3 next |
 
-**Current results** — 360 GuitarSet tracks, `audio_mic`, hand-set weights (not tuned).
-The `commit` column of `experiments/results.csv` references the pre-publication history,
-which was squashed into the initial commit; the rows are still the record of which runs
-produced which numbers, and `make eval-m1` reproduces them. M1's figures are in brackets where Phase 1.5 moved them:
+**Current results** — 360 GuitarSet tracks, `audio_mic`, the default decoder: hand-set
+weights, the hand window, T = 2.9974. Rows before 2026-10-01 have a `commit` column that
+references the pre-publication history, which was squashed into the initial commit; the
+rows are still the record of which runs produced which numbers. Reproduce the current ones
+with `uv run tabsampler eval-m1 --config configs/m2_window_eval.yaml`. The previous default
+(hand as a point, T = 1) is in brackets:
 
 | | oracle | end-to-end |
 |---|---|---|
 | E1 note F1, transcriber (raw) | 1.0000 | 0.7437 |
 | E1 note F1, pipeline (placed) | 1.0000 | 0.7452 |
-| **E2 exact tab F1 (headline)** | **0.6599** (M1 0.6366) | **0.4318** (M1 0.4231) |
-| E3 playable groups | 0.9970 (M1 0.9835) | 0.9896 (M1 0.9751) |
-| E3 playable transitions | 0.9134 | 0.9164 |
+| **E2 exact tab F1 (headline)** | **0.6878** (0.6599) | **0.4396** (0.4318) |
+| E3 playable groups | 0.9967 (0.9970) | 0.9904 (0.9896) |
+| E3 playable transitions, window rule | 0.9944 | 0.9834 |
 | E4 pitch validity | 1.0000 | 1.0000 |
-| E5 calibration error | 0.1652 | 0.3851 |
+| E5 calibration error | 0.1651 (0.1652) | **0.1272** (0.3851) |
 
 E1 = 1.0 in oracle mode is a plumbing check, not a result. **E4 = 1.0 is an invariant, not a
 score: anything below 1.0 is a bug**, because it means a (string, fret) pair does not sound
-the pitch we claimed. **E5 is the weak result** — at 0.39 the posteriors are not honest yet,
-and it got slightly worse in Phase 1.5.
+the pitch we claimed. **The oracle chord-shape rate is 0.0003 below ADR 0016's guardrail**,
+and M2's target of 0.760 is 7.2 points away. E3's transition rate is under a new rule and
+is not comparable with older rows.
 
 **E1 is two numbers now.** Raw = the transcriber's score, and it reproduces Phase 0's 0.7437
 exactly. Placed = the pipeline's, after placement drops notes the guitar cannot sound. M1
@@ -86,9 +92,11 @@ latter with `scripts/dadagp_track_meta.py` (its docstring has the command).
 
 ADR 0021 is the protocol, and it is not optional: fit on DadaGP **training**, select and
 calibrate on DadaGP **validation**, evaluate on GuitarSet **once**, and never choose anything
-by looking at GuitarSet. The split is frozen by hash. Its artists overlap between halves,
-which is fine for a few scalars and **must be fixed before any model with capacity** (Phase 2
-plan, task C1).
+by looking at GuitarSet. **Use the artist-disjoint split** (`--split artist`, ADR 0024) for
+every fit: whole artists sit on one side, frozen by hash. The shipped split, whose artists
+overlap, stays loadable only so the 2026-10-01 numbers can be reproduced. Validation parts
+are about three-quarters distorted guitar; report clean and distorted parts separately,
+because they keep disagreeing.
 
 ## Five things that will trip you up
 
@@ -126,25 +134,23 @@ Also: **ruff 0.16 formats Python code blocks inside Markdown** and will rewrite
 scored as unplayable (ADR 0019). Both moved reported numbers; see
 `docs/devlog/2026-09-27-phase-1.5.md`.
 
+**Closed in Phase 2 so far:** E3 not carrying the hand across an all-open shape, and E3
+and the cost model counting finger reach as hand movement — both by the hand window (ADR
+0025). The fitted-versus-hand-set question of ADR 0023 is settled by ADR 0027's fair test.
+
 Still open:
 
-- **Two decoders, one default, and a decision the test set may not make** (ADR 0023). The
-  hand-set weights are the default; weights fitted on DadaGP score +3.9 E2 and −63% E5 on
-  GuitarSet but are 11 points worse on clean DadaGP guitar and breach the E3 guardrail by a
-  tenth of a point. Adopting them *because* GuitarSet improved would be test-set selection.
-- **E3's transition rule does not carry the hand across an all-open shape**, contrary to
-  ADR 0011's text: fret 2 → open string → fret 20 in 0.1 s passes, the same move without
-  the open string fails. Superseded in importance by the next item, and fixed by the same
-  hand-window redesign (Phase 2 plan, task C2).
+- **E3's transition rule is still not a playability measure.** With the window, human tab
+  passes it 97.95% of the time, short of the 99% bar fixed in advance; what is left is
+  largely small, quick shifts that the 12 frets/s speed limit calls impossible. Needs a
+  pre-registered experiment on the limit. Until then, quote the rate with ADR 0022's caveat.
 - **A still-ringing note does not reserve its string** against the next group (spec §2.2).
   Not yet owned; revisit if metrics show it matters.
-- **E3's transition rule measures finger reach as hand movement** (ADR 0022). ADR 0011's
-  owed validation ran on 16.8M human chord shapes: the chord rules hold (99.86% pass, and
-  the "probably too strict" suspicion was wrong), but human tab passes the speed rule only
-  88% of the time, and 83% of the failures are moves of three frets or fewer between single
-  notes. Proposed fix: a hand *window*. The cost model's movement term has the same flaw.
+- **`eval-m1` labels every row "hand-set weights (ADR 0012)"** and prints "ground-zero
+  number" whatever `--decoder-config` says, so the 2026-10-01 fitted-weights rows carry a
+  wrong note (their config column is right). Small fix, needs a test.
 - **`eval-m1` writes the eval config's hypothesis into `results.csv`.** Give every new
-  evaluation its own config with its own hypothesis, as `configs/m2_fitted_eval.yaml` does;
+  evaluation its own config with its own hypothesis, as `configs/m2_window_eval.yaml` does;
   the Phase 1.5 rows still carry M1's hypothesis text.
 
 ## Things that are settled — don't relitigate them
@@ -180,10 +186,22 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
   stretch, and groups unfingerable at any stretch — and reports every one. Use the strict
   version in tests, the best-effort one on real input.
 - **Decoder states are lattice *nodes*, not bare chord shapes** (ADR 0018): a shape plus the
-  hand position carried into it. Only all-open shapes are augmented, which costs 1.07× the
-  state count on real data and 3.03× on a line of nothing but open-string pitches. Re-measure
-  with `scripts/measure_lattice.py`; benchmark decode with `scripts/bench_decode.py`. Anything reading per-shape quantities out of `forward_backward`
-  must sum over nodes; `note_posteriors` does.
+  hand window carried into it. Since ADR 0025 every shape gets one node per reachable
+  window: 2.57× the state count on GuitarSet's reference notes (1.07× under the old point
+  model), and decode is about twice as slow (`decode`, 500 groups: 58.3 → 113.7 ms).
+  Re-measure with `scripts/measure_lattice.py`; benchmark with `scripts/bench_decode.py`.
+  Anything reading per-shape quantities out of `forward_backward` must sum over nodes;
+  `note_posteriors` does.
+- **`fingering.states.shift_window` is the one definition of the hand.** E3, the cost
+  model, the decoder's lattice and the CRF fitter all call it; the brute-force oracle
+  re-derives it from ADR 0025's text on purpose and must not import it.
+- **The window makes moves asymmetric**: from fret 3 (frets 3–7), reaching fret 9 moves the
+  window 2; from fret 9, reaching fret 3 moves it 6, because a hand is placed at its lowest
+  note. Tests pin both directions.
+- **DadaGP fits and calibrations take minutes, not seconds.** A 600-song window fit runs in
+  roughly ten minutes; `scripts/calibrate_temperature.py` builds each lattice once and only
+  reruns forward-backward per trial temperature. Run long jobs under `caffeinate -i` so the
+  machine does not sleep mid-run.
 - **E7 in `results.csv` is too noisy to compare across runs.** The `eval-m1` column measured
   0.0370, 0.17, 0.20 and 0.04 s per audio minute for equivalent work on this machine in one
   afternoon. Benchmark decode directly instead.
@@ -196,12 +214,13 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 
 ## Open items that need Ege, not you
 
-- **ADR 0023's route for the fitted weights**: honour the first pre-registered adoption rule,
-  or earn adoption on a validation proxy chosen in advance. Not: "GuitarSet improved".
-- **Whether the hand-set default gets its own calibrated temperature** — it would cut its E5
-  without changing a single fingering.
-- **The hand-window movement model** (ADR 0022's proposal, Phase 2 plan task C2) — it changes
-  E3, the cost model and the oracle.
+- **The speed limit**: approve a pre-registered experiment on E3's 12 frets/s limit, the
+  remaining reason the transition rate is not a playability measure.
+- **One temperature or one per style**: oracle E5 did not move on clean GuitarSet with a
+  temperature fitted on mostly distorted validation parts. A validation question, best
+  taken with task C3's style work.
+- **The `eval-m1` row label**: fix it, and decide whether the 2026-10-01 rows get a
+  correcting note.
 - **D15 — weight release, the half ADR 0020 left open.** The code is MIT and the repo is
   public. Weights are a **per-corpus** decision, because DadaGP and ProgGP are
   research-use-only: check the terms *before* training anything whose weights might be
