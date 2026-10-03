@@ -33,23 +33,24 @@ from typing import NamedTuple
 
 from tabsampler.errors import UnfingerableGroupError
 from tabsampler.fingering.states import carry_hand, enumerate_states
-from tabsampler.types import ChordState, Context, FingeringScorer, NoteGroup
+from tabsampler.types import ChordState, Context, FingeringScorer, Hand, NoteGroup
 
 
 class LatticeNode(NamedTuple):
     """One decoder state: a chord shape, plus where the hand is while it is played.
 
-    ``carried_hand`` is the lowest fret of the 4-fret hand window after this shape is
-    played (ADR 0025): ``carry_hand`` of the previous node's hand and this shape. For a
-    fretted shape that fits in the window it lies between the shape's highest fret minus 4
-    and its lowest fret -- fret 12 reached from a hand at 5 is played with the hand at 8,
-    not 12 -- and a wider shape anchors it at its lowest fret. For an all-open shape it is
-    the window inherited from earlier, and None only when nothing fretted has been played
+    ``carried_hand`` is the frets the hand covers after this shape is played, as
+    ``(index fret, highest fret)``: ``carry_hand`` of the previous node's hand and this
+    shape (ADR 0025, ADR 0030). For a fretted shape that fits in the 4-fret window the index
+    lies between the shape's highest fret minus 4 and its lowest fret -- fret 12 reached
+    from a hand at 5 is played with the index at 8, not 12 -- and a wider shape puts the
+    index on its lowest fret and stretches the hand to its highest. For an all-open shape it
+    is the hand inherited from earlier, and None only when nothing fretted has been played
     yet.
     """
 
     state: ChordState
-    carried_hand: int | None
+    carried_hand: Hand | None
 
 
 def node_transition_cost(prior: LatticeNode, node: LatticeNode, scorer: FingeringScorer) -> float:
@@ -93,7 +94,7 @@ def build_lattice(
     # Hand positions the previous level can leave behind. Nothing precedes group 0, so
     # an all-open opening shape starts from no hand position at all -- which is what
     # keeps the first group's cost unchanged from M1.
-    carried: tuple[int | None, ...] = (None,)
+    carried: tuple[Hand | None, ...] = (None,)
     for index, group in enumerate(groups):
         span = ctx.max_span if spans is None else spans[index]
         states = enumerate_states(group, ctx.tuning, span)

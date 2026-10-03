@@ -172,29 +172,29 @@ def test_rules_are_data_and_can_be_relaxed() -> None:
 
 def test_a_reach_inside_one_position_is_not_a_hand_move() -> None:
     # 5 -> 7 in a sixteenth note used to read as 16 frets/s (ADR 0022). Now: no move.
-    reason, hand = hand_move_is_playable(5, pos((0, 7)), 0.125, RULES)
-    assert reason is None and hand == 5
+    reason, hand = hand_move_is_playable((5, 9), pos((0, 7)), 0.125, RULES)
+    assert reason is None and hand == (5, 9)
 
 
 def test_a_slow_long_jump_passes() -> None:
-    reason, hand = hand_move_is_playable(2, pos((1, 12)), 2.0, RULES)
-    assert reason is None and hand == 8
+    reason, hand = hand_move_is_playable((2, 6), pos((1, 12)), 2.0, RULES)
+    assert reason is None and hand == (8, 12)
 
 
 def test_the_same_jump_played_fast_fails() -> None:
-    reason, _ = hand_move_is_playable(2, pos((1, 12)), 0.1, RULES)
+    reason, _ = hand_move_is_playable((2, 6), pos((1, 12)), 0.1, RULES)
     assert reason is not None and "frets/s" in reason
 
 
 def test_a_jump_with_no_time_between_groups_fails() -> None:
-    reason, _ = hand_move_is_playable(2, pos((1, 12)), 0.0, RULES)
+    reason, _ = hand_move_is_playable((2, 6), pos((1, 12)), 0.0, RULES)
     assert reason is not None
 
 
 def test_no_move_with_no_time_between_groups_passes() -> None:
     # Distance is judged before time: a reach inside the window needs no time at all.
-    reason, hand = hand_move_is_playable(5, pos((0, 7)), 0.0, RULES)
-    assert reason is None and hand == 5
+    reason, hand = hand_move_is_playable((5, 9), pos((0, 7)), 0.0, RULES)
+    assert reason is None and hand == (5, 9)
 
 
 def test_a_jump_across_an_open_string_is_still_a_jump() -> None:
@@ -231,8 +231,9 @@ def test_open_strings_between_two_fretted_shapes_never_change_the_verdict(
 
 
 def test_a_shape_with_two_notes_on_one_string_still_moves_the_hand() -> None:
-    reason, hand = hand_move_is_playable(5, pos((0, 3), (0, 12)), 5.0, RULES)
-    assert hand == 3 and reason is None
+    # Frets 3 and 12 cannot fit one rest window: the index goes to 3, stretched to 12.
+    reason, hand = hand_move_is_playable((5, 9), pos((0, 3), (0, 12)), 5.0, RULES)
+    assert hand == (3, 12) and reason is None
 
 
 # ------------------------------------------------------------------ whole tab

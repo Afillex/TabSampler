@@ -39,36 +39,44 @@ def path_cost(
     C = sum of emission costs + sum of movement costs, where movement is charged against
     **where the hand was**, not against the previous shape.
 
-    The hand is a 4-fret window, written out here from ADR 0025's text and not imported, so
-    this stays an independent check on the decoder *and* on the cost model's movement term:
+    The hand covers a range of frets, written out here from ADR 0030's text (which keeps
+    ADR 0025's window) and not imported, so this stays an independent check on the decoder
+    *and* on the cost model's movement term:
 
-    - the hand starts nowhere, and the first fretted shape places it at its lowest fret,
-      for free;
-    - open strings need no hand, so an all-open shape leaves it where it was;
-    - a shape whose fretted notes all lie within frets ``hand`` to ``hand + 4`` costs no
-      movement: a finger reaches, the hand stays;
-    - otherwise the window moves by the least distance that brings the shape inside it --
-      down to the lowest note, or up until the highest fits -- and a shape wider than the
-      window anchors at its lowest fret. Movement costs ``move`` per fret moved.
+    - the first fretted shape places the hand, for free;
+    - a fretted shape whose notes all lie inside the range the hand covers costs nothing,
+      and the index finger stays where it was;
+    - otherwise the index moves to the start, among those whose rest window (start to
+      start + 4) holds the whole shape, closest to where it was -- and a shape wider than
+      the rest window can only be held stretched, with the index on its own lowest fret;
+    - after every fretted shape the hand covers from its index to the higher of index + 4
+      and the shape's highest fret: stretched only while a shape needs it;
+    - an all-open shape leaves the hand as it was, stretch included;
+    - movement is the distance the index moves, charged at ``move`` per fret.
     """
     total = 0.0
     for group, state in zip(groups, path, strict=True):
         total += scorer.emission_cost(group, state, ctx)
 
-    hand: int | None = None
+    hand: tuple[int, int] | None = None  # (index fret, highest fret the hand covers)
     for state in path:
         fretted = sorted(p.fret for p in state.positions if p.fret > 0)
         if not fretted:
-            continue  # open strings need no hand; it stays where it was
+            continue  # open strings need no hand; it stays as it was, stretch and all
         low, high = fretted[0], fretted[-1]
         if hand is None:
-            hand = low  # the first fretted shape places the hand, at no cost
+            hand = (low, max(low + 4, high))  # the first fretted shape places it, free
             continue
-        if hand <= low and high <= hand + 4:
-            continue  # inside the 4-fret window: a finger reaches, the hand does not move
-        new = low if low < hand else min(low, high - 4)
-        total += scorer.weights.move * abs(new - hand)  # type: ignore[attr-defined]
-        hand = new
+        index, covered_to = hand
+        if index <= low and high <= covered_to:
+            new_index = index  # inside what the hand covers: a finger reaches
+        elif high - low > 4:
+            new_index = low  # only a stretch holds it, from its own lowest fret
+        else:
+            holding = range(high - 4, low + 1)  # every rest window that holds the shape
+            new_index = min(holding, key=lambda start: abs(start - index))
+        total += scorer.weights.move * abs(new_index - index)  # type: ignore[attr-defined]
+        hand = (new_index, max(new_index + 4, high))
     return total
 
 

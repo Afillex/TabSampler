@@ -40,6 +40,7 @@ from tabsampler.types import (
     ChordState,
     Context,
     CostWeights,
+    Hand,
     NoteGroup,
     assert_state_matches_group,
 )
@@ -83,16 +84,16 @@ class HandSetScorer:
             + w.acoustic * 0.0
         )
 
-    def transition_cost_from(self, previous_hand: int | None, curr: ChordState) -> float:
+    def transition_cost_from(self, previous_hand: Hand | None, curr: ChordState) -> float:
         """Movement cost given where the hand *was*, not which shape it was in.
 
-        This is what the decoder calls. Passing a hand position rather than a shape is
-        what lets an all-open shape carry the hand forward instead of erasing it
-        (ADR 0018). The hand is a 4-fret window and moves only when ``curr`` has a
-        fretted note outside it, by the least distance that brings ``curr`` inside
-        (ADR 0025), so a finger reaching within one position costs nothing.
-        ``previous_hand`` is None before the first fretted shape, and an all-open ``curr``
-        needs no move, so both cost nothing.
+        This is what the decoder calls. Passing the hand rather than a shape is what lets
+        an all-open shape carry the hand forward instead of erasing it (ADR 0018). The hand
+        covers a 4-fret window, stretched over a wider chord while one needs it, and moves
+        only when ``curr`` has a fretted note outside what it covers (ADR 0025, ADR 0030),
+        so a finger reaching within one position costs nothing. ``previous_hand`` is None
+        before the first fretted shape, and an all-open ``curr`` needs no move, so both
+        cost nothing.
         """
         return self.weights.move * shift_window(previous_hand, curr.fretted_frets)[1]
 
@@ -103,9 +104,9 @@ class HandSetScorer:
         charges nothing when either shape is all open, because on its own it cannot know
         where the hand was; the decoder uses :meth:`transition_cost_from` for that.
         """
-        return self.transition_cost_from(prev.hand_position, curr)
+        return self.transition_cost_from(carry_hand(None, prev), curr)
 
-    def carry(self, previous_hand: int | None, curr: ChordState) -> int | None:
+    def carry(self, previous_hand: Hand | None, curr: ChordState) -> Hand | None:
         """The hand position after playing ``curr``. An all-open shape inherits.
 
         Delegates to :func:`tabsampler.fingering.states.carry_hand`, which is where the

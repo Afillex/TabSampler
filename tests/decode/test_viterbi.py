@@ -178,12 +178,15 @@ def test_the_hand_does_not_teleport_across_an_intervening_open_chord() -> None:
 
 
 def test_the_first_level_places_each_window_at_its_shapes_lowest_fret() -> None:
-    # Nothing precedes group 0, so every fretted shape there starts its hand window at its
-    # own lowest fret and gets exactly one node (ADR 0025). Later levels can carry more.
+    # Nothing precedes group 0, so every fretted shape there puts the index on its own
+    # lowest fret, the hand at rest over the four above it, and gets exactly one node
+    # (ADR 0025, ADR 0030). Later levels can carry more.
     fretted = group(56)  # no open string sounds MIDI 56
     (level,) = build_lattice([fretted], CTX)
     assert len(level) == len(enumerate_states(fretted, STANDARD, CTX.max_span))
-    assert all(node.carried_hand == node.state.hand_position for node in level)
+    for node in level:
+        frets = node.state.fretted_frets
+        assert node.carried_hand == (frets[0], max(frets[0] + 4, frets[-1]))
 
 
 def test_the_first_level_carries_no_hand_for_an_all_open_state() -> None:

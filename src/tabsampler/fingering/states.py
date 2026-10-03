@@ -25,7 +25,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from tabsampler.fingering.candidates import candidates
-from tabsampler.types import ChordState, NoteGroup, Position, Tuning
+from tabsampler.types import ChordState, Hand, NoteGroup, Position, Tuning
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,39 +39,44 @@ class StateStats:
     mean_states: float
 
 
-#: Frets one hand position covers, in span units: fret h to fret h + 4, as ADR 0011's span
-#: limit below fret 12. Fixed by decision, not fitted (ADR 0025).
+#: Frets a hand at rest covers above its index finger, in span units: fret h to fret h + 4,
+#: as ADR 0011's span limit below fret 12. Fixed by decision, not fitted (ADR 0025).
 HAND_WINDOW = 4
 
 
 def shift_window(
-    previous_hand: int | None, fretted: Sequence[int], window: int = HAND_WINDOW
-) -> tuple[int | None, int]:
-    """Where the hand's window starts after a shape, and how far it had to move (ADR 0025).
+    previous: Hand | None, fretted: Sequence[int], window: int = HAND_WINDOW
+) -> tuple[Hand | None, int]:
+    """The frets the hand covers after a shape, and how far its index finger moved.
 
-    The hand covers frets ``hand`` to ``hand + window`` and moves only when a fretted note
-    falls outside that range, by the least distance that brings the shape inside it. A
-    shape wider than the window anchors at its lowest fret. Open strings need no hand, so
-    an all-open shape (``fretted`` empty) leaves it where it was. ``fretted`` is ascending.
+    At rest the hand covers its index fret and the ``window`` frets above it (ADR 0025). A
+    shape inside what the hand covers costs nothing. Otherwise the index moves by the least
+    distance that lets a rest window hold the shape; a shape wider than that can only be
+    held stretched, from its own lowest fret, and the hand stays stretched only while a
+    shape needs it (ADR 0030). Open strings need no hand, so an all-open shape (``fretted``
+    empty) leaves it as it was. ``fretted`` is ascending.
     """
     if not fretted:
-        return previous_hand, 0
+        return previous, 0
     low, high = fretted[0], fretted[-1]
-    if previous_hand is None:
-        return low, 0
-    if low >= previous_hand and high <= previous_hand + window:
-        return previous_hand, 0
-    new = low if low < previous_hand else min(low, high - window)
-    return new, abs(new - previous_hand)
+    if previous is None:
+        return (low, max(low + window, high)), 0
+    start, end = previous
+    if start <= low and high <= end:
+        new_start = start
+    elif low < start or high - low > window:
+        new_start = low
+    else:
+        new_start = high - window
+    return (new_start, max(new_start + window, high)), abs(new_start - start)
 
 
-def carry_hand(previous_hand: int | None, state: ChordState) -> int | None:
-    """Where the hand's window starts after playing ``state``, given where it was before.
+def carry_hand(previous_hand: Hand | None, state: ChordState) -> Hand | None:
+    """The frets the hand covers after playing ``state``, given what it covered before.
 
-    The hand is a 4-fret window (ADR 0025, see :func:`shift_window`): a finger reaching
-    inside it does not move it, and an all-open shape **inherits** the previous position
-    rather than resetting to fret 0 (ADR 0018). ``None`` means the hand has not been
-    anywhere yet.
+    See :func:`shift_window`: a finger reaching inside the hand does not move it, a wide
+    chord stretches it (ADR 0030), and an all-open shape **inherits** the previous hand
+    rather than resetting it (ADR 0018). ``None`` means the hand has not been anywhere yet.
     """
     return shift_window(previous_hand, state.fretted_frets)[0]
 

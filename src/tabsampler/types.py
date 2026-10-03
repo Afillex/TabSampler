@@ -262,22 +262,29 @@ class Transcriber(Protocol):
     def transcribe(self, audio: NDArray[np.float32], sr: int) -> list[NoteEvent]: ...
 
 
+#: The frets a fretting hand covers: (index-finger fret, highest fret it reaches). At rest
+#: that is four frets above the index (ADR 0025); a chord wider than that stretches it to
+#: the chord's own highest fret while a shape needs the stretch (ADR 0030).
+Hand = tuple[int, int]
+
+
 @runtime_checkable
 class FingeringScorer(Protocol):
     """How comfortable a shape is, and how hard it is to move between shapes (spec 2.2).
 
-    ``transition_cost_from`` is what the decoder calls, and it takes a *hand position*
-    rather than a previous shape. The reason is ADR 0018: an all-open shape has no hand
-    position of its own, so a scorer that only ever sees the previous shape cannot charge
-    the movement across one. ``transition_cost`` is kept as the stateless convenience the
-    spec names and must agree with it on any shape that has a hand position.
+    ``transition_cost_from`` is what the decoder calls, and it takes the *hand* -- the frets
+    it covers (ADR 0030) -- rather than a previous shape. The reason is ADR 0018: an all-open
+    shape has no hand position of its own, so a scorer that only ever sees the previous
+    shape cannot charge the movement across one. ``transition_cost`` is kept as the
+    stateless convenience the spec names and must agree with it on any shape that has a
+    hand position.
     """
 
     def emission_cost(self, group: NoteGroup, state: ChordState, ctx: Context) -> float: ...
 
     def transition_cost(self, prev: ChordState, curr: ChordState) -> float: ...
 
-    def transition_cost_from(self, previous_hand: int | None, curr: ChordState) -> float: ...
+    def transition_cost_from(self, previous_hand: Hand | None, curr: ChordState) -> float: ...
 
 
 @runtime_checkable

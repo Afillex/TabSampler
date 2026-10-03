@@ -44,7 +44,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from tabsampler.fingering.states import HAND_WINDOW, shift_window
-from tabsampler.types import Position, TabNote
+from tabsampler.types import Hand, Position, TabNote
 
 #: (onset in seconds, the positions sounding at that onset)
 Shape = tuple[float, tuple[Position, ...]]
@@ -161,8 +161,8 @@ def group_is_playable(positions: Sequence[Position], rules: PlayabilityRules) ->
 
 
 def hand_move_is_playable(
-    hand: int | None, positions: Sequence[Position], seconds: float, rules: PlayabilityRules
-) -> tuple[str | None, int | None]:
+    hand: Hand | None, positions: Sequence[Position], seconds: float, rules: PlayabilityRules
+) -> tuple[str | None, Hand | None]:
     """Whether the hand can make the move this shape needs in ``seconds``, and where it ends.
 
     The hand is a window (ADR 0025): a finger reaching inside it is not a move, and an
@@ -192,7 +192,7 @@ def hand_moves(shapes: Sequence[Shape]) -> list[tuple[int, float]]:
     -- because an all-open shape in between leaves the hand free (ADR 0029).
     """
     moves: list[tuple[int, float]] = []
-    hand: int | None = None
+    hand: Hand | None = None
     placed_at: float | None = None
     for index, (onset, positions) in enumerate(shapes):
         fretted = fretted_frets(positions)

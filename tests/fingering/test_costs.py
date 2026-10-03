@@ -130,28 +130,31 @@ def test_transition_to_or_from_an_all_open_state_is_free() -> None:
 
 def test_movement_is_charged_across_an_intervening_open_chord() -> None:
     s = scorer()
-    # fret 2 -> all-open -> fret 10. The window starting at 2 covers frets 2-6, so reaching
+    # fret 2 -> all-open -> fret 10. A hand with its index on 2 covers frets 2-6, so reaching
     # fret 10 moves it 4, to 6-10 (ADR 0025); the open chord in between changes nothing.
-    assert s.transition_cost_from(2, state((1, 0))) == 0.0  # nothing to move to
-    assert s.transition_cost_from(2, state((0, 10))) == pytest.approx(4.0 * s.weights.move)
-    # An all-open shape carries the previous position forward rather than resetting to 0.
-    assert s.carry(previous_hand=2, curr=state((1, 0))) == 2
-    assert s.carry(previous_hand=2, curr=state((0, 10))) == 6
+    assert s.transition_cost_from((2, 6), state((1, 0))) == 0.0  # nothing to move to
+    assert s.transition_cost_from((2, 6), state((0, 10))) == pytest.approx(4.0 * s.weights.move)
+    # An all-open shape carries the previous hand forward rather than resetting it.
+    assert s.carry(previous_hand=(2, 6), curr=state((1, 0))) == (2, 6)
+    assert s.carry(previous_hand=(2, 6), curr=state((0, 10))) == (6, 10)
     assert s.carry(previous_hand=None, curr=state((1, 0))) is None
 
 
 def test_a_reach_inside_the_window_costs_nothing() -> None:
     s = scorer()
-    assert s.transition_cost_from(5, state((0, 8))) == 0.0
+    assert s.transition_cost_from((5, 9), state((0, 8))) == 0.0
 
 
-def test_transition_cost_is_transition_cost_from_the_previous_hand_position() -> None:
+def test_transition_cost_is_transition_cost_from_the_hand_the_previous_shape_leaves() -> None:
     # The stateless method stays on the FingeringScorer Protocol and must agree with the
     # hand-aware one, so the two cannot drift apart.
+    from tabsampler.fingering.states import carry_hand
+
     s = scorer()
-    for prev in (state((0, 2)), state((1, 0)), state((0, 5), (1, 7))):
-        for curr in (state((2, 0)), state((0, 10)), state((3, 4), (4, 6))):
-            assert s.transition_cost(prev, curr) == s.transition_cost_from(prev.hand_position, curr)
+    for prev in (state((0, 2)), state((1, 0)), state((0, 5), (1, 7)), state((0, 12), (1, 17))):
+        for curr in (state((2, 0)), state((0, 10)), state((3, 4), (4, 6)), state((1, 17))):
+            expected = s.transition_cost_from(carry_hand(None, prev), curr)
+            assert s.transition_cost(prev, curr) == expected
 
 
 # ------------------------------------------------------------------ robustness

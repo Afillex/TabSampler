@@ -38,7 +38,7 @@ from scipy.special import logsumexp  # pyright: ignore[reportUnknownVariableType
 from tabsampler.decode.viterbi import build_lattice
 from tabsampler.fingering.costs import FRETS_PER_OCTAVE, count_open, mean_fretted_fret
 from tabsampler.fingering.states import shift_window
-from tabsampler.types import ChordState, Context, CostWeights, NoteGroup
+from tabsampler.types import ChordState, Context, CostWeights, Hand, NoteGroup
 
 #: Order of the weight vector, and of every feature vector.
 WEIGHT_NAMES = ("move", "span", "high", "open_reward")
@@ -114,7 +114,7 @@ def _shape_features(state: ChordState) -> Vector:
 def path_features(states: Sequence[ChordState]) -> Vector:
     """``Phi`` of one path: the shape features summed, plus the hand window's movement."""
     total = np.zeros(4)
-    hand: int | None = None
+    hand: Hand | None = None
     for state in states:
         total += _shape_features(state)
         hand, moved = shift_window(hand, state.fretted_frets)
