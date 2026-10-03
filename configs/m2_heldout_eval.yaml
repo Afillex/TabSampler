@@ -1,0 +1,37 @@
+# The default decoder and the previous one on the new test set, GuitarSet's players 01-05
+# (ADR 0037), once each (docs/plans/2026-10-03-guitarset-validation-player.md, Task 4).
+#
+# Written and committed BEFORE the runs. Nothing is chosen from them: the default was
+# re-decided on player 00 (ADR 0038). CONTAMINATED, as ADR 0037 says: these 300 tracks were
+# part of the earlier 360-track runs, so most of what follows is derived, not predicted.
+
+hypothesis: >-
+  On GuitarSet's test players 01-05 (300 tracks), the default decoder (hand-set weights,
+  window and stretch, T 1.5728; ADR 0038) and the previous default (clean-fitted weights,
+  T 1.1975; ADR 0032) measure as the earlier 360-track runs and player 00's validation runs
+  imply. These are derived from runs already seen, not independent predictions (ADR 0037):
+  oracle E2 about 0.656 for the default (its 360-track figure 0.6878, measured before the
+  stretch, less player 00's 0.8065; within 0.005 if the stretch changes little) and 0.6257
+  for the previous default, so the default is ahead by about three points; both far from
+  ADR 0016's 0.760. E1 and E4 as before. E3 chord shapes within 0.002 of the 360-track
+  figures. E3 transitions and E5 for the default on this test set are new: its temperature
+  changed (1.5728) and transitions follow ADR 0029-0031's rule; on player 00 they were
+  0.9997 / 0.9952 and oracle / end-to-end E5 0.1178 / 0.2100. Metrics: E1-E5. Split:
+  GuitarSet test, players 01-05, oracle and end to end.
+
+dataset:
+  name: guitarset
+  data_home: data/guitarset
+  channel: audio_mic
+
+transcriber:
+  exe: basic-pitch
+  cache_dir: cache/note_events
+  onset_threshold: 0.5
+  frame_threshold: 0.3
+  minimum_note_length_ms: 127.70
+  model_serialization: coreml
+  version_tag: basic-pitch-0.4.0
+
+onset_tolerance: 0.05
+seed: 0
