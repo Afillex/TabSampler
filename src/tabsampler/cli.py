@@ -55,7 +55,7 @@ from tabsampler.fingering.candidates import group_notes
 from tabsampler.fingering.costs import HandSetScorer
 from tabsampler.render.ascii import render_ascii_with_legend
 from tabsampler.render.json_out import render_json
-from tabsampler.results import append_row, results_row
+from tabsampler.results import append_row, describe_weights, m1_row_notes, results_row
 from tabsampler.transcribe.basic_pitch_cli import BasicPitchCLITranscriber
 from tabsampler.types import NoteEvent, TabNote
 
@@ -205,10 +205,7 @@ def eval_m1(
     dec = load_phase1_config(decoder)
     console.print(f"[bold]config[/bold] {config}  [bold]decoder[/bold] {decoder}")
     console.print(f"[bold]hypothesis[/bold] {cfg.hypothesis.strip()}")
-    console.print(
-        "[yellow]Cost weights are hand-set, not tuned (ADR 0012). This is the "
-        "ground-zero number.[/yellow]"
-    )
+    console.print(f"[bold]decoder weights[/bold] {describe_weights(dec.weights)}")
 
     track_ids = list(guitarset_test_ids())
     total = len(track_ids)
@@ -290,7 +287,7 @@ def eval_m1(
                 on_track_done=advance,
             )
 
-    _print_m1_table(reports)
+    _print_m1_table(reports, decoder)
     console.print(
         f"[dim]transcriber cache: {transcriber.cache_hits} hits, "
         f"{transcriber.cache_misses} misses. E7 above is decode time when the cache is "
@@ -318,23 +315,24 @@ def eval_m1(
                 e3=report.e3_group_rate,
                 e5=report.e5_ece,
                 e7=report.runtime_seconds_per_audio_minute,
-                notes=(
-                    f"{cfg.dataset.channel}; hand-set weights (ADR 0012); "
-                    f"E1 is the pipeline's (placed) figure, transcriber raw "
-                    f"{report.e1_incoming.f1:.4f}; "
-                    f"E3 transitions {report.e3_transition_rate:.4f}; "
-                    f"E4 {report.e4:.4f}; {len(track_ids)} tracks; "
-                    f"E7 is decode-only ({transcriber.cache_hits} cache hits, "
-                    f"{transcriber.cache_misses} misses) and too noisy to compare "
-                    f"across runs (ADR 0018)"
+                notes=m1_row_notes(
+                    channel=cfg.dataset.channel,
+                    decoder=decoder,
+                    weights=dec.weights,
+                    e1_raw=report.e1_incoming.f1,
+                    e3_transitions=report.e3_transition_rate,
+                    e4=report.e4,
+                    n_tracks=len(track_ids),
+                    cache_hits=transcriber.cache_hits,
+                    cache_misses=transcriber.cache_misses,
                 ),
             ),
         )
     console.print(f"[green]appended {len(reports)} results rows to {results}[/green]")
 
 
-def _print_m1_table(reports: dict[str, FullReport]) -> None:
-    table = Table(title="M1 results (GuitarSet, hand-set weights, micro-averaged)")
+def _print_m1_table(reports: dict[str, FullReport], decoder: Path) -> None:
+    table = Table(title=f"M1 results (GuitarSet, decoder {decoder}, micro-averaged)")
     table.add_column("metric")
     for mode in reports:
         table.add_column(mode, justify="right")

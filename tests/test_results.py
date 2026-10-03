@@ -6,7 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from tabsampler.results import RESULTS_COLUMNS, append_row, results_row
+from tabsampler.config import load_phase1_config
+from tabsampler.results import (
+    RESULTS_COLUMNS,
+    append_row,
+    describe_weights,
+    m1_row_notes,
+    results_row,
+)
 
 
 def test_columns_match_the_committed_schema() -> None:
@@ -126,3 +133,36 @@ def test_mode_must_be_oracle_or_e2e() -> None:
             e1=0.1,
             seed=0,
         )
+
+
+CONFIGS = Path(__file__).resolve().parents[1] / "configs"
+
+
+def test_m1_row_notes_state_the_decoders_actual_weights() -> None:
+    # eval-m1 used to write "hand-set weights (ADR 0012)" into every row whatever the
+    # decoder was, so the 2026-10-01 rows for the DadaGP-fitted decoder were mislabelled.
+    fitted = CONFIGS / "fitted_dadagp.yaml"
+    notes = m1_row_notes(
+        channel="audio_mic",
+        decoder=fitted,
+        weights=load_phase1_config(fitted).weights,
+        e1_raw=0.7437,
+        e3_transitions=0.9004,
+        e4=1.0,
+        n_tracks=360,
+        cache_hits=360,
+        cache_misses=0,
+    )
+    assert "hand-set" not in notes
+    assert "fitted_dadagp.yaml" in notes
+    assert "move 0.5772" in notes
+    assert "open_reward -1.1483" in notes
+    assert "temperature 1.721" in notes
+
+
+def test_described_weights_include_the_temperature() -> None:
+    # The temperature changes every posterior, so a row that omits it cannot be reproduced.
+    weights = load_phase1_config(CONFIGS / "phase1_baseline.yaml").weights
+    assert describe_weights(weights) == (
+        "move 1, span 1, high 0.1, open_reward 0.25, temperature 2.9974"
+    )

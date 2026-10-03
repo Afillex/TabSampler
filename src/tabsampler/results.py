@@ -13,6 +13,8 @@ import csv
 import datetime as dt
 from pathlib import Path
 
+from tabsampler.types import CostWeights
+
 #: The results schema. Fixed: every row ever written uses these columns, in this order.
 RESULTS_COLUMNS = (
     "date",
@@ -83,6 +85,47 @@ def results_row(
         "seed": str(seed),
         "notes": notes,
     }
+
+
+def describe_weights(weights: CostWeights) -> str:
+    """A decoder's cost weights and temperature, stated rather than labelled.
+
+    Rows once said "hand-set weights" whatever the decoder was, which mislabelled the runs
+    with fitted weights; the values themselves cannot be wrong. The acoustic term is listed
+    only once it is in use (Phase 3).
+    """
+    parts = [
+        f"move {weights.move:g}",
+        f"span {weights.span:g}",
+        f"high {weights.high:g}",
+        f"open_reward {weights.open_reward:g}",
+    ]
+    if weights.acoustic:
+        parts.append(f"acoustic {weights.acoustic:g}")
+    parts.append(f"temperature {weights.temperature:g}")
+    return ", ".join(parts)
+
+
+def m1_row_notes(
+    *,
+    channel: str,
+    decoder: Path,
+    weights: CostWeights,
+    e1_raw: float,
+    e3_transitions: float,
+    e4: float,
+    n_tracks: int,
+    cache_hits: int,
+    cache_misses: int,
+) -> str:
+    """The notes column of an ``eval-m1`` row, naming the decoder that produced it."""
+    return (
+        f"{channel}; decoder {decoder}: {describe_weights(weights)}; "
+        f"E1 is the pipeline's (placed) figure, transcriber raw {e1_raw:.4f}; "
+        f"E3 transitions {e3_transitions:.4f}; E4 {e4:.4f}; {n_tracks} tracks; "
+        f"E7 is decode-only ({cache_hits} cache hits, {cache_misses} misses) and too noisy "
+        f"to compare across runs (ADR 0018)"
+    )
 
 
 def append_row(path: Path | str, row: dict[str, str]) -> None:
