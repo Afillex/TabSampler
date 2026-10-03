@@ -243,5 +243,4 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 ## When you finish a session
 
 Write `docs/devlog/YYYY-MM-DD.md`: what was done, what was measured, what's next, open
-questions. Update this file if the
-state a fresh agent needs has changed.
+questions. Update this file if what a newcomer needs to know has changed.

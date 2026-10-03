@@ -144,5 +144,5 @@ Three things fall out of this:
    That is 1.0% of groups, and it is exactly why `decode_best_effort` drops notes rather
    than relaxing further.
 
-Reproduce: the measurement script is throwaway and lives in the scratchpad, not the repo.
+Reproduce: the measurement script was throwaway and is not in the repo.
 It calls `state_count_stats`, which is in `fingering/states.py` for this purpose.

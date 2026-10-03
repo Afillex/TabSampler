@@ -682,7 +682,7 @@ dropped note is never invisible.
 
 - [ ] **Step 4: Run the tests, then drive it for real**
 
-Use the `agent-browser` skill: start the server, upload a GuitarSet clip, screenshot the
+Use a headless browser: start the server, upload a GuitarSet clip, screenshot the
 result, and check the page against what `tabsampler transcribe` prints for the same file.
 They must agree note for note.
 
