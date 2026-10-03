@@ -25,12 +25,19 @@ import math
 from collections.abc import Sequence
 from pathlib import Path
 
+import numpy as np
 from scipy.optimize import minimize_scalar  # pyright: ignore[reportUnknownVariableType]
 
 from tabsampler.config import load_phase1_config
 from tabsampler.data.dadagp import load_tracks
 from tabsampler.data.splits import Split
-from tabsampler.decode.forward_backward import decode
+from tabsampler.decode.forward_backward import (  # the decoder's own log-space passes
+    _cost_arrays,  # pyright: ignore[reportPrivateUsage]
+    _log_alpha_beta,  # pyright: ignore[reportPrivateUsage]
+    _lse_scalar,  # pyright: ignore[reportPrivateUsage]
+    decode,
+)
+from tabsampler.decode.viterbi import build_lattice, viterbi
 from tabsampler.eval.calibration import expected_calibration_error
 from tabsampler.fingering.costs import HandSetScorer
 from tabsampler.fingering.fit import HumanSequence, human_sequences
@@ -64,6 +71,48 @@ def score(
     return nll / len(confidences), expected_calibration_error(confidences, correct)
 
 
+def prepare(sequences: Sequence[HumanSequence], weights: CostWeights, ctx: Context):
+    """Everything the temperature cannot change, computed once: per sequence, the lattice's
+    cost arrays and, per level and note, which nodes place that note at the human position
+    and which at the decoded (Viterbi) one. The Viterbi path does not depend on T."""
+    scorer = HandSetScorer(weights=weights)
+    prepared = []
+    for seq in sequences:
+        lattice = build_lattice(seq.groups, ctx, seq.spans)
+        emissions, transitions = _cost_arrays(seq.groups, lattice, scorer, ctx)
+        path, _ = viterbi(seq.groups, scorer, ctx, seq.spans)
+        masks = []
+        for nodes, truth, chosen in zip(lattice, seq.states, path, strict=True):
+            per_note = []
+            for i, (human, decoded) in enumerate(
+                zip(truth.positions, chosen.positions, strict=True)
+            ):
+                at_human = np.array([n.state.positions[i] == human for n in nodes])
+                at_chosen = np.array([n.state.positions[i] == decoded for n in nodes])
+                per_note.append((at_human, at_chosen, human == decoded))
+            masks.append(per_note)
+        prepared.append((emissions, transitions, masks))
+    return prepared
+
+
+def fast_score(prepared, temperature: float):
+    """``score`` on prepared sequences: only forward-backward is redone for each T."""
+    nll = 0.0
+    confidences: list[float] = []
+    correct: list[bool] = []
+    for emissions, transitions, masks in prepared:
+        log_alpha, log_beta = _log_alpha_beta(emissions, transitions, temperature)
+        log_z = _lse_scalar(log_alpha[-1])
+        for a, b, per_note in zip(log_alpha, log_beta, masks, strict=True):
+            log_gamma = a + b - log_z
+            gamma = np.exp(log_gamma - _lse_scalar(log_gamma))  # as decode() renormalises
+            for at_human, at_chosen, hit in per_note:
+                nll -= math.log(max(float(gamma[at_human].sum()), EPSILON))
+                confidences.append(min(max(float(gamma[at_chosen].sum()), 0.0), 1.0))
+                correct.append(hit)
+    return nll / len(confidences), expected_calibration_error(confidences, correct)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("archive", type=Path)
@@ -90,17 +139,20 @@ def main() -> None:
         for s in human_sequences(track.steps, ctx)
     ]
 
-    before_nll, before_ece = score(val, weights, ctx, 1.0)
-    print(f"T = 1.0000: per-note NLL {before_nll:.4f}  calibration error {before_ece:.4f}")
+    prepared = prepare(val, weights, ctx)
+    before_nll, before_ece = fast_score(prepared, 1.0)
+    print(
+        f"T = 1.0000: per-note NLL {before_nll:.4f}  calibration error {before_ece:.4f}", flush=True
+    )
 
     result = minimize_scalar(  # pyright: ignore[reportUnknownVariableType]
-        lambda log_t: score(val, weights, ctx, math.exp(log_t))[0],
+        lambda log_t: fast_score(prepared, math.exp(log_t))[0],
         bounds=(math.log(0.1), math.log(10.0)),
         method="bounded",
         options={"xatol": 1e-3},
     )
     best = math.exp(float(result.x))  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
-    after_nll, after_ece = score(val, weights, ctx, best)
+    after_nll, after_ece = fast_score(prepared, best)
     print(f"T = {best:.4f}: per-note NLL {after_nll:.4f}  calibration error {after_ece:.4f}")
 
 
