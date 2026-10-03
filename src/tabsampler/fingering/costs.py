@@ -11,6 +11,9 @@ with the emission term itself carrying the span, neck-height and open-string par
     emission = lambda_span * span
              + lambda_high * (mean fretted fret / 12)
              - open_reward * (number of open strings)
+             + sum of string_bias over the strings its notes are on    # ADR 0034
+             + low_region * (fretted notes at frets 1-4)               # ADR 0034
+             + high_region * (fretted notes at fret 12 or above)       # ADR 0034
              + lambda_ac * acoustic          # zero until Phase 3
 
 Weights are hand-set for M1 and live in ``configs/phase1_baseline.yaml``. ADR 0012
@@ -60,6 +63,20 @@ def count_open(state: ChordState) -> int:
     return sum(1 for p in state.positions if p.is_open)
 
 
+#: Fretted notes at or below this fret are in open position; at or above
+#: ``HIGH_REGION_BOTTOM``, on the upper neck. Frets between are the reference (ADR 0034).
+LOW_REGION_TOP = 4
+HIGH_REGION_BOTTOM = 12
+
+
+def count_low_region(state: ChordState) -> int:
+    return sum(1 for fret in state.fretted_frets if fret <= LOW_REGION_TOP)
+
+
+def count_high_region(state: ChordState) -> int:
+    return sum(1 for fret in state.fretted_frets if fret >= HIGH_REGION_BOTTOM)
+
+
 @dataclass(frozen=True, slots=True)
 class HandSetScorer:
     """A :class:`~tabsampler.types.FingeringScorer` with hand-set weights."""
@@ -78,6 +95,10 @@ class HandSetScorer:
             w.span * state.span
             + w.high * (mean_fretted_fret(state) / FRETS_PER_OCTAVE)
             - w.open_reward * count_open(state)
+            # ADR 0034's feature groups: zero unless a config sets them.
+            + sum(w.string_bias[p.string] for p in state.positions)
+            + w.low_region * count_low_region(state)
+            + w.high_region * count_high_region(state)
             # The acoustic term (spec 2.2's lambda_ac) enters at Phase 3, when a
             # per-note -log P(string | audio) exists. Until then it is identically 0,
             # so the weight is inert by construction rather than by omission.

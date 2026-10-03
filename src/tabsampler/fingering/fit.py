@@ -2,10 +2,11 @@
 
 Pure: no I/O, no global state.
 
-The hand-set cost model is **linear in its four weights**::
+The hand-set cost model is **linear in its weights**::
 
     C(path) = move * sum|dhand| + span * sum span
             + high * sum(mean fret / 12) - open_reward * sum n_open
+            + string biases and fret-region weights (ADR 0034)
             = w . Phi(path)
 
 and the decoder scores a path as ``exp(-C / T)``, so the decoder is already a linear-chain
@@ -36,12 +37,40 @@ from scipy.optimize import minimize  # pyright: ignore[reportUnknownVariableType
 from scipy.special import logsumexp  # pyright: ignore[reportUnknownVariableType]
 
 from tabsampler.decode.viterbi import build_lattice
-from tabsampler.fingering.costs import FRETS_PER_OCTAVE, count_open, mean_fretted_fret
+from tabsampler.fingering.costs import (
+    FRETS_PER_OCTAVE,
+    count_high_region,
+    count_low_region,
+    count_open,
+    mean_fretted_fret,
+)
 from tabsampler.fingering.states import shift_window
 from tabsampler.types import ChordState, Context, CostWeights, Hand, NoteGroup
 
-#: Order of the weight vector, and of every feature vector.
-WEIGHT_NAMES = ("move", "span", "high", "open_reward")
+#: Order of the weight vector, and of every feature vector. The low E string's bias is not
+#: here: a group's notes always number the same, so the six string counts sum to a constant
+#: and only five biases can be fitted -- the low E is the reference, pinned at zero
+#: (ADR 0034). The middle fret region (5-11) is the reference for the same reason.
+WEIGHT_NAMES = (
+    "move",
+    "span",
+    "high",
+    "open_reward",
+    "string_1",
+    "string_2",
+    "string_3",
+    "string_4",
+    "string_5",
+    "low_region",
+    "high_region",
+)
+
+#: The weights each experiment can switch on; the rest stay at their starting values.
+FEATURE_GROUPS: dict[str, tuple[str, ...]] = {
+    "base": WEIGHT_NAMES[:4],
+    "string": WEIGHT_NAMES[4:9],
+    "region": WEIGHT_NAMES[9:],
+}
 
 Vector = NDArray[np.float64]
 
@@ -64,10 +93,10 @@ class HumanSequence:
 class SequenceFeatures:
     """One sequence's lattice as feature arrays: any weights score it without a rebuild."""
 
-    emission: tuple[Vector, ...]  # per level: (nodes, 4), move column zero
+    emission: tuple[Vector, ...]  # per level: (nodes, len(WEIGHT_NAMES)), move column zero
     movement: tuple[Vector, ...]  # per transition: (previous nodes, nodes) of |dhand|
     allowed: tuple[NDArray[np.bool_], ...]  # per transition: False where the lattice forbids it
-    observed: Vector  # the human path's features, shape (4,)
+    observed: Vector  # the human path's features, shape (len(WEIGHT_NAMES),)
 
     @property
     def n_groups(self) -> int:
@@ -89,31 +118,63 @@ class FitResult:
 
 
 def weights_to_vector(weights: CostWeights) -> Vector:
-    return np.array([weights.move, weights.span, weights.high, weights.open_reward], dtype=float)
+    """The weights in ``WEIGHT_NAMES`` order.
+
+    Raises:
+        ValueError: if the low E string's bias is not zero; it is the fixed reference.
+    """
+    if weights.string_bias[0] != 0.0:
+        raise ValueError("the low E string's bias is the fitter's reference and must be zero")
+    return np.array(
+        [
+            weights.move,
+            weights.span,
+            weights.high,
+            weights.open_reward,
+            *weights.string_bias[1:],
+            weights.low_region,
+            weights.high_region,
+        ],
+        dtype=float,
+    )
 
 
 def weights_from_vector(vector: Vector, temperature: float = 1.0) -> CostWeights:
-    move, span, high, open_reward = (float(v) for v in vector)
+    v = [float(x) for x in vector]
     return CostWeights(
-        move=move, span=span, high=high, open_reward=open_reward, temperature=temperature
+        move=v[0],
+        span=v[1],
+        high=v[2],
+        open_reward=v[3],
+        string_bias=(0.0, *v[4:9]),
+        low_region=v[9],
+        high_region=v[10],
+        temperature=temperature,
     )
 
 
 def _shape_features(state: ChordState) -> Vector:
     """Emission features of one shape. ``w . this`` is ``HandSetScorer.emission_cost``."""
+    strings = [0.0] * 5
+    for position in state.positions:
+        if position.string > 0:
+            strings[position.string - 1] += 1.0
     return np.array(
         [
             0.0,
             float(state.span),
             mean_fretted_fret(state) / FRETS_PER_OCTAVE,
             -float(count_open(state)),
+            *strings,
+            float(count_low_region(state)),
+            float(count_high_region(state)),
         ]
     )
 
 
 def path_features(states: Sequence[ChordState]) -> Vector:
     """``Phi`` of one path: the shape features summed, plus the hand window's movement."""
-    total = np.zeros(4)
+    total = np.zeros(len(WEIGHT_NAMES))
     hand: Hand | None = None
     for state in states:
         total += _shape_features(state)
@@ -183,7 +244,7 @@ def _sequence_nll_and_gradient(w: Vector, feats: SequenceFeatures) -> tuple[floa
         )
     log_z = float(_lse(log_alpha[-1]))
 
-    expected = np.zeros(4)
+    expected = np.zeros(len(WEIGHT_NAMES))
     for t, emission in enumerate(feats.emission):
         expected += np.exp(log_alpha[t] + log_beta[t] - log_z) @ emission
     for t, move in enumerate(feats.movement):
@@ -201,7 +262,7 @@ def _sequence_nll_and_gradient(w: Vector, feats: SequenceFeatures) -> tuple[floa
 def nll_and_gradient(w: Vector, sequences: Sequence[SequenceFeatures]) -> tuple[float, Vector]:
     """Total negative log-likelihood at temperature 1, and its gradient in ``w``."""
     total = 0.0
-    gradient = np.zeros(4)
+    gradient = np.zeros(len(WEIGHT_NAMES))
     for feats in sequences:
         nll, grad = _sequence_nll_and_gradient(w, feats)
         total += nll
@@ -218,20 +279,35 @@ def _minimise(
     return x, int(result.nit), bool(result.success)  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
 
 
-def fit_weights(sequences: Sequence[SequenceFeatures], initial: CostWeights) -> FitResult:
-    """Maximum-likelihood weights, starting from ``initial``. The temperature is carried
-    through unchanged: it is not fitted here (see the module docstring)."""
-    x, iterations, converged = _minimise(
-        lambda w: nll_and_gradient(w, sequences), weights_to_vector(initial)
-    )
-    nll, gradient = nll_and_gradient(x, sequences)
+def fit_weights(
+    sequences: Sequence[SequenceFeatures],
+    initial: CostWeights,
+    active: Sequence[str] = FEATURE_GROUPS["base"],
+) -> FitResult:
+    """Maximum-likelihood weights, starting from ``initial``. Only the weights named in
+    ``active`` move; every other weight keeps its starting value, so each feature group is
+    an experiment of its own (ADR 0034). The temperature is carried through unchanged: it is
+    not fitted here (see the module docstring)."""
+    mask = np.array([name in active for name in WEIGHT_NAMES])
+    start = weights_to_vector(initial)
+
+    def objective(x: Vector) -> tuple[float, Vector]:
+        w = start.copy()
+        w[mask] = x
+        nll, gradient = nll_and_gradient(w, sequences)
+        return nll, gradient[mask]
+
+    x, iterations, converged = _minimise(objective, start[mask])
+    w = start.copy()
+    w[mask] = x
+    nll, gradient = nll_and_gradient(w, sequences)
     return FitResult(
-        weights=weights_from_vector(x, temperature=initial.temperature),
+        weights=weights_from_vector(w, temperature=initial.temperature),
         nll=nll,
         n_groups=sum(s.n_groups for s in sequences),
         iterations=iterations,
         converged=converged,
-        gradient_norm=float(np.linalg.norm(gradient)),
+        gradient_norm=float(np.linalg.norm(gradient[mask])),
     )
 
 

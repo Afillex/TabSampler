@@ -41,6 +41,7 @@ of the old record to point at its replacement.
 | [0031](0031-e3-speed-limit.md) | E3's speed limit set from human tab: **48 frets/s**, 0.9988 of unseen artists' moves pass | D9 | accepted |
 | [0032](0032-style-decoders.md) | Clean and distorted guitar get **a decoder each**, fitted and judged on their own parts; the default is clean | D7 | proposed |
 | [0033](0033-per-style-temperature.md) | Each style's decoder gets **its own temperature**, calibrated on that style's validation parts | D7 | proposed |
+| [0034](0034-c3-feature-groups.md) | Two richer feature groups — **per-string preference** and **fret regions** — each kept only if it raises a style's validation recovery | D7 | proposed |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),

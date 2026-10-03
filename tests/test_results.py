@@ -166,3 +166,15 @@ def test_described_weights_include_the_temperature() -> None:
     assert describe_weights(weights) == (
         "move 1, span 1, high 0.1, open_reward 0.25, temperature 2.9974"
     )
+
+
+def test_described_weights_list_the_feature_groups_only_when_used() -> None:
+    from tabsampler.types import CostWeights
+
+    plain = describe_weights(CostWeights())
+    assert "string_bias" not in plain and "region" not in plain
+    used = describe_weights(
+        CostWeights(string_bias=(0.0, 1.0, 0.0, 0.0, -0.5, 0.0), low_region=0.25)
+    )
+    assert "string_bias (0, 1, 0, 0, -0.5, 0)" in used
+    assert "low_region 0.25" in used and "high_region" not in used

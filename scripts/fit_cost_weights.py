@@ -29,6 +29,7 @@ import argparse
 import hashlib
 import json
 import time
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -39,6 +40,7 @@ from tabsampler.data.splits import Split
 from tabsampler.eval.recovery import PartSequence, recover
 from tabsampler.fingering.costs import HandSetScorer
 from tabsampler.fingering.fit import (
+    FEATURE_GROUPS,
     HumanSequence,
     fit_weights,
     human_sequences,
@@ -95,6 +97,18 @@ def main() -> None:
         "scored on every part, reported by part.",
     )
     parser.add_argument(
+        "--features",
+        default="",
+        help="Feature groups to fit beyond the four base weights, comma-separated: "
+        "string, region (ADR 0034).",
+    )
+    parser.add_argument(
+        "--weights-out",
+        type=Path,
+        default=None,
+        help="Write the fitted weights, at full precision, as JSON.",
+    )
+    parser.add_argument(
         "--per-song-out",
         type=Path,
         default=None,
@@ -107,7 +121,15 @@ def main() -> None:
     ctx = Context(tuning=DADAGP_TUNING, max_span=5)
 
     started = time.perf_counter()
-    print(f"split scheme: {args.split}; training parts: {args.part}")
+    groups = ["base", *(g for g in args.features.split(",") if g)]
+    unknown = sorted(set(groups) - set(FEATURE_GROUPS))
+    if unknown:
+        parser.error(f"unknown feature groups {unknown}; known: {sorted(FEATURE_GROUPS)}")
+    active = tuple(name for group in groups for name in FEATURE_GROUPS[group])
+    print(
+        f"split scheme: {args.split}; training parts: {args.part}; "
+        f"feature groups: {', '.join(groups)}"
+    )
     train = [
         (song, s)
         for song, part, s in sequences_for(
@@ -149,7 +171,7 @@ def main() -> None:
     fits = {}
     for name in ("all",) if args.skip_halves else ("A", "B", "all"):
         started = time.perf_counter()
-        fits[name] = fit_weights(feats[name], hand_set)
+        fits[name] = fit_weights(feats[name], hand_set, active=active)
         r = fits[name]
         print(
             f"fit {name:3s}: move {r.weights.move:8.4f}  span {r.weights.span:8.4f}  "
@@ -159,6 +181,16 @@ def main() -> None:
         )
 
     fitted = fits["all"].weights
+    if len(groups) > 1:
+        print(
+            f"    string_bias {tuple(round(b, 4) for b in fitted.string_bias)}  "
+            f"low_region {fitted.low_region:.4f}  high_region {fitted.high_region:.4f}"
+        )
+    if args.weights_out is not None:
+        args.weights_out.parent.mkdir(parents=True, exist_ok=True)
+        values = {k: list(v) if isinstance(v, tuple) else v for k, v in asdict(fitted).items()}
+        args.weights_out.write_text(json.dumps(values, indent=2))
+        print(f"    wrote {args.weights_out}")
     for label, weights in (("hand-set", hand_set), ("fitted", fitted)):
         nll, _ = nll_and_gradient(weights_to_vector(weights), feats["val"])
         n_groups = sum(f.n_groups for f in feats["val"])

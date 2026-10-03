@@ -18,6 +18,7 @@ from hypothesis import HealthCheck, given, settings
 from tabsampler.decode.forward_backward import log_partition
 from tabsampler.fingering.costs import HandSetScorer
 from tabsampler.fingering.fit import (
+    FEATURE_GROUPS,
     WEIGHT_NAMES,
     HumanSequence,
     fit_weights,
@@ -68,7 +69,20 @@ def human(groups: list[NoteGroup]) -> HumanSequence:
     )
 
 
-WEIGHTS = (CostWeights(), CostWeights(move=0.3, span=1.7, high=2.5, open_reward=-0.4))
+WEIGHTS = (
+    CostWeights(),
+    CostWeights(move=0.3, span=1.7, high=2.5, open_reward=-0.4),
+    # Every feature group non-zero (ADR 0034); the low E's bias is the pinned reference.
+    CostWeights(
+        move=0.3,
+        span=1.7,
+        high=2.5,
+        open_reward=-0.4,
+        string_bias=(0.0, 0.2, -0.1, 0.4, 0.05, -0.3),
+        low_region=0.6,
+        high_region=-0.2,
+    ),
+)
 
 
 # ------------------------------------------------------------------ re-expression is exact
@@ -84,10 +98,27 @@ def test_features_times_weights_is_the_scorers_path_cost(weights: CostWeights) -
 
 
 def test_the_weight_vector_round_trips() -> None:
-    w = CostWeights(move=0.3, span=1.7, high=2.5, open_reward=-0.4, temperature=0.8)
-    back = weights_from_vector(weights_to_vector(w), temperature=0.8)
-    assert back == w
-    assert WEIGHT_NAMES == ("move", "span", "high", "open_reward")
+    for w in WEIGHTS:
+        assert weights_from_vector(weights_to_vector(w), temperature=w.temperature) == w
+    assert WEIGHT_NAMES == (
+        "move",
+        "span",
+        "high",
+        "open_reward",
+        "string_1",
+        "string_2",
+        "string_3",
+        "string_4",
+        "string_5",
+        "low_region",
+        "high_region",
+    )
+
+
+def test_the_low_e_string_is_the_pinned_reference() -> None:
+    # Six string counts always sum to the group size, so one bias cannot be fitted.
+    with pytest.raises(ValueError, match="low E"):
+        weights_to_vector(CostWeights(string_bias=(0.5, 0.0, 0.0, 0.0, 0.0, 0.0)))
 
 
 @pytest.mark.oracle
@@ -110,7 +141,7 @@ def test_log_partition_matches_the_oracle_verified_decoder(groups: list[NoteGrou
 def test_expected_features_match_a_brute_force_sum_over_paths(groups: list[NoteGroup]) -> None:
     # The gradient is observed minus expected features. Expected features by enumerating
     # every state path is obviously right and hopelessly slow, which is the point.
-    weights = WEIGHTS[1]
+    weights = WEIGHTS[2]
     w = weights_to_vector(weights)
     feats = sequence_features(human(groups), CTX)
     _, gradient = nll_and_gradient(w, [feats])
@@ -118,7 +149,7 @@ def test_expected_features_match_a_brute_force_sum_over_paths(groups: list[NoteG
     lattice = [enumerate_states(g, STANDARD, CTX.max_span) for g in groups]
     scorer = HandSetScorer(weights=weights)
     total = 0.0
-    expected = np.zeros(4)
+    expected = np.zeros(len(WEIGHT_NAMES))
     for path in itertools.product(*lattice):
         weight = math.exp(-path_cost(groups, list(path), scorer, CTX))
         total += weight
@@ -133,10 +164,10 @@ def test_expected_features_match_a_brute_force_sum_over_paths(groups: list[NoteG
 def test_the_gradient_matches_finite_differences() -> None:
     groups = [group(52, onset=0.0), group(64, onset=0.5), group(80, onset=1.0), group(55, 59)]
     feats = [sequence_features(human(groups), CTX)]
-    w = weights_to_vector(WEIGHTS[1])
+    w = weights_to_vector(WEIGHTS[2])
     _, gradient = nll_and_gradient(w, feats)
     step = 1e-6
-    for i in range(4):
+    for i in range(len(WEIGHT_NAMES)):
         up, down = w.copy(), w.copy()
         up[i] += step
         down[i] -= step
@@ -151,7 +182,20 @@ def test_fitting_lowers_the_nll_and_lands_on_a_stationary_point() -> None:
     result = fit_weights(feats, CostWeights())
     assert result.nll <= nll_and_gradient(start, feats)[0] + 1e-9
     _, gradient = nll_and_gradient(weights_to_vector(result.weights), feats)
-    assert float(np.abs(gradient).max()) < 1e-3
+    assert float(np.abs(gradient[:4]).max()) < 1e-3  # the four base weights were fitted
+
+
+def test_fitting_a_subset_leaves_the_other_weights_untouched() -> None:
+    groups = [group(52 + (i % 7), onset=i * 0.5) for i in range(12)]
+    feats = [sequence_features(human(groups), CTX)]
+    result = fit_weights(feats, CostWeights(), active=FEATURE_GROUPS["base"])
+    assert result.weights.string_bias == (0.0,) * 6
+    assert (result.weights.low_region, result.weights.high_region) == (0.0, 0.0)
+    both = fit_weights(
+        feats, CostWeights(), active=FEATURE_GROUPS["base"] + FEATURE_GROUPS["string"]
+    )
+    assert any(both.weights.string_bias[1:])
+    assert (both.weights.low_region, both.weights.high_region) == (0.0, 0.0)
 
 
 def test_a_human_state_missing_from_the_lattice_is_refused() -> None:

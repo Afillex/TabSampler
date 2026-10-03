@@ -208,3 +208,27 @@ def test_a_state_that_does_not_match_its_group_is_refused() -> None:
     g = NoteGroup.of([n(40), n(45)])
     with pytest.raises(ValueError):
         s.emission_cost(g, state((0, 0)), ctx())
+
+
+# ------------------------------------------------------------------ C3 feature groups (ADR 0034)
+
+
+def test_a_string_bias_costs_each_note_on_that_string() -> None:
+    shape = state((1, 2), (2, 0))  # B on the A string at fret 2, D open
+    notes = NoteGroup.of(
+        [NoteEvent(onset=0.0, offset=0.4, pitch=p, confidence=1.0) for p in (47, 50)]
+    )
+    base = HandSetScorer().emission_cost(notes, shape, ctx())
+    biased = HandSetScorer(weights=CostWeights(string_bias=(0.0, 1.5, 0.25, 0.0, 0.0, 0.0)))
+    assert biased.emission_cost(notes, shape, ctx()) == pytest.approx(base + 1.75)
+
+
+def test_region_weights_count_fretted_notes_by_region() -> None:
+    # Frets 3 (open position), 7 (the reference) and 14 (upper neck); one open string.
+    shape = state((0, 3), (1, 7), (2, 14), (3, 0))
+    notes = NoteGroup.of(
+        [NoteEvent(onset=0.0, offset=0.4, pitch=p, confidence=1.0) for p in (43, 52, 64, 55)]
+    )
+    base = HandSetScorer().emission_cost(notes, shape, ctx())
+    regions = HandSetScorer(weights=CostWeights(low_region=1.0, high_region=10.0))
+    assert regions.emission_cost(notes, shape, ctx()) == pytest.approx(base + 11.0)

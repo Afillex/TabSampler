@@ -230,10 +230,20 @@ class CostWeights:
     open_reward: float = 0.25
     acoustic: float = 0.0  # unused until Phase 3; in the contract so it stays stable
     temperature: float = 1.0
+    #: Cost of each note on a string, open or fretted, low E first (ADR 0034).
+    string_bias: tuple[float, ...] = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    #: Cost of each fretted note at frets 1-4, and at fret 12 or above; frets 5-11 are the
+    #: reference (ADR 0034).
+    low_region: float = 0.0
+    high_region: float = 0.0
 
     def __post_init__(self) -> None:
         if self.temperature <= 0.0:
             raise ValueError(f"temperature {self.temperature} must be positive")
+        if len(self.string_bias) != 6:
+            raise ValueError(
+                f"string_bias needs six entries, one per string, got {self.string_bias}"
+            )
 
 
 @dataclass(frozen=True, slots=True)

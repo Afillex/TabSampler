@@ -191,7 +191,17 @@ def load_phase1_config(path: Path | str) -> Phase1Config:
     _require_known_keys(
         "weights",
         weights_raw,
-        ("move", "span", "high", "open_reward", "acoustic", "temperature"),
+        (
+            "move",
+            "span",
+            "high",
+            "open_reward",
+            "acoustic",
+            "temperature",
+            "string_bias",
+            "low_region",
+            "high_region",
+        ),
     )
     defaults = CostWeights()
     weights = CostWeights(
@@ -201,6 +211,9 @@ def load_phase1_config(path: Path | str) -> Phase1Config:
         open_reward=float(weights_raw.get("open_reward", defaults.open_reward)),
         acoustic=float(weights_raw.get("acoustic", defaults.acoustic)),
         temperature=float(weights_raw.get("temperature", defaults.temperature)),
+        string_bias=tuple(float(b) for b in weights_raw.get("string_bias", defaults.string_bias)),
+        low_region=float(weights_raw.get("low_region", defaults.low_region)),
+        high_region=float(weights_raw.get("high_region", defaults.high_region)),
     )
 
     rules_raw: dict[str, Any] = raw.get("rules") or {}

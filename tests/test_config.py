@@ -34,6 +34,9 @@ PROBE: dict[str, object] = {
     "open_reward": 0.25,
     "acoustic": 0.0,
     "temperature": 1.0,
+    "string_bias": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "low_region": 0.0,
+    "high_region": 0.0,
     "max_span_low": 4,
     "max_span_high": 5,
     "high_neck_fret": 12,
@@ -142,3 +145,17 @@ def test_the_hex_pickup_channels_are_refused_as_transcriber_input(tmp_path: Path
     path = write(tmp_path, {"dataset": {"channel": "audio_hex"}})
     with pytest.raises(ValueError, match=r"hex-pickup|not allowed"):
         load_eval_config(path)
+
+
+def test_an_old_config_loads_with_the_new_weights_at_zero() -> None:
+    # ADR 0034's weights default to zero, so a config written before them decodes as before.
+    root = Path(__file__).resolve().parents[1]
+    weights = load_phase1_config(root / "configs" / "phase1_baseline.yaml").weights
+    assert weights.string_bias == (0.0,) * 6
+    assert (weights.low_region, weights.high_region) == (0.0, 0.0)
+
+
+def test_a_string_bias_needs_one_entry_per_string(tmp_path: Path) -> None:
+    path = write(tmp_path, {"weights": {"string_bias": [0.0, 1.0]}})
+    with pytest.raises(ValueError, match="six"):
+        load_phase1_config(path)

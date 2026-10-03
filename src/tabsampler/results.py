@@ -100,6 +100,12 @@ def describe_weights(weights: CostWeights) -> str:
         f"high {weights.high:g}",
         f"open_reward {weights.open_reward:g}",
     ]
+    if any(weights.string_bias):
+        parts.append("string_bias (" + ", ".join(f"{b:g}" for b in weights.string_bias) + ")")
+    if weights.low_region:
+        parts.append(f"low_region {weights.low_region:g}")
+    if weights.high_region:
+        parts.append(f"high_region {weights.high_region:g}")
     if weights.acoustic:
         parts.append(f"acoustic {weights.acoustic:g}")
     parts.append(f"temperature {weights.temperature:g}")
