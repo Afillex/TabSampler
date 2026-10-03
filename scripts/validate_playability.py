@@ -14,6 +14,10 @@ fixed in ADR 0022 before this run: human tab passes the transition rule at >= 0.
 If it does not, the result is recorded and reported; neither the window nor the speed
 limit is tuned to pass.
 
+Rerun for ADR 0029 (2026-10-03): a move is timed from the last fretted group, not from an
+all-open group in between. Prediction, fixed in ADR 0029 before the run: the transition
+pass rate rises from 0.9795 but stays below 0.99.
+
 Crowd-sourced tab contains mistakes, so not every failure indicts a rule. The failure
 breakdown is what makes the number interpretable.
 
@@ -33,9 +37,8 @@ from tabsampler.eval.playability import (
     PlayabilityRules,
     fingers_needed,
     group_is_playable,
-    hand_move_is_playable,
+    judge_transitions,
 )
-from tabsampler.fingering.states import shift_window
 
 
 def main() -> None:
@@ -62,10 +65,7 @@ def main() -> None:
     # it. Nothing is fitted here, so the artist overlap (ADR 0024) does not matter.
     for track in load_tracks(archive, Split.TRAIN, meta, scheme="shipped", on_song=on_song):
         tracks += 1
-        hand: int | None = None
-        first = True
-        previous_onset = 0.0
-        for group, state in track.steps:
+        for _, state in track.steps:
             positions = state.positions
             groups += 1
             reason = group_is_playable(positions, rules)
@@ -79,17 +79,10 @@ def main() -> None:
                 span = fretted[-1] - fretted[0]
                 (spans_high if fretted[0] >= rules.high_neck_fret else spans_low)[span] += 1
             fingers[fingers_needed(positions, rules)] += 1
-
-            if first:
-                hand = shift_window(None, fretted)[0]
-                first = False
-            else:
-                transitions += 1
-                reason, hand = hand_move_is_playable(
-                    hand, positions, group.onset - previous_onset, rules
-                )
-                transitions_passed += reason is None
-            previous_onset = group.onset
+        # The hand and the clock are carried across all-open shapes (ADR 0025, ADR 0029).
+        for verdict in judge_transitions([(g.onset, s.positions) for g, s in track.steps], rules):
+            transitions += 1
+            transitions_passed += verdict is None
 
     def share(part: int, whole: int) -> str:
         return f"{part / whole:.4f}" if whole else "n/a"
@@ -119,7 +112,10 @@ def main() -> None:
         print("   cumulative share by span:", ", ".join(coverage[:10]))
     print(f"fingers needed: {dict(sorted(fingers.items()))}")
     print()
-    print(f"E3 transitions, hand window (ADR 0025): {share(transitions_passed, transitions)}")
+    print(
+        "E3 transitions, hand window timed from the last fretted group (ADR 0029): "
+        f"{share(transitions_passed, transitions)}"
+    )
     print("acceptance (ADR 0022, fixed in advance): >= 0.99")
 
 

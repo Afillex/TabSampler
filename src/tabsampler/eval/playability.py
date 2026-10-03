@@ -169,14 +169,45 @@ def hand_move_is_playable(
     all-open shape leaves it where it was. Returns (reason or None, the new hand).
     """
     new_hand, distance = shift_window(hand, fretted_frets(positions), HAND_WINDOW)
+    return move_verdict(distance, seconds, rules), new_hand
+
+
+def move_verdict(distance: int, seconds: float, rules: PlayabilityRules) -> str | None:
+    """None if the hand can move ``distance`` frets in ``seconds``, else the reason."""
     if distance == 0:
-        return None, new_hand
+        return None
     if seconds <= 0.0:
-        return f"{distance}-fret jump with no time between groups", new_hand
+        return f"{distance}-fret jump with no time between groups"
     speed = distance / seconds
     if speed > rules.max_frets_per_second:
-        return f"{speed:.1f} frets/s exceeds {rules.max_frets_per_second}", new_hand
-    return None, new_hand
+        return f"{speed:.1f} frets/s exceeds {rules.max_frets_per_second}"
+    return None
+
+
+def hand_moves(shapes: Sequence[Shape]) -> list[tuple[int, float]]:
+    """For each transition, (frets the hand moves, seconds it has to move in).
+
+    The hand is carried across all-open shapes (ADR 0018), and so is the clock: a move is
+    timed from the last shape with a fretted note -- the last moment the hand was in place
+    -- because an all-open shape in between leaves the hand free (ADR 0029).
+    """
+    moves: list[tuple[int, float]] = []
+    hand: int | None = None
+    placed_at: float | None = None
+    for index, (onset, positions) in enumerate(shapes):
+        fretted = fretted_frets(positions)
+        hand, distance = shift_window(hand, fretted, HAND_WINDOW)
+        if index > 0:
+            since = shapes[index - 1][0] if placed_at is None else placed_at
+            moves.append((distance, onset - since))
+        if fretted:
+            placed_at = onset
+    return moves
+
+
+def judge_transitions(shapes: Sequence[Shape], rules: PlayabilityRules) -> list[str | None]:
+    """E3's verdict on every transition of a piece: None, or why it is not playable."""
+    return [move_verdict(distance, seconds, rules) for distance, seconds in hand_moves(shapes)]
 
 
 def group_tab_by_onset(tab: Sequence[TabNote], window_s: float = 0.03) -> list[Shape]:
@@ -220,12 +251,8 @@ def playability_rate(
             failures.append(f"group @{onset:.3f}s: {reason}")
 
     transitions_pass = 0
-    # The hand is carried through the whole tab, across all-open shapes (ADR 0025).
-    hand = shift_window(None, fretted_frets(shapes[0][1]))[0] if shapes else None
-    for index in range(1, len(shapes)):
-        prev_onset = shapes[index - 1][0]
-        onset, positions = shapes[index]
-        reason, hand = hand_move_is_playable(hand, positions, onset - prev_onset, active)
+    # The hand and the clock are carried across all-open shapes (ADR 0025, ADR 0029).
+    for (onset, _), reason in zip(shapes[1:], judge_transitions(shapes, active), strict=True):
         if reason is None:
             transitions_pass += 1
         else:

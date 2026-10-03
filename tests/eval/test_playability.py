@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from tabsampler.eval.playability import (
     PlayabilityRules,
     fingers_needed,
     group_is_playable,
     hand_move_is_playable,
+    judge_transitions,
     playability_rate,
 )
 from tabsampler.types import NoteEvent, Position, TabNote
@@ -188,10 +191,43 @@ def test_a_jump_with_no_time_between_groups_fails() -> None:
     assert reason is not None
 
 
+def test_no_move_with_no_time_between_groups_passes() -> None:
+    # Distance is judged before time: a reach inside the window needs no time at all.
+    reason, hand = hand_move_is_playable(5, pos((0, 7)), 0.0, RULES)
+    assert reason is None and hand == 5
+
+
 def test_a_jump_across_an_open_string_is_still_a_jump() -> None:
     # fret 2 -> open -> fret 20 in 0.1 s: the open string must not reset the hand.
     tab = [tabnote(0.00, 0, 2), tabnote(0.05, 1, 0), tabnote(0.10, 0, 20)]
-    assert playability_rate(tab, RULES).transition_rate < 1.0
+    report = playability_rate(tab, RULES)
+    assert (report.n_transitions_pass, report.n_transitions) == (1, 2)
+
+
+def test_a_move_across_an_open_string_is_timed_from_the_last_fretted_note() -> None:
+    # fret 2 -> open -> fret 10 at 0.25 s steps: the hand had 0.5 s, not 0.25 s (ADR 0029).
+    tab = [tabnote(0.0, 0, 2), tabnote(0.25, 1, 0), tabnote(0.5, 0, 10)]
+    assert playability_rate(tab, RULES).n_transitions_pass == 2
+
+
+def test_a_piece_that_starts_with_open_strings_has_no_moves_to_time() -> None:
+    shapes = [(0.0, pos((1, 0))), (0.1, pos((2, 0))), (0.2, pos((0, 5)))]
+    assert judge_transitions(shapes, RULES) == [None, None]
+
+
+@given(
+    a=st.integers(1, 15),
+    b=st.integers(1, 20),
+    gap=st.floats(0.02, 1.0),
+    cuts=st.lists(st.floats(0.01, 0.99), min_size=1, max_size=3),
+)
+def test_open_strings_between_two_fretted_shapes_never_change_the_verdict(
+    a: int, b: int, gap: float, cuts: list[float]
+) -> None:
+    first, last = (0.0, pos((0, a))), (gap, pos((1, b)))
+    opens = [(gap * c, pos((2, 0))) for c in sorted(cuts)]
+    plain = judge_transitions([first, last], RULES)[-1]
+    assert judge_transitions([first, *opens, last], RULES)[-1] == plain
 
 
 def test_a_shape_with_two_notes_on_one_string_still_moves_the_hand() -> None:
