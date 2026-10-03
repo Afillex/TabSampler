@@ -1,0 +1,41 @@
+# One GuitarSet evaluation of the default decoder as the hand-window plan leaves it
+# (docs/plans/2026-10-02-hand-window-and-calibration.md, Task 8): hand-set weights, the
+# hand window (ADR 0025) and the temperature calibrated on DadaGP validation (ADR 0026).
+#
+# Written and committed BEFORE the run. GuitarSet is evaluated once with this config and
+# never used to choose anything (ADR 0003): the window was kept, the fitted weights were
+# turned down and the temperature was set, all on DadaGP, before this file existed.
+
+hypothesis: >-
+  The default decoder with the hand window and the calibrated temperature keeps oracle exact
+  tab F1 on GuitarSet within one point of 0.6599 and lowers calibration error in both modes.
+  Variable: the default decoder, which changes in two ways at once because the plan allows
+  one look at GuitarSet. They move different metrics: E2 and E3 depend on the window alone,
+  since the Viterbi path does not depend on the temperature; E5 depends on both, and this
+  run cannot separate them. Metrics: E1-E5, E2 the headline. Split: GuitarSet test, all 360
+  tracks, oracle and end to end. Prediction, from DadaGP artist validation only: E2 within
+  one point of 0.6599 oracle and 0.4318 end to end (the window moved the hand-set weights'
+  recovery of human fingering on clean validation parts by +0.4 points, and GuitarSet is
+  clean playing); E1 and E4 unchanged (1.0000 / 0.7452 placed; 1.0000 / 1.0000); E3 group
+  rates at or above ADR 0016's guardrails of 0.9970 / 0.9896; E5 below 0.1652 oracle and
+  below ADR 0016's end-to-end guardrail of 0.3851 (validation: 0.2017 -> 0.0767). E3's
+  transition rate now follows the window rule (ADR 0025): not comparable with 0.9134 /
+  0.9164, and still not a playability measure (ADR 0022). Not expected to reach ADR 0016's
+  M2 target of 0.760.
+
+dataset:
+  name: guitarset
+  data_home: data/guitarset
+  channel: audio_mic
+
+transcriber:
+  exe: basic-pitch
+  cache_dir: cache/note_events
+  onset_threshold: 0.5
+  frame_threshold: 0.3
+  minimum_note_length_ms: 127.70
+  model_serialization: coreml
+  version_tag: basic-pitch-0.4.0
+
+onset_tolerance: 0.05
+seed: 0
