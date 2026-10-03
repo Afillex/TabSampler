@@ -45,7 +45,8 @@ means "artists the model has never seen" (ADR 0024):
   99%, and on distorted validation parts the window recovered 0.0023 less of the human
   fingering (ADR 0028). Ege kept the window both times, with both misses on record.
 - **The temperature is calibrated** (ADR 0026): T = 2.9974 cut calibration error on DadaGP
-  validation from 0.2017 to 0.0767. It changes posteriors, never a fingering.
+  validation from 0.2017 to 0.0767, measured on the songs it was fitted on — one number
+  fitted to about half a million notes. It changes posteriors, never a fingering.
 - **Fitted weights lost a fair test fixed in advance** (ADR 0027): on unseen artists they
   recover 13 points less of the human fingering on clean parts, so the hand-set weights stay.
 
