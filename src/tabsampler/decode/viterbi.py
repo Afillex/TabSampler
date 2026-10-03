@@ -13,11 +13,12 @@ Costs are added, never multiplied, so there is nothing to underflow here. Log sp
 matters in :mod:`tabsampler.decode.forward_backward`, which exponentiates.
 
 **The states above are lattice nodes, not bare chord shapes (ADR 0018).** A node is a
-shape plus the hand position in force while it is played, because an all-open shape has
-no hand position of its own and must carry the previous one forward -- otherwise
-fret 2 -> open chord -> fret 10 is charged no movement at all. Only all-open shapes need
-the augmentation: any shape with a fretted note determines its own hand position, so it
-has exactly one node. See :func:`build_lattice`.
+shape plus the hand window in force while it is played. Where the window sits depends on
+where the hand came from (ADR 0025): a shape inside the current window leaves it alone, a
+shape outside moves it by the least distance, and an all-open shape carries it forward --
+otherwise fret 2 -> open chord -> fret 10 is charged no movement at all. So any shape,
+fretted or not, can have one node per window reachable at the previous level. See
+:func:`build_lattice`.
 
 Written as plain loops. Spec 2.2 says to optimise only after measuring, and the state
 counts are small enough (see
@@ -38,9 +39,13 @@ from tabsampler.types import ChordState, Context, FingeringScorer, NoteGroup
 class LatticeNode(NamedTuple):
     """One decoder state: a chord shape, plus where the hand is while it is played.
 
-    ``carried_hand`` equals ``state.hand_position`` for any shape with a fretted note.
-    For an all-open shape it is the position inherited from earlier in the piece, and
-    None only when nothing fretted has been played yet.
+    ``carried_hand`` is the lowest fret of the 4-fret hand window after this shape is
+    played (ADR 0025): ``carry_hand`` of the previous node's hand and this shape. For a
+    fretted shape that fits in the window it lies between the shape's highest fret minus 4
+    and its lowest fret -- fret 12 reached from a hand at 5 is played with the hand at 8,
+    not 12 -- and a wider shape anchors it at its lowest fret. For an all-open shape it is
+    the window inherited from earlier, and None only when nothing fretted has been played
+    yet.
     """
 
     state: ChordState
@@ -66,12 +71,11 @@ def build_lattice(
 ) -> list[tuple[LatticeNode, ...]]:
     """Legal nodes for every group: each legal shape, paired with the hand it is played with.
 
-    A shape with any fretted note fixes its own hand position and yields exactly one
-    node. An all-open shape yields one node per distinct hand position reachable at the
-    previous level, because that is the information it has to carry forward (ADR 0018).
-    Augmenting *every* node with a hand position instead would multiply the state space
-    by ``max_fret + 1`` and Viterbi is ``O(T * S^2)``; the measured cost of doing it only
-    where it is needed is in the ADR.
+    Each shape yields one node per distinct window the hand can be in after playing it,
+    given every window reachable at the previous level (ADR 0025; ADR 0018 introduced the
+    nodes for all-open shapes alone). Only reachable windows get nodes, rather than every
+    shape times every fret, which would multiply the state space by ``max_fret + 1`` while
+    Viterbi is ``O(T * S^2)``. ADR 0025 records the measured growth.
 
     Args:
         spans: Optional per-group span bound, overriding ``ctx.max_span``. Used by
