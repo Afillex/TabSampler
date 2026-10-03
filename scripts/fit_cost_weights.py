@@ -121,14 +121,14 @@ def main() -> None:
     ctx = Context(tuning=DADAGP_TUNING, max_span=5)
 
     started = time.perf_counter()
-    groups = ["base", *(g for g in args.features.split(",") if g)]
-    unknown = sorted(set(groups) - set(FEATURE_GROUPS))
+    feature_groups = ["base", *(g for g in args.features.split(",") if g)]
+    unknown = sorted(set(feature_groups) - set(FEATURE_GROUPS))
     if unknown:
         parser.error(f"unknown feature groups {unknown}; known: {sorted(FEATURE_GROUPS)}")
-    active = tuple(name for group in groups for name in FEATURE_GROUPS[group])
+    active = tuple(name for group in feature_groups for name in FEATURE_GROUPS[group])
     print(
         f"split scheme: {args.split}; training parts: {args.part}; "
-        f"feature groups: {', '.join(groups)}"
+        f"feature groups: {', '.join(feature_groups)}"
     )
     train = [
         (song, s)
@@ -181,7 +181,7 @@ def main() -> None:
         )
 
     fitted = fits["all"].weights
-    if len(groups) > 1:
+    if len(feature_groups) > 1:
         print(
             f"    string_bias {tuple(round(b, 4) for b in fitted.string_bias)}  "
             f"low_region {fitted.low_region:.4f}  high_region {fitted.high_region:.4f}"
