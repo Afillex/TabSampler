@@ -212,8 +212,11 @@ def test_a_jump_across_an_open_string_is_still_a_jump() -> None:
 
 def test_a_move_across_an_open_string_is_timed_from_the_last_fretted_note() -> None:
     # fret 2 -> open -> fret 10 at 0.25 s steps: the hand had 0.5 s, not 0.25 s (ADR 0029).
+    # Pinned to the 12 frets/s the fix was made under: at ADR 0031's 48 the old timing's
+    # 16 frets/s would pass too, and the test would guard nothing.
     tab = [tabnote(0.0, 0, 2), tabnote(0.25, 1, 0), tabnote(0.5, 0, 10)]
-    assert playability_rate(tab, RULES).n_transitions_pass == 2
+    rules = PlayabilityRules(max_frets_per_second=12.0)
+    assert playability_rate(tab, rules).n_transitions_pass == 2
 
 
 def test_a_piece_that_starts_with_open_strings_has_no_moves_to_time() -> None:
