@@ -40,9 +40,10 @@ Decided on DadaGP before GuitarSet was run, on an artist-disjoint split so that 
 means "artists the model has never seen" (ADR 0024):
 
 - **The hand is a 4-fret window, not a point** (ADR 0025). The old model charged a finger
-  reaching inside one position as the hand moving. Human tab now passes the transition
-  rule 97.95% of the time (88.35% before) — short of the 99% bar fixed in advance; Ege kept
-  the window, with the miss on record.
+  reaching inside one position as the hand moving. It missed both checks fixed in advance:
+  human tab passes the transition rule 97.95% of the time (88.35% before) against a bar of
+  99%, and on distorted validation parts the window recovered 0.0023 less of the human
+  fingering (ADR 0028). Ege kept the window both times, with both misses on record.
 - **The temperature is calibrated** (ADR 0026): T = 2.9974 cut calibration error on DadaGP
   validation from 0.2017 to 0.0767. It changes posteriors, never a fingering.
 - **Fitted weights lost a fair test fixed in advance** (ADR 0027): on unseen artists they
@@ -115,7 +116,8 @@ run: the fitted weights recover 11 points *less* of the human fingering on clean
 parts (0.8097 → 0.6963) and gain only on distorted ones. It also breaches ADR 0016's E3
 guardrail by a tenth of a point and is 6.1 points short of the M2 target of 0.760.
 GuitarSet's verdict cannot be the reason to adopt it — that would be selecting on the test
-set. ADR 0023 lays out the two legitimate routes. `configs/fitted_dadagp.yaml` reproduces it.
+set. ADR 0023 lays out the two legitimate routes. `configs/fitted_dadagp.yaml` holds these
+weights; the figures above reproduce only at commit e809798, before the hand window.
 
 **Settled since** (ADR 0027): refitted under the hand window on the artist-disjoint split,
 they lost the fair test fixed in advance on DadaGP validation — clean recovery 0.6919
@@ -157,8 +159,9 @@ this project's own baseline (ADR 0016), not from anyone else's figure.
   reaching within one hand position as the hand moving, and human tab passed it only 88%
   of the time. With the hand window it passes 97.95% (ADR 0025), still short of the 99% bar
   fixed in advance: what is left is largely small, quick shifts that the 12 frets/s speed
-  limit calls impossible. Our output's 0.99 / 0.98 transition rate is reported with that
-  caveat until the speed limit is settled.
+  limit calls impossible, and some may be a timing artefact — a move across an open string
+  is timed from the open string, not from the last fretted note. Our output's 0.99 / 0.98
+  transition rate is reported with that caveat until both are settled.
 
 ### Runtime
 
@@ -206,6 +209,9 @@ same day.
   position a beginner would use.
 - E3's transition rule still calls some small, quick shifts impossible: human tab fails it
   2% of the time (ADR 0025), so its 12 frets/s speed limit needs an experiment of its own.
+  It also times a move across an all-open shape from the open shape rather than from the
+  last fretted one, so `fret 2 → open → fret 10` can fail where `fret 2 → fret 10` in the
+  same time passes.
 - E3's finger model is a rule, not a measurement: one finger barres the lowest fretted
   fret and every note above it costs a finger, which refuses some partial barres a good
   player manages (ADR 0019).

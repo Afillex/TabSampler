@@ -15,7 +15,7 @@ are both **done, measured and tagged**, and **Phase 1.5 has closed M1's known de
 (ADRs 0016-0019). **DadaGP arrived on 2026-10-01** and Phase 2 is under way: the training
 protocol is fixed (ADR 0021) and every fit now uses an artist-disjoint split (ADR 0024);
 ADR 0011's chord rules are validated on human tab (ADR 0022); the hand is modelled as a
-4-fret window (ADR 0025); the default keeps hand-set weights, because fitted ones lost a
+4-fret window, kept after missing both of its pre-registered checks (ADRs 0025, 0028); the default keeps hand-set weights, because fitted ones lost a
 fair test fixed in advance (ADR 0027), and has a calibrated temperature (ADR 0026). What
 remains is a fingering model good enough for M2, audio conditioning, and an app a
 guitarist can use.
@@ -36,7 +36,7 @@ guitarist can use.
 
 ```bash
 make install                       # uv sync --all-groups, Python 3.13
-make check                         # lint + pyright --strict + 403 tests. Must be green.
+make check                         # lint + pyright --strict + 408 tests. Must be green.
 make oracle                        # the correctness core. Must be green.
 ```
 
@@ -52,7 +52,7 @@ session) → `docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | `v0.0-phase0`, `v0.1-m1` |
-| Tests | 403, all offline — no test needs the dataset or the transcriber |
+| Tests | 408, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
 | Current phase | Phase 2, **in progress**: `docs/plans/2026-10-01-phase-2.md`, task C3 next |
 
@@ -93,7 +93,8 @@ latter with `scripts/dadagp_track_meta.py` (its docstring has the command).
 ADR 0021 is the protocol, and it is not optional: fit on DadaGP **training**, select and
 calibrate on DadaGP **validation**, evaluate on GuitarSet **once**, and never choose anything
 by looking at GuitarSet. **Use the artist-disjoint split** (`--split artist`, ADR 0024) for
-every fit: whole artists sit on one side, frozen by hash. The shipped split, whose artists
+every fit: whole artists sit on one side, frozen by hash. `load_tracks` has no default
+scheme and the scripts refuse to run without `--split`, so the choice is always explicit. The shipped split, whose artists
 overlap, stays loadable only so the 2026-10-01 numbers can be reproduced. Validation parts
 are about three-quarters distorted guitar; report clean and distorted parts separately,
 because they keep disagreeing.
@@ -144,6 +145,11 @@ Still open:
   passes it 97.95% of the time, short of the 99% bar fixed in advance; what is left is
   largely small, quick shifts that the 12 frets/s speed limit calls impossible. Needs a
   pre-registered experiment on the limit. Until then, quote the rate with ADR 0022's caveat.
+- **E3 times a move across an all-open shape from the open shape**, not from the last
+  fretted one: `fret 2 → open → fret 10` at 0.25 s steps fails at 16 frets/s while
+  `fret 2 → fret 10` in the same 0.5 s passes. Some of the 2% may be this artefact. Fix it
+  first, inside the speed-limit experiment: fixing it alone would change the metric after
+  its one GuitarSet look.
 - **A still-ringing note does not reserve its string** against the next group (spec §2.2).
   Not yet owned; revisit if metrics show it matters.
 - **`eval-m1` labels every row "hand-set weights (ADR 0012)"** and prints "ground-zero
@@ -214,8 +220,12 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 
 ## Open items that need Ege, not you
 
-- **The speed limit**: approve a pre-registered experiment on E3's 12 frets/s limit, the
-  remaining reason the transition rate is not a playability measure.
+- **The speed limit**: approve a pre-registered experiment on E3's 12 frets/s limit, with
+  the open-shape timing fixed first — the remaining reasons the transition rate is not a
+  playability measure.
+- **Wide chords**: under ADR 0025 a shape wider than the window anchors it at its lowest
+  fret, so alternating such a chord with its own top note is charged a fret of movement
+  each way. Stretching the window instead would change ADR 0025's model.
 - **One temperature or one per style**: oracle E5 did not move on clean GuitarSet with a
   temperature fitted on mostly distorted validation parts. A validation question, best
   taken with task C3's style work.

@@ -1,6 +1,8 @@
 # ADR 0023: Cost weights fitted on DadaGP — measured, recorded, not yet the default
 
-Status: accepted (2026-10-01)
+Status: accepted (2026-10-01); its open question is settled by
+[ADR 0027](0027-fitted-weights-fair-test.md): refitted under the hand window, the fitted weights
+lost a fair test fixed in advance, and the hand-set weights stay the default.
 
 Supersedes ADR 0012's premise that tuning is blocked: it is no longer. Does **not** change the
 default decoder: `configs/phase1_baseline.yaml` (hand-set) stays the default, for the reason

@@ -4,6 +4,12 @@
 # 11 points WORSE than the hand-set weights on clean guitar parts (0.8097 -> 0.6963). The gain
 # is entirely distorted parts, which are 71% of DadaGP. configs/phase1_baseline.yaml stays the
 # default. Values rounded to 4 decimal places from the fit; see experiments/results.csv.
+#
+# Fitted and measured under the POINT hand model. ADR 0025 has since replaced it with a
+# 4-fret window, so with today's decoder these weights are unmeasured: the README's GuitarSet
+# figures for them come from commit e809798 and reproduce only there. Refitted under the
+# window, the weights lost a fair test fixed in advance (ADR 0027); those values are in
+# experiments/results.csv, deliberately not written here, so this file stays ADR 0023's record.
 
 hypothesis: >-
   Weights fitted by maximum likelihood on DadaGP training, with the temperature calibrated on

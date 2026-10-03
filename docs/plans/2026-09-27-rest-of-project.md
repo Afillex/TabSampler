@@ -520,7 +520,7 @@ needs no rhythm at all — it can show time-positioned tab exactly as the ASCII 
 and it is where uncertainty and alternatives actually belong. **So the UI comes first and
 the exports are gated on ADR 0017.**
 
-**Gate:** Ege drops one of his own recordings into a local web page and gets back playable
+**Gate:** Ege drops one of their own recordings into a local web page and gets back playable
 tab with uncertain notes visibly marked and alternatives on hover.
 
 ---
