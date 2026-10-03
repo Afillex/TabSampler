@@ -22,3 +22,5 @@
 2026-10-02T20:51:22+00:00 | 91c3a6e | measured node-lattice size (ADR 0018) on 60 GuitarSet tracks via scripts/measure_lattice.py: decoder complexity instrumentation, no metric computed and no threshold chosen from it
 2026-10-03T12:18:52+00:00 | 680b492 | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m2_window_eval.yaml
 2026-10-03T19:07:44+00:00 | 0dd856d | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m2_style_eval.yaml
+2026-10-03T19:58:43+00:00 | 322536b | eval-m1 (oracle + e2e) on 300 GuitarSet test tracks via configs/m2_heldout_eval.yaml
+2026-10-03T19:59:26+00:00 | 322536b | eval-m1 (oracle + e2e) on 300 GuitarSet test tracks via configs/m2_heldout_eval.yaml

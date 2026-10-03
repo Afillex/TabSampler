@@ -12,13 +12,62 @@ Status: **Milestone M1 reached; Phase 2 (learned fingering) in progress.**
 
 ## Results
 
-All 360 GuitarSet tracks, `audio_mic`. The default decoder is now the one for **clean or
-acoustic guitar** (ADR 0032): cost weights **fitted on clean DadaGP playing**, a
-**temperature calibrated for that style** (T = 1.1975, ADR 0033), and the hand modelled as a
-4-fret window that a wide chord can stretch (ADRs 0025, 0030). Distorted guitar has its own
-decoder, `configs/decoder_distorted.yaml`. Both modes per spec 3.2: *oracle* feeds
-reference notes to the fingering stage and so measures fingering alone; *end-to-end* feeds
-Basic Pitch's notes and is what a user gets.
+**The test set is GuitarSet's players 01–05: 300 tracks, `audio_mic`** (ADR 0037). Player
+00's 60 tracks are validation data, chosen by rule. The default decoder, re-chosen on that
+validation player (ADR 0038), uses **hand-set cost weights**, the hand modelled as a 4-fret
+window that a wide chord can stretch (ADRs 0025, 0030), and a temperature calibrated for
+clean guitar (T = 1.5728). Distorted guitar has its own decoder,
+`configs/decoder_distorted.yaml`. Both modes per spec 3.2: *oracle* feeds reference notes
+to the fingering stage and so measures fingering alone; *end-to-end* feeds Basic Pitch's
+notes and is what a user gets.
+
+| | metric | oracle | end-to-end | previous default (oracle / e2e) |
+|---|---|---|---|---|
+| E1 | note F1, transcriber (raw) | 1.0000 | 0.7493 | 1.0000 / 0.7493 |
+| E1 | note F1, pipeline (placed) | 1.0000 | 0.7507 | 1.0000 / 0.7507 |
+| **E2** | **exact tab F1 (headline)** | **0.6559** | **0.4277** | 0.6258 / 0.4337 |
+| E3 | playable groups | 0.9980 | 0.9912 | 0.9970 / 0.9899 |
+| E3 | playable transitions | 0.9997 | 0.9984 | 0.9995 / 0.9974 |
+| E4 | pitch validity | 1.0000 | 1.0000 | 1.0000 / 1.0000 |
+| E5 | calibration error (ECE) | **0.0794** | 0.2189 | 0.1260 / 0.3117 |
+
+*Previous default*: weights fitted on clean DadaGP playing, T = 1.1975 (ADR 0032), kept as
+`configs/fitted_clean_dadagp.yaml`. 49 253 reference notes; 49 253 placed in oracle mode,
+50 167 end to end. End to end, 105 notes lay outside the guitar's range, 100 more were
+dropped as unfingerable, and 39 groups (1 in oracle mode) were decoded with the span bound
+relaxed. **The transcriber costs 0.2281 of E2** (0.6559 → 0.4277).
+
+**These 300 tracks are not untouched.** They were part of every earlier 360-track run, so
+the choice between these two decoders was made knowing how both had done on them in
+aggregate, and the figures above confirm nothing about that choice (ADR 0037). Before the
+runs, they were derived from the earlier ones — 0.656 and 0.6257 for oracle E2 — and came
+out at 0.6559 and 0.6258. They are the baseline that the next decisions, made on player 00
+alone, will be judged against.
+
+| ADR 0016's values, judged on the 300 (ADR 0037) | required | measured | |
+|---|---|---|---|
+| E4 | 1.0000 | 1.0000 / 1.0000 | held |
+| E3 groups, oracle / end to end | ≥ 0.9970 / 0.9896 | 0.9980 / 0.9912 | held |
+| E3 transitions (ADR 0035) | ≥ 0.9996 / 0.9969 | 0.9997 / 0.9984 | held |
+| E5 end to end | < 0.3851 | 0.2189 | held |
+| **M2 target**, E2 oracle | ≥ 0.760 | 0.6559 | **missed, by 10.4 points** |
+
+### Validation on GuitarSet's own playing (ADRs 0037, 0038)
+
+DadaGP's clean parts had misled three times (below), so one GuitarSet player now serves as
+validation. On it, ADR 0032's clean-fitted default was re-tested against the hand-set
+weights by a rule committed first: its oracle E2 was 0.0232 higher, but with a 95%
+track-level interval of −0.0030 to +0.0513, and it lowered the chord-shape rate by 0.00076
+against the 0.0005 allowed — so the hand-set weights came back. The validation player
+showed two things. It is much easier than the test players (oracle E2 0.81 against 0.66),
+so its absolute figures do not carry over. And it favoured the clean fit where the other
+players, on balance, do not: one held-out player is a noisy guide, and the rule's demand for
+a clear win is what kept the default from moving on noise.
+
+### Before the split: all 360 tracks
+
+The clean-fitted default (ADR 0032) against the hand-set default before it, on all 360
+tracks, before player 00 became validation data:
 
 | | metric | oracle | end-to-end | previous default (oracle / e2e) |
 |---|---|---|---|---|
@@ -36,7 +85,7 @@ outside the guitar's range, 127 more were dropped as unfingerable, and 64 groups
 oracle mode) were decoded with the span bound relaxed. **The transcriber costs 0.2251 of
 E2** (0.6689 → 0.4439).
 
-### What changed, and what GuitarSet said
+### What changed then, and what GuitarSet said
 
 Decided on DadaGP before GuitarSet was run (artist-disjoint validation, ADR 0024), every
 comparison with a song-level paired bootstrap:
@@ -177,24 +226,24 @@ this project's own baseline (ADR 0016), not from anyone else's figure.
 
 ### What the numbers say, honestly
 
-- Given perfect notes, the default places about **67%** of notes on the string a human
-  actually used — 69% for the previous default, 66% before the hand window. ADR 0016's M2
+- Given perfect notes, the default places about **66%** of notes on the string a human
+  actually used, on the test players — 81% on the easier validation player. ADR 0016's M2
   target is 76%.
 - End to end, E2 is bounded by note F1: you cannot finger a note you did not hear. The
   transcriber's own F1 is 0.7437, which is the ceiling to argue about, not 0.7452.
-- **Calibration.** Given perfect notes the default's posteriors are now fairly honest
-  (E5 0.10); end to end they are less so (0.30), because the decoder is surer of itself and
-  the transcriber's mistakes are not its to see. ADR 0016's E5 guardrail (< 0.3851) holds.
+- **Calibration.** Given perfect notes the default's posteriors are fairly honest (E5
+  0.08); end to end less so (0.22), because the decoder cannot see the transcriber's
+  mistakes. ADR 0016's E5 guardrail (< 0.3851) holds.
 - **Both halves of E3 are now measured against human tab.** 99.86% of 16.8 million human
   chord shapes pass the chord rules (ADR 0022), and human tab passes the transition rule on
   99.88% of transitions — 98.6% of the moves where the hand actually shifts — on artists the
-  speed limit was not taken from (ADRs 0031, 0036). Our output passes 0.9957 / 0.9889 of its
-  chord shapes and 0.9996 / 0.9969 of its transitions.
+  speed limit was not taken from (ADRs 0031, 0036). Our output passes 0.9980 / 0.9912 of its
+  chord shapes and 0.9997 / 0.9984 of its transitions on the test players.
 - **DadaGP validation does not yet predict GuitarSet.** Three times its clean parts were a
   poor guide: the pooled fitted weights (−11 points on clean validation, +3.9 on GuitarSet,
   ADR 0023), the hand window (+0.4 and +2.8: right direction, far off in size) and the clean
-  decoder (+3.6 and −1.9). Ege has since decided to hold out one GuitarSet player as
-  validation data; the next plan does that, and re-decides the default on it.
+  decoder (+3.6 and −1.9). One GuitarSet player is now validation data instead (ADR 0037),
+  and the default was re-decided on it (ADR 0038).
 
 ### Runtime
 
@@ -237,9 +286,11 @@ same day, and the stretch (ADR 0030) to 34.3 ms and 120.1 ms.
 - A still-ringing note does not reserve its string against the next group (spec 2.2).
 - The user picks the decoder: `configs/decoder_clean.yaml`, the default, or
   `configs/decoder_distorted.yaml`. Nothing detects the style from the audio (ADR 0032).
-- The distorted decoder still uses the hand-set weights: every distorted fit so far decodes
-  slightly more chord shapes that E3 rejects than ADR 0032 allows (ADRs 0032, 0034). The
-  clean decoder's fitted weights won on DadaGP validation and lost on GuitarSet (above).
+- Both decoders use the hand-set weights. Every distorted fit so far decodes slightly more
+  chord shapes that E3 rejects than ADR 0032 allows (ADRs 0032, 0034), and the clean fit did
+  not clearly win on GuitarSet's validation player (ADR 0038).
+- Validation is one GuitarSet player, 60 tracks: intervals are wide, and that player is
+  easier than the rest (ADR 0037).
 - E3's speed limit (48 frets/s) comes from crowd-sourced tab quantised to a rhythmic grid:
   some very fast moves in it may be notation rather than playing (ADR 0031). It still calls
   about one human hand move in seventy too fast (ADR 0036).
@@ -248,8 +299,8 @@ same day, and the stretch (ADR 0030) to 34.3 ms and 120.1 ms.
 - E3's finger model is a rule, not a measurement: one finger barres the lowest fretted
   fret and every note above it costs a finger, which refuses some partial barres a good
   player manages (ADR 0019).
-- Basic Pitch predicts notes the guitar cannot sound (158 of them here, e.g. MIDI 39
-  below the open low E). They are dropped and counted, which lowers recall.
+- Basic Pitch predicts notes the guitar cannot sound (105 of them on the test players, e.g.
+  MIDI 39 below the open low E). They are dropped and counted, which lowers recall.
 
 ## Documentation
 
