@@ -33,8 +33,8 @@ of the old record to point at its replacement.
 | [0023](0023-fitted-cost-weights.md) | Weights fitted on DadaGP: **+3.9 E2 and −63% E5 on GuitarSet, but not the default** — worse on clean guitar | D7 | accepted; premise lifted by 0023 |
 | [0024](0024-artist-disjoint-split.md) | **Artist-disjoint DadaGP split** for every fit: 519 artists / 2,607 songs to validation, frozen by hash | D8 | accepted |
 | [0025](0025-hand-window.md) | **The hand is a 4-fret window**: decoder, cost model and E3 (gate missed at 0.9795, kept by Ege's decision) | 2.2 / D9 | accepted |
-| [0026](0026-default-temperature.md) | Calibrate the default decoder's temperature on artist validation | D7 | proposed |
-| [0027](0027-fitted-weights-fair-test.md) | Fitted weights replace the default **only if** they win on clean parts, distorted parts **and** E3 | D7 | proposed |
+| [0026](0026-default-temperature.md) | Default decoder's temperature calibrated on artist validation: **T = 2.9974, ECE −62%** | D7 | accepted |
+| [0027](0027-fitted-weights-fair-test.md) | Fair test for fitted weights: **failed** (clean and E3 lose) — hand-set stays the default | D7 | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),

@@ -1,6 +1,6 @@
 # ADR 0026: The default decoder gets a calibrated temperature
 
-Status: proposed (2026-10-02) — pre-registration; accepted with its result
+Status: accepted (2026-10-03) — hypothesis held
 
 ## Context
 
@@ -24,3 +24,17 @@ the confidence numbers, never a fingering: the Viterbi path does not depend on i
   metric is calibration error computed as E5 computes it.
 - **Adoption:** the fitted temperature is written into `configs/phase1_baseline.yaml` if
   validation calibration error falls; GuitarSet plays no part.
+
+## Result (2026-10-03)
+
+On 300 artist-disjoint validation songs, with the hand-set weights and the hand window:
+
+| | per-note NLL | calibration error |
+|---|---|---|
+| T = 1 | 1.2156 | 0.2017 |
+| **T = 2.9974** | **0.7475** | **0.0767** |
+
+**Held: calibration error falls 62%.** The hand-set posteriors were strongly overconfident —
+their costs are on too large a scale to read as probabilities — and a temperature near 3
+flattens them. `configs/phase1_baseline.yaml` now carries `temperature: 2.9974`. No fingering
+changes: the Viterbi path does not depend on T.

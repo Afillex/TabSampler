@@ -50,7 +50,7 @@ weights:
   # Forward-backward temperature. 1.0 means posteriors come straight from exp(-C);
   # lower concentrates them on the Viterbi path, higher flattens them. Calibration
   # (E5) is what should eventually set this.
-  temperature: 1.0
+  temperature: 2.9974  # calibrated on DadaGP artist validation (ADR 0026): ECE 0.2017 -> 0.0767
 
 # Notes whose posterior falls below this are marked uncertain in the rendered tab
 # (ADR 0013). Not tuned either.

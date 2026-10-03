@@ -111,3 +111,21 @@ plan, with the README refreshed in the same commit.
 
 **Revisit** when the speed-limit experiment lands: rerun `scripts/validate_playability.py`,
 and only then may E3's transition rate be quoted as playability.
+
+## Addendum (2026-10-03): the validation check, and a second decision by Ege
+
+Added before this branch was reviewed or merged, under the precedent narrowed on 2026-10-01.
+The plan's second pre-registered check: *the hand window does not lower the hand-set weights'
+recovery of human fingerings on clean or distorted artist-disjoint validation parts.*
+
+| hand-set weights, 300 validation songs | clean | distorted | NLL / group |
+|---|---|---|---|
+| point model | 0.8217 | **0.5728** | 0.7489 |
+| hand window | 0.8257 | **0.5705** | **0.6937** |
+
+**The check failed, by 0.0023 on distorted parts**, while clean rose by 0.0040 and the
+window made the model fit human fingerings noticeably better. The rule set no allowance for
+noise — a flaw in the rule, not a finding — and a 0.2-point move on 300 songs is within what
+the sample can resolve. **Ege decided to keep the window.** Both checks this ADR faced were
+missed, both by the margins given above, and both decisions to keep it were Ege's, made
+with these numbers in hand.
