@@ -27,8 +27,8 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import time
-from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
@@ -36,9 +36,7 @@ import numpy as np
 from tabsampler.config import load_phase1_config
 from tabsampler.data.dadagp import load_tracks
 from tabsampler.data.splits import Split
-from tabsampler.decode.viterbi import viterbi
-from tabsampler.eval.playability import PlayabilityRules, group_is_playable
-from tabsampler.fingering.candidates import candidates
+from tabsampler.eval.recovery import PartSequence, recover
 from tabsampler.fingering.costs import HandSetScorer
 from tabsampler.fingering.fit import (
     HumanSequence,
@@ -48,7 +46,7 @@ from tabsampler.fingering.fit import (
     sequence_features,
     weights_to_vector,
 )
-from tabsampler.types import Context, CostWeights, Tuning
+from tabsampler.types import Context, Tuning
 
 DADAGP_TUNING = Tuning(n_frets=24)
 
@@ -71,27 +69,6 @@ def half(song: str) -> int:
     return hashlib.sha1(song.encode()).digest()[0] % 2
 
 
-def recovery(sequences: Sequence[tuple[str, HumanSequence]], weights: CostWeights, ctx: Context):
-    """Per part ("all", "clean", "distorted"): (share of human positions Viterbi recovers,
-    notes), plus the single-candidate share and the decoded output's E3 chord-shape rate."""
-    scorer = HandSetScorer(weights=weights)
-    rules = PlayabilityRules()
-    hits: dict[str, list[int]] = {"all": [0, 0], "clean": [0, 0], "distorted": [0, 0]}
-    single = shapes = playable = 0
-    for part, seq in sequences:
-        path, _ = viterbi(seq.groups, scorer, ctx, seq.spans)
-        for group, truth, guess in zip(seq.groups, seq.states, path, strict=True):
-            shapes += 1
-            playable += group_is_playable(guess.positions, rules) is None
-            for note, t, g in zip(group.notes, truth.positions, guess.positions, strict=True):
-                for key in ("all", part):
-                    hits[key][0] += t == g
-                    hits[key][1] += 1
-                single += len(candidates(note.pitch, ctx.tuning)) == 1
-    shares = {k: (h / n if n else float("nan"), n) for k, (h, n) in hits.items()}
-    return shares, single / hits["all"][1], playable / shapes
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("archive", type=Path)
@@ -110,6 +87,13 @@ def main() -> None:
         action="store_true",
         help="Skip the two half-sample stability fits (they inform, no rule uses them).",
     )
+    parser.add_argument(
+        "--per-song-out",
+        type=Path,
+        default=None,
+        help="Directory for per-song validation counts (hand-set.json, fitted.json); "
+        "they name DadaGP songs, so keep them under cache/.",
+    )
     args = parser.parse_args()
 
     hand_set = load_phase1_config("configs/phase1_baseline.yaml").weights
@@ -124,12 +108,12 @@ def main() -> None:
         )
     ]
     val_parts = [
-        (part, s)
-        for _, part, s in sequences_for(
+        PartSequence(song, part, s)
+        for song, part, s in sequences_for(
             args.archive, args.meta, Split.VALIDATION, args.val_songs, args.seed, ctx, args.split
         )
     ]
-    val = [s for _, s in val_parts]
+    val = [item.sequence for item in val_parts]
     print(f"loaded in {time.perf_counter() - started:.0f}s")
 
     every = [s for _, s in train]
@@ -170,18 +154,26 @@ def main() -> None:
     for label, weights in (("hand-set", hand_set), ("fitted", fitted)):
         nll, _ = nll_and_gradient(weights_to_vector(weights), feats["val"])
         n_groups = sum(f.n_groups for f in feats["val"])
-        shares, single, e3 = recovery(val_parts, weights, ctx)
+        report = recover(val_parts, HandSetScorer(weights=weights), ctx)
         ratio = weights.move / (weights.high / 12.0) if weights.high else float("inf")
-        acc, n_notes = shares["all"]
+        n_notes = report.counts()[1]
         print(
-            f"validation {label:8s}: NLL/group {nll / n_groups:.4f}   recovery {acc:.4f} "
-            f"of {n_notes} notes ({single:.4f} single-candidate)   move:high per fret {ratio:.1f}:1"
+            f"validation {label:8s}: NLL/group {nll / n_groups:.4f}   recovery "
+            f"{report.share():.4f} of {n_notes} notes "
+            f"({report.single_candidate / n_notes:.4f} single-candidate)   "
+            f"move:high per fret {ratio:.1f}:1"
         )
         print(
-            f"    by part: clean {shares['clean'][0]:.4f} ({shares['clean'][1]} notes)   "
-            f"distorted {shares['distorted'][0]:.4f} ({shares['distorted'][1]} notes)   "
-            f"decoded E3 chord shapes {e3:.4f}"
+            f"    by part: clean {report.share('clean'):.4f} ({report.counts('clean')[1]} notes)"
+            f"   distorted {report.share('distorted'):.4f} "
+            f"({report.counts('distorted')[1]} notes)   "
+            f"decoded E3 chord shapes {report.chord_shape_rate():.4f}"
         )
+        if args.per_song_out is not None:
+            args.per_song_out.mkdir(parents=True, exist_ok=True)
+            out = args.per_song_out / f"{label}.json"
+            out.write_text(json.dumps({"decoder": label, **report.to_dict()}))
+            print(f"    wrote {out}")
     if args.skip_halves:
         return
     a, b = (weights_to_vector(fits[h].weights) for h in ("A", "B"))
