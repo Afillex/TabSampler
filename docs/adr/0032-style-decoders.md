@@ -1,6 +1,7 @@
 # ADR 0032: Clean and distorted guitar get a decoder each
 
-Status: proposed (2026-10-03) — pre-registration; accepted with its result
+Status: accepted (2026-10-03) — **clean passed its fair test; distorted failed it on the
+chord-shape condition**
 
 Carries out the style item of Phase 2 task C3 (`docs/plans/2026-10-01-phase-2.md`): "fit on
 clean and distorted parts separately and measure each on its own validation parts", and
@@ -55,3 +56,28 @@ longer has to be good for bossa nova too.
 
 **Harder.** Two decoders to calibrate and maintain, and a choice the user must make — the
 default covers the common case.
+
+## Result (2026-10-03)
+
+| 300 artist-validation songs | hand-set | fitted on that style | delta, 95% paired interval | chord shapes, that style's parts |
+|---|---|---|---|---|
+| **clean parts**, clean-only fit | 0.8257 | **0.8616** | +0.0359 [+0.0134, +0.0622] | 0.99974 → 0.99964 (−0.00010) |
+| **distorted parts**, distorted-only fit | 0.5705 | **0.6480** | +0.0774 [+0.0358, +0.1177] | 0.99978 → 0.99913 (**−0.00065**) |
+
+Fitted weights: clean — move 1.2316, span 0.7279, high 0.8867, open_reward −0.1702 (131,345
+training groups); distorted — move 0.9466, span 0.7102, high 0.1610, open_reward −1.3742
+(390,284 groups).
+
+**Clean passes: for the first time, fitted weights beat the hand-set ones on clean guitar**,
+by 3.6 points of recovery, once they are fitted on clean playing alone. They are
+`configs/decoder_clean.yaml`, the CLI's default; the rounded weights reproduce the fit
+exactly.
+
+**Distorted fails, on condition (b).** Its recovery gain is large and clearly real, but its
+decoded output has more chord shapes that E3 calls unplayable: 0.00065 more, against the
+0.0005 allowed. By the rule fixed before the fit, `configs/decoder_distorted.yaml` keeps
+the hand-set weights. Whether that allowance is right for a style whose model recovers 7.7
+points more of the human fingering is a question for Ege, not a reason to bend the rule.
+
+The hypothesis held for recovery on both styles; the fair test is what decides adoption,
+and it split.

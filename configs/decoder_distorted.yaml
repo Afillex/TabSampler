@@ -1,0 +1,37 @@
+# Decoder for distorted guitar (ADR 0032). Pass it with --decoder-config / --config.
+#
+# Hand-set weights, as configs/phase1_baseline.yaml: the weights fitted on distorted parts
+# recovered far more of the human fingering on distorted artist-validation parts (0.5705 ->
+# 0.6480, 95% paired interval +0.0358 to +0.1177) but lowered the decoded chord-shape rate
+# by 0.00065, beyond ADR 0032's allowance of 0.0005, so by the rule fixed in advance they do
+# not replace the hand-set weights.
+
+hypothesis: >-
+  The decoder for distorted guitar: hand-set cost weights (ADR 0032's fair test kept them),
+  with the temperature calibrated for this style (ADR 0033).
+
+tuning:
+  # Standard tuning, low E to high e, as MIDI note numbers (ADR 0008).
+  open_pitches: [40, 45, 50, 55, 59, 64]
+  n_frets: 22
+  capo: 0
+
+grouping:
+  window_s: 0.03
+
+# The enumeration bound, as configs/phase1_baseline.yaml explains.
+max_span: 5
+
+weights:
+  move: 1.0
+  span: 1.0
+  high: 0.1
+  open_reward: 0.25
+  acoustic: 0.0
+  # ADR 0026's pooled temperature until ADR 0033 calibrates one for this style.
+  temperature: 2.9974
+
+# Notes whose posterior falls below this are marked uncertain (ADR 0013). Not tuned.
+uncertainty_threshold: 0.6
+
+seed: 0

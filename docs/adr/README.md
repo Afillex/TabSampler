@@ -39,7 +39,7 @@ of the old record to point at its replacement.
 | [0029](0029-e3-move-timing.md) | E3 times a hand move from the **last fretted group**, not from an open group in between: human tab 0.9795 → 0.9823 | D9 (defect) | accepted |
 | [0030](0030-hand-stretch.md) | A chord wider than the window **stretches the hand** instead of anchoring it (supersedes one sentence of 0025); recovery unchanged | 2.2 / D9 | accepted |
 | [0031](0031-e3-speed-limit.md) | E3's speed limit set from human tab: **48 frets/s**, 0.9988 of unseen artists' moves pass | D9 | accepted |
-| [0032](0032-style-decoders.md) | Clean and distorted guitar get **a decoder each**, fitted and judged on their own parts; the default is clean | D7 | proposed |
+| [0032](0032-style-decoders.md) | Clean and distorted guitar get **a decoder each**; clean-fitted weights win on clean parts (0.8257 → 0.8616) and become the default; distorted keeps hand-set (chord shapes −0.00065) | D7 | accepted |
 | [0033](0033-per-style-temperature.md) | Each style's decoder gets **its own temperature**, calibrated on that style's validation parts | D7 | proposed |
 | [0034](0034-c3-feature-groups.md) | Two richer feature groups — **per-string preference** and **fret regions** — each kept only if it raises a style's validation recovery | D7 | proposed |
 

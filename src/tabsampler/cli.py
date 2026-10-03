@@ -190,7 +190,7 @@ def eval_m1(
         "configs/m1_full_eval.yaml"
     ),
     decoder: Annotated[Path, typer.Option("--decoder-config", help="Decoder config YAML.")] = Path(
-        "configs/phase1_baseline.yaml"
+        "configs/decoder_clean.yaml"
     ),
     results: Annotated[
         Path, typer.Option("--results", help="results.csv to append to.")
@@ -391,7 +391,7 @@ def transcribe(
         typer.Option("--output", "-o", help="Write here. .json gives JSON, else ASCII."),
     ] = None,
     config: Annotated[Path, typer.Option("--config", "-c", help="Decoder config YAML.")] = Path(
-        "configs/phase1_baseline.yaml"
+        "configs/decoder_clean.yaml"
     ),
     exe: Annotated[
         str, typer.Option("--transcriber", help="basic-pitch executable.")
@@ -451,7 +451,7 @@ def transcribe(
 @app.command("diagnose")
 def diagnose(
     decoder: Annotated[Path, typer.Option("--decoder-config", help="Decoder config YAML.")] = Path(
-        "configs/phase1_baseline.yaml"
+        "configs/decoder_clean.yaml"
     ),
     paths: Annotated[int, typer.Option("--paths", help="How many synthetic paths.")] = 200,
     groups: Annotated[int, typer.Option("--groups", help="Shapes per path.")] = 8,

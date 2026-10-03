@@ -1,0 +1,40 @@
+# Decoder for clean or acoustic guitar -- the CLI's default (ADR 0032).
+#
+# Weights fitted by maximum likelihood on the clean parts of 600 artist-split DadaGP
+# training songs, rounded to 4 decimal places. They passed ADR 0032's fair test on clean
+# artist-validation parts: recovery of the human fingering 0.8257 -> 0.8616 against the
+# hand-set weights (95% song-level paired interval +0.0134 to +0.0622), decoded chord-shape
+# rate 0.99974 -> 0.99964 (allowed drop 0.0005).
+
+hypothesis: >-
+  The default decoder, for clean or acoustic guitar: cost weights fitted on clean DadaGP
+  parts (ADR 0032), with the temperature calibrated for this style (ADR 0033).
+
+tuning:
+  # Standard tuning, low E to high e, as MIDI note numbers (ADR 0008).
+  open_pitches: [40, 45, 50, 55, 59, 64]
+  n_frets: 22
+  capo: 0
+
+grouping:
+  window_s: 0.03
+
+# The enumeration bound, as configs/phase1_baseline.yaml explains; decode_best_effort
+# relaxes it per group when a chord needs more and reports it.
+max_span: 5
+
+weights:
+  move: 1.2316
+  span: 0.7279
+  high: 0.8867
+  # Slightly negative: fitted on clean parts, an open string is mildly penalised once the
+  # other three terms are in place -- a correction given them, not a claim on its own.
+  open_reward: -0.1702
+  acoustic: 0.0
+  # ADR 0026's pooled temperature until ADR 0033 calibrates one for this style.
+  temperature: 2.9974
+
+# Notes whose posterior falls below this are marked uncertain (ADR 0013). Not tuned.
+uncertainty_threshold: 0.6
+
+seed: 0
