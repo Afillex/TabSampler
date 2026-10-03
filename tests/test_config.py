@@ -39,7 +39,7 @@ PROBE: dict[str, object] = {
     "high_neck_fret": 12,
     "max_fingers": 4,
     "allow_barre": True,
-    "max_frets_per_second": 12.0,
+    "max_frets_per_second": 48.0,
 }
 
 

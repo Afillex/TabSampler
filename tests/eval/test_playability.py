@@ -170,6 +170,12 @@ def test_rules_are_data_and_can_be_relaxed() -> None:
 # ------------------------------------------------------------------ transition rules
 
 
+def test_the_speed_limit_is_the_one_measured_on_human_tab() -> None:
+    # ADR 0031: the slowest limit under which 99.86% of training artists' human moves pass,
+    # rounded up, and checked on unseen artists (0.9988 pass). Changing it needs a new ADR.
+    assert RULES.max_frets_per_second == 48.0
+
+
 def test_a_reach_inside_one_position_is_not_a_hand_move() -> None:
     # 5 -> 7 in a sixteenth note used to read as 16 frets/s (ADR 0022). Now: no move.
     reason, hand = hand_move_is_playable((5, 9), pos((0, 7)), 0.125, RULES)
@@ -297,7 +303,7 @@ def test_a_tab_placing_two_notes_on_one_string_is_reported_not_crashed() -> None
 
 def test_the_default_rules_are_adr_0011s_numbers() -> None:
     assert (RULES.max_span_low, RULES.max_span_high, RULES.high_neck_fret) == (4, 5, 12)
-    assert RULES.max_frets_per_second == 12.0
+    # ADR 0011's 12 frets/s was replaced by ADR 0031's measured limit; see the test above.
     # max_fingers replaces ADR 0011's max_fretted_notes; barres are modelled (ADR 0019).
     assert RULES.max_fingers == 4
     assert RULES.allow_barre is True

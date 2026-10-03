@@ -62,7 +62,9 @@ class PlayabilityRules:
     max_fingers: int = 4
     #: Whether one finger may cover several strings at the lowest fretted fret.
     allow_barre: bool = True
-    max_frets_per_second: float = 12.0
+    #: The slowest limit under which 99.86% of human moves pass on training artists, as
+    #: often as the chord rules hold; checked on unseen artists (ADR 0031). Was 12.
+    max_frets_per_second: float = 48.0
 
     def max_span_at(self, lowest_fretted: int) -> int:
         """The span allowed for a shape whose lowest fretted note is here."""
