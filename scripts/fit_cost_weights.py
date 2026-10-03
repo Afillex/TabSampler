@@ -1,4 +1,4 @@
-"""Fit the four cost weights by maximum likelihood on DadaGP, and check them on validation.
+"""Fit the cost weights by maximum likelihood on DadaGP, and check them on validation.
 
 Pre-registered before the run (ADR 0023):
 

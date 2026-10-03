@@ -220,7 +220,9 @@ class TabNote:
 class CostWeights:
     """Spec 2.2's lambdas, plus the forward-backward temperature.
 
-    Defaults live in ``configs/phase1_baseline.yaml``; these are the fallbacks.
+    These defaults are the hand-set weights of ``configs/phase1_baseline.yaml`` (ADR 0012)
+    with the new feature groups at zero; the shipped decoders' values live in
+    ``configs/decoder_clean.yaml`` and ``configs/decoder_distorted.yaml`` (ADR 0032).
     """
 
     move: float = 1.0

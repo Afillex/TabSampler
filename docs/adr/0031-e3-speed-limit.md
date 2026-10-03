@@ -1,6 +1,8 @@
 # ADR 0031: E3's speed limit, set from human tab and checked on unseen artists
 
-Status: accepted (2026-10-03) — **the check held: E3's limit is 48 frets per second**
+Status: accepted (2026-10-03) — **the check held: E3's limit is 48 frets per second**. Its
+quotable wording is corrected by [ADR 0036](0036-corrections-to-0030-and-0031.md): 99.86% is a
+share of transitions; 98.6% of actual hand moves pass.
 
 Would supersede ADR 0011's **12 frets per second** and ADR 0022's rejection of raising it.
 Approved in principle by Ege on 2026-10-03, after the open-string timing was fixed first

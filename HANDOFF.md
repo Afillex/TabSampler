@@ -14,7 +14,7 @@ and Phase 1 (a hand-set cost model decoded with Viterbi plus forward-backward po
 are both **done, measured and tagged**, and **Phase 1.5 has closed M1's known defects**
 (ADRs 0016-0019). **DadaGP arrived on 2026-10-01** and Phase 2 is under way: the training
 protocol is fixed (ADR 0021) and every fit now uses an artist-disjoint split (ADR 0024);
-both halves of E3 are validated on human tab (ADRs 0022, 0031); the hand is a 4-fret
+both halves of E3 are measured against human tab (ADRs 0022, 0031, 0036); the hand is a 4-fret
 window that a wide chord can stretch (ADRs 0025, 0030); and clean and distorted guitar have
 a decoder each (ADR 0032) with their own temperatures (ADR 0033) — the clean one, fitted on
 clean DadaGP playing, is the default. The first richer features did not earn a place (ADR
@@ -151,9 +151,11 @@ across open strings from the wrong group (ADR 0029); E3's unmeasured speed limit
 
 Still open:
 
-- **DadaGP validation does not predict GuitarSet.** Three times its clean parts pointed one
-  way and GuitarSet another (ADR 0023; the hand window; the clean decoder, +3.6 on
-  validation and −1.9 on GuitarSet). Every model choice rests on it, so this comes first.
+- **DadaGP validation does not predict GuitarSet.** Three times its clean parts were a poor
+  guide (ADR 0023; the hand window; the clean decoder, +3.6 on validation and −1.9 on
+  GuitarSet). Ege decided on 2026-10-03 to hold out GuitarSet's player 00 as validation;
+  the next plan does it and re-decides the default there. Until then, `main` on GitHub
+  still has the previous default: this branch is merged locally, not pushed.
 - **Both chord-shape guardrails are breached** on GuitarSet (0.9957 / 0.9889). It cannot be
   diagnosed on GuitarSet; on DadaGP validation the clean decoder's rate is 0.99964.
 - **A still-ringing note does not reserve its string** against the next group (spec §2.2).
@@ -204,6 +206,12 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 - **`fingering.states.shift_window` is the one definition of the hand.** E3, the cost
   model, the decoder's lattice and the CRF fitter all call it; the brute-force oracle
   re-derives it from ADR 0030's text, as a literal search, and must not import it.
+- **The per-string biases overlap with `high`.** For single notes the mean fret is close to
+  a linear function of the string, so a fit trades one against the other (in the clean
+  per-string fit `high` went 0.89 → 1.48). Read fitted string biases only together with
+  `high`; regularise before trying more feature groups.
+- **E3's speed limit, in words:** human tab passes 48 frets/s on 99.88% of transitions and
+  on 98.6% of the moves where the hand actually shifts (ADR 0036) — not "99.86% of moves".
 - **Two decoders, one default.** `configs/decoder_clean.yaml` is the CLI's default and
   `configs/decoder_distorted.yaml` the alternative (ADR 0032); `configs/phase1_baseline.yaml`
   is the record of the hand-set baseline, no longer the default.
@@ -231,10 +239,8 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 
 ## Open items that need Ege, not you
 
-- **Validation that predicts GuitarSet**: a curated acoustic subset of DadaGP, or the
-  Phase 4 corpora. Every further model choice depends on it.
-- **The default decoder**: kept, by the protocol, though it lost 1.9 points on GuitarSet;
-  reverting because of GuitarSet would be test-set selection.
+- **Pushing**: this branch waits, merged locally, until the next plan has re-decided the
+  default on the held-out player; say so if it should go public sooner.
 - **The chord-shape allowance (0.0005)**: it has blocked every fitted distorted model, each
   7.7 to 10.3 points better at recovering human fingerings.
 - **The clean temperature**: T = 1 has a lower calibration error (0.0559) than the

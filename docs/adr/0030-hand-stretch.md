@@ -1,6 +1,7 @@
 # ADR 0030: A chord wider than the window stretches the hand
 
-Status: accepted (2026-10-03) — the check held on recovery
+Status: accepted (2026-10-03) — the check held on recovery. Its claim that a chord's own notes
+are never charged movement is corrected by [ADR 0036](0036-corrections-to-0030-and-0031.md).
 
 Supersedes **one sentence of [ADR 0025](0025-hand-window.md)**: "a shape wider than the
 window anchors at its lowest fret". The 4-fret window, its rest width and everything else

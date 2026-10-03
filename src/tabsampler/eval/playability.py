@@ -13,8 +13,10 @@ Rules, from ADR 0011, passed in as data so they can change without editing this 
 - open strings are free and excluded from the span;
 - at most 4 **fingers** (ADR 0019, superseding ADR 0011's count of fretted *notes*);
 - one note per string;
-- hand movement at most 12 frets per second, where the hand is a 4-fret window that
-  moves only when a note falls outside it and is carried across all-open shapes
+- hand movement at most 48 frets per second (ADR 0031, measured on human tab; was 12),
+  timed from the last group with a fretted note (ADR 0029), where the hand is a 4-fret
+  window -- stretched over a wider chord while one needs it (ADR 0030) -- that moves only
+  when a note falls outside it and is carried across all-open shapes
   (ADR 0025, replacing ADR 0011's lowest-fret rule, which ADR 0022 showed counted a
   finger reaching as the hand moving).
 
@@ -167,8 +169,10 @@ def hand_move_is_playable(
 ) -> tuple[str | None, Hand | None]:
     """Whether the hand can make the move this shape needs in ``seconds``, and where it ends.
 
-    The hand is a window (ADR 0025): a finger reaching inside it is not a move, and an
-    all-open shape leaves it where it was. Returns (reason or None, the new hand).
+    The hand is a window (ADR 0025), stretched over a wider chord while one needs it (ADR
+    0030): a finger reaching inside it is not a move, and an all-open shape leaves it where
+    it was. ``seconds`` is the caller's: :func:`hand_moves` times a move from the last
+    fretted group (ADR 0029). Returns (reason or None, the new hand).
     """
     new_hand, distance = shift_window(hand, fretted_frets(positions), HAND_WINDOW)
     return move_verdict(distance, seconds, rules), new_hand

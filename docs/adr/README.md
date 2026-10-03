@@ -37,12 +37,13 @@ of the old record to point at its replacement.
 | [0027](0027-fitted-weights-fair-test.md) | Fair test for fitted weights: **failed** (clean and E3 lose) — hand-set stays the default | D7 | accepted |
 | [0028](0028-hand-window-kept.md) | The hand window stays after **missing its validation check** by 0.0023 on distorted parts (Ege's decision) | 2.2 / D9 | accepted |
 | [0029](0029-e3-move-timing.md) | E3 times a hand move from the **last fretted group**, not from an open group in between: human tab 0.9795 → 0.9823 | D9 (defect) | accepted |
-| [0030](0030-hand-stretch.md) | A chord wider than the window **stretches the hand** instead of anchoring it (supersedes one sentence of 0025); recovery unchanged | 2.2 / D9 | accepted |
-| [0031](0031-e3-speed-limit.md) | E3's speed limit set from human tab: **48 frets/s**, 0.9988 of unseen artists' moves pass | D9 | accepted |
+| [0030](0030-hand-stretch.md) | A chord wider than the window **stretches the hand** instead of anchoring it (supersedes one sentence of 0025); recovery unchanged | 2.2 / D9 | accepted; a claim corrected by 0036 |
+| [0031](0031-e3-speed-limit.md) | E3's speed limit set from human tab: **48 frets/s**; 0.9988 of unseen artists' transitions pass | D9 | accepted; wording corrected by 0036 |
 | [0032](0032-style-decoders.md) | Clean and distorted guitar get **a decoder each**; clean-fitted weights win on clean parts (0.8257 → 0.8616) and become the default; distorted keeps hand-set (chord shapes −0.00065) | D7 | accepted |
 | [0033](0033-per-style-temperature.md) | Each style's decoder gets **its own temperature**: clean T = 1.1975, distorted T = 4.2982 | D7 | accepted |
 | [0034](0034-c3-feature-groups.md) | Two richer feature groups — **per-string preference** and **fret regions**: only regions, for distorted, kept; not adopted (chord shapes −0.00062) | D7 | accepted |
 | [0035](0035-e3-transition-baseline.md) | ADR 0016's **transition guardrail gets a baseline** under the new E3 rule: 0.9996 oracle, 0.9969 end to end | D10 | accepted |
+| [0036](0036-corrections-to-0030-and-0031.md) | Corrections after review: **48 frets/s passes 98.6% of real hand moves** (99.88% of transitions); the stretch relaxes | D9 | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),

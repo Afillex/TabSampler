@@ -43,17 +43,17 @@ comparison with a song-level paired bootstrap:
 
 - **Clean and distorted guitar got a decoder each** (ADR 0032). Weights fitted on clean
   playing alone beat the hand-set ones on clean validation parts, 0.8257 → 0.8616 (95%
-  interval +0.013 to +0.062): the first fitted weights to win on clean guitar. Weights fitted
+  interval +0.013 to +0.062): the first fitted weights to win on clean validation parts. Weights fitted
   on distorted playing gained even more there (+0.077) but decoded slightly more chord
   shapes that E3 calls unplayable (0.00065 more, against an allowance of 0.0005), so the
   distorted decoder keeps the hand-set weights.
 - **Each decoder has its own temperature** (ADR 0033): 1.1975 for clean, 4.2982 for
   distorted, from one pooled 2.9974.
-- **E3's transition rule became a measure** (ADRs 0029, 0031): a move is timed from the
-  last fretted note, and the speed limit is 48 frets per second — the speed 99.86% of human
-  moves stay under, as often as the chord rules hold, checked on artists it was not taken
-  from (0.9988 pass). The transition rate now means *moves no faster than 99.86% of human
-  moves*.
+- **E3's transition rule became a measure** (ADRs 0029, 0031, 0036): a move is timed from
+  the last fretted note, and the speed limit is 48 frets per second, set from human tab.
+  On artists it was not taken from, human tab passes it on 99.88% of transitions — and on
+  98.6% of the moves where the hand actually shifts, since most transitions move nothing.
+  At the old 12 frets per second only 77% of those moves passed.
 - **Two richer feature groups were tried** (ADR 0034): a per-string preference and fret
   regions. Neither earned a place in a shipped decoder.
 
@@ -68,14 +68,23 @@ comparison with a song-level paired bootstrap:
 
 **The headline went the wrong way.** The prediction committed before the run
 (`configs/m2_style_eval.yaml`) expected oracle E2 to rise, because the clean decoder had
-won by 3.6 points on clean DadaGP validation; **on GuitarSet it fell by 1.9 points**, and
-both chord-shape guardrails are now breached. End-to-end E2 rose, as predicted (+0.4
-points); oracle calibration error fell by a third (0.1651 → 0.1008) and end-to-end
-calibration error rose (0.1272 → 0.3027), both as predicted — a sharper decoder is more
-confident about notes the transcriber got wrong.
+won by 3.6 points on clean DadaGP validation; **on GuitarSet it fell by 1.9 points**. Its
+chord-shape prediction missed too: "within 0.001 of 0.9967 / 0.9904" came out 0.9957 (on
+the boundary) and 0.9889 (0.0015 off), breaching both guardrails. End-to-end E2 rose by
+0.4 points, as predicted, though that is within what ADR 0016 counts as noise; oracle
+calibration error fell from 0.1651 to 0.1008 and end-to-end calibration error rose from
+0.1272 to 0.3027, both as predicted — a sharper decoder is more confident about notes the
+transcriber got wrong.
+
+Two of these decisions were prompted in part by earlier GuitarSet runs — the per-style
+temperature by oracle calibration error not moving last time, the clean default by
+GuitarSet being acoustic. Both were decided on DadaGP, so ADR 0003 holds, but this run
+confirms them less independently than a fresh prediction would. ADR 0016's guardrails now
+also rest on two different decoders: the chord-shape baseline is the hand-set decoder's
+from Phase 1.5, the transition baseline this run's (ADR 0035).
 
 This is the third time DadaGP's clean parts have been a poor guide to GuitarSet, and the
-first in this direction: validation said better, the test set says worse. **The default is
+first time they got the direction wrong: validation said better, the test set says worse. **The default is
 not reverted on this evidence**: choosing by GuitarSet, in either direction, would be
 selecting on the test set (ADR 0003), exactly as adopting fitted weights on a GuitarSet
 gain would have been in ADR 0023. What it does show is that the project needs validation
@@ -176,15 +185,16 @@ this project's own baseline (ADR 0016), not from anyone else's figure.
 - **Calibration.** Given perfect notes the default's posteriors are now fairly honest
   (E5 0.10); end to end they are less so (0.30), because the decoder is surer of itself and
   the transcriber's mistakes are not its to see. ADR 0016's E5 guardrail (< 0.3851) holds.
-- **Both halves of E3 are now validated measures.** 99.86% of 16.8 million human chord
-  shapes pass the chord rules (ADR 0022), and the transition rule's speed limit is the one
-  99.86% of human moves stay under (ADR 0031). Our output passes 0.9957 / 0.9889 of its
-  chord shapes and 0.9996 / 0.9969 of its moves.
-- **DadaGP validation does not yet predict GuitarSet.** Three times its clean parts pointed
-  one way and GuitarSet another: the pooled fitted weights (−11 points on clean validation,
-  +3.9 on GuitarSet, ADR 0023), the hand window (+0.4 and +2.8) and the clean decoder (+3.6
-  and −1.9). Until there is validation data closer to acoustic playing, a validation gain
-  is not a promise about it.
+- **Both halves of E3 are now measured against human tab.** 99.86% of 16.8 million human
+  chord shapes pass the chord rules (ADR 0022), and human tab passes the transition rule on
+  99.88% of transitions — 98.6% of the moves where the hand actually shifts — on artists the
+  speed limit was not taken from (ADRs 0031, 0036). Our output passes 0.9957 / 0.9889 of its
+  chord shapes and 0.9996 / 0.9969 of its transitions.
+- **DadaGP validation does not yet predict GuitarSet.** Three times its clean parts were a
+  poor guide: the pooled fitted weights (−11 points on clean validation, +3.9 on GuitarSet,
+  ADR 0023), the hand window (+0.4 and +2.8: right direction, far off in size) and the clean
+  decoder (+3.6 and −1.9). Ege has since decided to hold out one GuitarSet player as
+  validation data; the next plan does that, and re-decides the default on it.
 
 ### Runtime
 
@@ -231,7 +241,10 @@ same day, and the stretch (ADR 0030) to 34.3 ms and 120.1 ms.
   slightly more chord shapes that E3 rejects than ADR 0032 allows (ADRs 0032, 0034). The
   clean decoder's fitted weights won on DadaGP validation and lost on GuitarSet (above).
 - E3's speed limit (48 frets/s) comes from crowd-sourced tab quantised to a rhythmic grid:
-  some very fast moves in it may be notation rather than playing (ADR 0031).
+  some very fast moves in it may be notation rather than playing (ADR 0031). It still calls
+  about one human hand move in seventy too fast (ADR 0036).
+- After a wide chord, a lone low note relaxes the hand's stretch, so alternating the chord's
+  low and high notes is charged a fret each time (ADR 0036).
 - E3's finger model is a rule, not a measurement: one finger barres the lowest fretted
   fret and every note above it costs a finger, which refuses some partial barres a good
   player manages (ADR 0019).

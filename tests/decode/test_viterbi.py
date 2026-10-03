@@ -75,7 +75,7 @@ def test_the_returned_path_is_a_minimiser_even_when_paths_tie(
 
 
 # The hand covers 4 frets (ADR 0025). At span 6 some candidate shapes do not fit inside it
-# and are anchored at their lowest fret. The shipped config allows span 5 and best-effort
+# and stretch it from their lowest fret (ADR 0030). The shipped config allows span 5 and best-effort
 # decoding relaxes further, so the oracle must see such shapes too.
 WIDE = Context(tuning=STANDARD, max_span=6)
 WIDE_SETTINGS = settings(
