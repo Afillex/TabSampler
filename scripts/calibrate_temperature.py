@@ -15,7 +15,10 @@ Pre-registered before the run:
 - Split: DadaGP validation only. GuitarSet plays no part (ADR 0003).
 
     uv run python scripts/calibrate_temperature.py data/dadagp/DadaGP-v1.1.zip \\
-        data/dadagp/track_meta.json --decoder-config configs/fitted_dadagp.yaml
+        data/dadagp/track_meta.json --decoder-config configs/fitted_dadagp.yaml --split shipped
+
+ADR 0026 calibrated the default the same way, on the artist split:
+``--decoder-config configs/phase1_baseline.yaml --split artist``.
 """
 
 from __future__ import annotations
@@ -120,11 +123,17 @@ def main() -> None:
     parser.add_argument("--decoder-config", type=Path, required=True)
     parser.add_argument("--val-songs", type=int, default=300)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--split", choices=("shipped", "artist"), default="shipped")
+    parser.add_argument(
+        "--split",
+        choices=("shipped", "artist"),
+        required=True,
+        help="artist for every new calibration (ADR 0024); shipped only to reproduce older rows.",
+    )
     args = parser.parse_args()
 
     weights = load_phase1_config(args.decoder_config).weights
     ctx = Context(tuning=DADAGP_TUNING, max_span=5)
+    print(f"split scheme: {args.split}", flush=True)
     val = [
         s
         for track in load_tracks(

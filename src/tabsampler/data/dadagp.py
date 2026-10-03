@@ -255,19 +255,21 @@ def load_tracks(
     archive_path: Path | str,
     split: Split,
     meta_path: Path | str,
+    *,
+    scheme: Literal["shipped", "artist"],
     expected_sha256: Mapping[Split, str] = SPLIT_SHA256,
     tuning: Tuning = Tuning.STANDARD,
     sample: int | None = None,
     seed: int = 0,
     on_song: Callable[[str, ParseStats], None] | None = None,
-    scheme: Literal["shipped", "artist"] = "shipped",
     artist_sha256: str | None = ARTIST_VALIDATION_SHA256,
 ) -> Iterator[HumanTrack]:
     """Human fingerings for every cleared song in one DadaGP split.
 
     Args:
         scheme: ``"shipped"`` is DadaGP's own song-level split (ADR 0021); ``"artist"``
-            reassigns the same songs so that no artist is on both sides (ADR 0024).
+            reassigns the same songs so that no artist is on both sides (ADR 0024). It has
+            no default, so that no caller falls back to the shipped split by accident.
         artist_sha256: The frozen hash of the artist split's validation keys; ``None``
             skips the check, for tests that build their own archives.
         sample: Take this many cleared songs, chosen with ``seed``, instead of all of them.

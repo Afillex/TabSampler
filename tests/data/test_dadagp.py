@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -253,8 +255,12 @@ def hashes_of(archive: Path) -> dict[Split, str]:
 def test_the_loader_reads_only_the_requested_split(tmp_path: Path) -> None:
     archive, meta = make_archive(tmp_path)
     expected = hashes_of(archive)
-    train = list(load_tracks(archive, Split.TRAIN, meta, expected_sha256=expected))
-    validation = list(load_tracks(archive, Split.VALIDATION, meta, expected_sha256=expected))
+    train = list(
+        load_tracks(archive, Split.TRAIN, meta, scheme="shipped", expected_sha256=expected)
+    )
+    validation = list(
+        load_tracks(archive, Split.VALIDATION, meta, scheme="shipped", expected_sha256=expected)
+    )
     assert [t.song for t in train] == ["A/Artist/Song.gp4.tokens.txt"]
     assert [t.song for t in validation] == ["B/Band/Tune.gp4.tokens.txt"]
 
@@ -263,7 +269,11 @@ def test_the_loader_refuses_the_test_split(tmp_path: Path) -> None:
     # DadaGP has no test split in this project; GuitarSet is the test set (ADR 0003).
     archive, meta = make_archive(tmp_path)
     with pytest.raises(TestSetMisuseError):
-        list(load_tracks(archive, Split.TEST, meta, expected_sha256=hashes_of(archive)))
+        list(
+            load_tracks(
+                archive, Split.TEST, meta, scheme="shipped", expected_sha256=hashes_of(archive)
+            )
+        )
 
 
 def test_the_loader_refuses_a_split_file_that_has_changed(tmp_path: Path) -> None:
@@ -271,7 +281,7 @@ def test_the_loader_refuses_a_split_file_that_has_changed(tmp_path: Path) -> Non
     archive, meta = make_archive(tmp_path)
     wrong = {Split.TRAIN: "0" * 64, Split.VALIDATION: "0" * 64}
     with pytest.raises(ValueError, match="sha256"):
-        list(load_tracks(archive, Split.TRAIN, meta, expected_sha256=wrong))
+        list(load_tracks(archive, Split.TRAIN, meta, scheme="shipped", expected_sha256=wrong))
 
 
 def test_the_loader_skips_songs_the_tuning_pass_did_not_clear(tmp_path: Path) -> None:
@@ -284,7 +294,14 @@ def test_the_loader_skips_songs_the_tuning_pass_did_not_clear(tmp_path: Path) ->
             }
         )
     )
-    assert list(load_tracks(archive, Split.TRAIN, meta, expected_sha256=hashes_of(archive))) == []
+    assert (
+        list(
+            load_tracks(
+                archive, Split.TRAIN, meta, scheme="shipped", expected_sha256=hashes_of(archive)
+            )
+        )
+        == []
+    )
 
 
 def test_the_committed_hashes_are_the_v1_1_release() -> None:
@@ -321,33 +338,78 @@ def test_the_artist_split_is_deterministic() -> None:
     assert artist_split(keys) == artist_split(list(reversed(keys)))
 
 
+def make_crossed_archive(tmp_path: Path) -> tuple[Path, Path]:
+    """Two songs that DadaGP's shipped split and the artist split put on opposite sides.
+
+    The shipped lists put Queen in training and Artist in validation; ADR 0024's hash puts
+    Queen in validation and Artist in training. A loader that ignored the scheme, or swapped
+    the sides, would serve the wrong song.
+    """
+    queen, artist = "Q/Queen/Song.gp4.tokens.txt", "A/Artist/Song.gp4.tokens.txt"
+    archive = tmp_path / "DadaGP.zip"
+    with zipfile.ZipFile(archive, "w") as zf:
+        zf.writestr(
+            f"{ARCHIVE_ROOT}_DadaGP_training.json",
+            json.dumps([{"tokens.txt": queen, "validation_set": False}]),
+        )
+        zf.writestr(
+            f"{ARCHIVE_ROOT}_DadaGP_validation.json",
+            json.dumps([{"tokens.txt": artist, "validation_set": True}]),
+        )
+        zf.writestr(f"{ARCHIVE_ROOT}{queen}", song("clean0:note:s6:f0"))
+        zf.writestr(f"{ARCHIVE_ROOT}{artist}", song("clean0:note:s5:f0"))
+    meta = tmp_path / "track_meta.json"
+    meta.write_text(
+        json.dumps({key: {"clean": True, "reason": "clean"} for key in (queen, artist)})
+    )
+    return archive, meta
+
+
 def test_the_loader_serves_the_artist_scheme(tmp_path: Path) -> None:
+    archive, meta = make_crossed_archive(tmp_path)
+    queen, artist = "Q/Queen/Song.gp4.tokens.txt", "A/Artist/Song.gp4.tokens.txt"
+    # The premise: if the hash ever put both on one side, this test would check nothing.
+    assert artist_split([queen, artist]) == {queen: Split.VALIDATION, artist: Split.TRAIN}
+
+    def songs(split: Split) -> set[str]:
+        return {
+            t.song
+            for t in load_tracks(
+                archive,
+                split,
+                meta,
+                scheme="artist",
+                expected_sha256=hashes_of(archive),
+                artist_sha256=None,
+            )
+        }
+
+    assert songs(Split.TRAIN) == {artist}
+    assert songs(Split.VALIDATION) == {queen}
+
+
+def test_the_loader_makes_the_caller_choose_a_split_scheme(tmp_path: Path) -> None:
+    # ADR 0024: every fit uses the artist split. A forgotten argument must not fall back,
+    # silently, to the shipped split, whose artists sit on both sides.
     archive, meta = make_archive(tmp_path)
-    expected = hashes_of(archive)
-    train = {
-        t.song
-        for t in load_tracks(
-            archive,
-            Split.TRAIN,
-            meta,
-            expected_sha256=expected,
-            scheme="artist",
-            artist_sha256=None,
-        )
-    }
-    val = {
-        t.song
-        for t in load_tracks(
-            archive,
-            Split.VALIDATION,
-            meta,
-            expected_sha256=expected,
-            scheme="artist",
-            artist_sha256=None,
-        )
-    }
-    assert train | val == {"A/Artist/Song.gp4.tokens.txt", "B/Band/Tune.gp4.tokens.txt"}
-    assert not train & val
+    with pytest.raises(TypeError, match="scheme"):
+        list(load_tracks(archive, Split.TRAIN, meta, expected_sha256=hashes_of(archive)))  # pyright: ignore[reportCallIssue]
+
+
+SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
+
+
+@pytest.mark.parametrize("script", ["fit_cost_weights.py", "calibrate_temperature.py"])
+def test_the_dadagp_scripts_refuse_to_run_without_a_split(script: str, tmp_path: Path) -> None:
+    # Argument parsing fails before any file is opened, so no dataset is needed.
+    args = [str(tmp_path / "missing.zip"), str(tmp_path / "missing.json")]
+    if script == "calibrate_temperature.py":
+        args += ["--decoder-config", "configs/phase1_baseline.yaml"]
+    result = subprocess.run(
+        [sys.executable, str(SCRIPTS / script), *args], capture_output=True, text=True
+    )
+    assert result.returncode == 2, result.stderr
+    assert "--split" in result.stderr
 
 
 def test_the_artist_scheme_refuses_a_changed_assignment(tmp_path: Path) -> None:

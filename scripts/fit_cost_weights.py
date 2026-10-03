@@ -20,7 +20,7 @@ guitars often have them and a lattice that cannot reach fret 23 cannot express t
 choice there; the cost model itself does not depend on the number of frets.
 
     uv run python scripts/fit_cost_weights.py data/dadagp/DadaGP-v1.1.zip \\
-        data/dadagp/track_meta.json --train-songs 600 --val-songs 300
+        data/dadagp/track_meta.json --train-songs 600 --val-songs 300 --split artist
 """
 
 from __future__ import annotations
@@ -99,7 +99,12 @@ def main() -> None:
     parser.add_argument("--train-songs", type=int, default=600)
     parser.add_argument("--val-songs", type=int, default=300)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--split", choices=("shipped", "artist"), default="shipped")
+    parser.add_argument(
+        "--split",
+        choices=("shipped", "artist"),
+        required=True,
+        help="artist for every new fit (ADR 0024); shipped only to reproduce older rows.",
+    )
     parser.add_argument(
         "--skip-halves",
         action="store_true",

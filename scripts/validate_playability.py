@@ -58,7 +58,9 @@ def main() -> None:
         for name in ParseStats.__dataclass_fields__:
             parse[name] += getattr(stats, name)
 
-    for track in load_tracks(archive, Split.TRAIN, meta, on_song=on_song):
+    # DadaGP's shipped training list: ADR 0022's and ADR 0025's figures were measured on
+    # it. Nothing is fitted here, so the artist overlap (ADR 0024) does not matter.
+    for track in load_tracks(archive, Split.TRAIN, meta, scheme="shipped", on_song=on_song):
         tracks += 1
         hand: int | None = None
         first = True
