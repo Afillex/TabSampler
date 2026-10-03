@@ -129,11 +129,17 @@ def main() -> None:
         required=True,
         help="artist for every new calibration (ADR 0024); shipped only to reproduce older rows.",
     )
+    parser.add_argument(
+        "--part",
+        choices=("all", "clean", "distorted"),
+        default="all",
+        help="Calibrate on one style's validation parts only (ADR 0033).",
+    )
     args = parser.parse_args()
 
     weights = load_phase1_config(args.decoder_config).weights
     ctx = Context(tuning=DADAGP_TUNING, max_span=5)
-    print(f"split scheme: {args.split}", flush=True)
+    print(f"split scheme: {args.split}; validation parts: {args.part}", flush=True)
     val = [
         s
         for track in load_tracks(
@@ -145,6 +151,7 @@ def main() -> None:
             seed=args.seed,
             scheme=args.split,
         )
+        if args.part in ("all", "clean" if track.instrument.startswith("clean") else "distorted")
         for s in human_sequences(track.steps, ctx)
     ]
 
@@ -153,6 +160,13 @@ def main() -> None:
     print(
         f"T = 1.0000: per-note NLL {before_nll:.4f}  calibration error {before_ece:.4f}", flush=True
     )
+    if weights.temperature != 1.0:
+        own_nll, own_ece = fast_score(prepared, weights.temperature)
+        print(
+            f"T = {weights.temperature:.4f} (the config's): per-note NLL {own_nll:.4f}  "
+            f"calibration error {own_ece:.4f}",
+            flush=True,
+        )
 
     result = minimize_scalar(  # pyright: ignore[reportUnknownVariableType]
         lambda log_t: fast_score(prepared, math.exp(log_t))[0],
