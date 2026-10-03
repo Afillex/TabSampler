@@ -45,6 +45,7 @@ of the old record to point at its replacement.
 | [0035](0035-e3-transition-baseline.md) | ADR 0016's **transition guardrail gets a baseline** under the new E3 rule: 0.9996 oracle, 0.9969 end to end | D10 | accepted |
 | [0036](0036-corrections-to-0030-and-0031.md) | Corrections after review: **48 frets/s passes 98.6% of real hand moves** (99.88% of transitions); the stretch relaxes | D9 | accepted |
 | [0037](0037-guitarset-validation-player.md) | **GuitarSet's player 00 becomes validation data**; players 01–05 stay test-only (amends 0003) | D8 | accepted |
+| [0038](0038-default-redecided-on-player-00.md) | The default decoder **re-decided on player 00**: the clean fit must beat the hand-set weights there to stay | D7 | proposed |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),

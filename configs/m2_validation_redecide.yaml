@@ -1,0 +1,30 @@
+# The default decoder re-decided on GuitarSet's validation player, 00 (ADR 0038).
+#
+# Validation data (ADR 0037): no test-set look. Run once per candidate, before anything is
+# chosen; the rule in ADR 0038, committed with this file, decides.
+
+hypothesis: >-
+  On GuitarSet's validation player (00, 60 tracks, ADR 0037), the clean-fitted weights do
+  not beat the hand-set weights on oracle exact tab F1 by a margin whose 95% track-level
+  paired interval is wholly above zero, so the default returns to the hand-set weights
+  (ADR 0038's rule). Candidates: hand-set (configs/phase1_baseline.yaml) and clean-fitted
+  (configs/decoder_clean.yaml), both with the hand window and stretch. Metric: oracle E2
+  and the oracle chord-shape rate; end-to-end figures recorded only. Split: validation.
+  The prediction leans on the 360-track test runs, which included player 00 (ADR 0037).
+
+dataset:
+  name: guitarset
+  data_home: data/guitarset
+  channel: audio_mic
+
+transcriber:
+  exe: basic-pitch
+  cache_dir: cache/note_events
+  onset_threshold: 0.5
+  frame_threshold: 0.3
+  minimum_note_length_ms: 127.70
+  model_serialization: coreml
+  version_tag: basic-pitch-0.4.0
+
+onset_tolerance: 0.05
+seed: 0
