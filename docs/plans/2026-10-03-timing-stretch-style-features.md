@@ -4,6 +4,9 @@
 > reported number is pre-registered in a commit made before it runs, with a tolerance and a
 > noise estimate stated in advance (ADR 0028's lesson).
 
+**Status:** executed 2026-10-03; results, misses and open questions in
+`docs/devlog/2026-10-03.md`.
+
 **Goal:** close the open questions left by the hand-window work and start Phase 2 task C3:
 fix how E3 times moves across open strings, settle E3's speed limit, let a wide chord
 stretch the hand, give clean and distorted guitar their own decoders and temperatures, and
@@ -103,7 +106,7 @@ groups switched on by name, so each feature group is one experiment.
   n_resamples: int = 2000, seed: int = 0) -> PairedDifference(delta, low, high, n_songs,
   n_notes)`.
 
-- [ ] **Step 1: Write the failing tests** (`tests/eval/test_bootstrap.py`)
+- [x] **Step 1: Write the failing tests** (`tests/eval/test_bootstrap.py`)
 
 ```python
 from __future__ import annotations
@@ -184,13 +187,13 @@ def test_a_report_survives_a_round_trip_through_plain_data() -> None:
     assert RecoveryReport.from_dict(report.to_dict()) == report
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `uv run pytest tests/eval/test_bootstrap.py tests/eval/test_recovery.py -q`
 Expected: collection errors — `tabsampler.eval.bootstrap` and `tabsampler.eval.recovery` do
 not exist.
 
-- [ ] **Step 3: Write `src/tabsampler/eval/bootstrap.py`**
+- [x] **Step 3: Write `src/tabsampler/eval/bootstrap.py`**
 
 ```python
 """Song-level paired bootstrap: is one decoder better than another on the same songs?
@@ -247,7 +250,7 @@ def paired_bootstrap(
     return PairedDifference(delta, low, high, len(songs), int(notes.sum()))
 ```
 
-- [ ] **Step 4: Write `src/tabsampler/eval/recovery.py`**
+- [x] **Step 4: Write `src/tabsampler/eval/recovery.py`**
 
 ```python
 """How much of the human fingering a decoder recovers on held-out human tab (ADR 0023).
@@ -354,12 +357,12 @@ def recover(
     return report
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `uv run pytest tests/eval/test_bootstrap.py tests/eval/test_recovery.py -q`
 Expected: 7 passed.
 
-- [ ] **Step 6: Write the two scripts and switch the fit script to `recover`**
+- [x] **Step 6: Write the two scripts and switch the fit script to `recover`**
 
 `scripts/score_validation.py` — decodes the artist validation sample with one decoder
 config, prints recovery by part, the decoded chord-shape rate and lattice nodes per state,
@@ -481,7 +484,7 @@ In `scripts/fit_cost_weights.py`, replace the local `recovery()` with `recover` 
 `PartSequence`s and add `--per-song-out DIR`, which writes `DIR/hand-set.json` and
 `DIR/fitted.json` in `score_validation.py`'s format. The printed lines keep their wording.
 
-- [ ] **Step 7: Check and commit**
+- [x] **Step 7: Check and commit**
 
 Run: `make check` — Expected: exit 0.
 
@@ -509,7 +512,7 @@ git commit -m "Keep validation counts per song and compare decoders with a paire
   rules: PlayabilityRules) -> str | None`; `judge_transitions(shapes: Sequence[Shape],
   rules: PlayabilityRules) -> list[str | None]`. Tasks 4 and 5 consume `hand_moves`.
 
-- [ ] **Step 1: Write ADR 0029 as proposed, with the rerun's prediction, and commit it**
+- [x] **Step 1: Write ADR 0029 as proposed, with the rerun's prediction, and commit it**
 
 Decision: a hand move is timed from the onset of the last group with a fretted note, the
 last moment the hand was in place; an all-open group in between leaves the hand free and
@@ -518,7 +521,7 @@ cleared songs of DadaGP's shipped training list, 16,732,524 transitions): **the 
 rises from 0.9795 but stays below 0.99**, because the fix only touches moves that cross an
 all-open shape. Commit: `Pre-register the E3 move-timing fix (ADR 0029)`.
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 ```python
 from hypothesis import given
@@ -554,13 +557,13 @@ def test_open_strings_between_two_fretted_shapes_never_change_the_verdict(
     assert judge_transitions([first, *opens, last], RULES)[-1] == plain
 ```
 
-- [ ] **Step 3: Run them to verify they fail**
+- [x] **Step 3: Run them to verify they fail**
 
 Run: `uv run pytest tests/eval/test_playability.py -q`
 Expected: the first fails (1 of 2 transitions pass); the other two fail on the missing
 `judge_transitions` import.
 
-- [ ] **Step 4: Implement in `playability.py`**
+- [x] **Step 4: Implement in `playability.py`**
 
 ```python
 def hand_moves(shapes: Sequence[Shape]) -> list[tuple[int, float]]:
@@ -608,13 +611,13 @@ pairing each verdict with `shapes[1:]` for the failure text. In
 `judge_transitions([(g.onset, s.positions) for g, s in track.steps], rules)`, and the
 printed label reads `E3 transitions, hand window timed from the last fretted group (ADR 0029)`.
 
-- [ ] **Step 5: Run the tests, then the whole suite**
+- [x] **Step 5: Run the tests, then the whole suite**
 
 Run: `uv run pytest tests/eval/test_playability.py -q` — Expected: all pass.
 Run: `make check` — Expected: exit 0. Commit:
 `Time E3 hand moves from the last fretted group (ADR 0029)`.
 
-- [ ] **Step 6: Rerun the human-tab check, record it, accept the ADR**
+- [x] **Step 6: Rerun the human-tab check, record it, accept the ADR**
 
 Run (background): `caffeinate -i uv run python -u scripts/validate_playability.py
 data/dadagp/DadaGP-v1.1.zip data/dadagp/track_meta.json`
@@ -642,7 +645,7 @@ accept ADR 0029 with a Result section, commit: `Record the E3 timing fix's effec
   `LatticeNode.carried_hand: Hand | None`; `transition_cost_from(previous_hand: Hand | None,
   curr)`.
 
-- [ ] **Step 1: Score the current decoder per song** (the paired baseline)
+- [x] **Step 1: Score the current decoder per song** (the paired baseline)
 
 Run: `caffeinate -i uv run python -u scripts/score_validation.py data/dadagp/DadaGP-v1.1.zip
 data/dadagp/track_meta.json --decoder-config configs/phase1_baseline.yaml --split artist
@@ -650,7 +653,7 @@ data/dadagp/track_meta.json --decoder-config configs/phase1_baseline.yaml --spli
 Expected: recovery 0.6379 overall, clean 0.8257, distorted 0.5705 (as Task 6 of the previous
 plan measured).
 
-- [ ] **Step 2: Write ADR 0030 as proposed and commit it**
+- [x] **Step 2: Write ADR 0030 as proposed and commit it**
 
 Decision, written so the oracle can be built from it: the hand covers a fret range, at rest
 `h` to `h + 4`. A fretted shape inside the covered range costs nothing and leaves the index
@@ -666,7 +669,7 @@ transition pass rate does not fall.** Keep rule: the stretch stays unless a part
 falls by more than 0.001 with its interval wholly below zero. Commit:
 `Pre-register the hand stretch (ADR 0030)`.
 
-- [ ] **Step 3: Write the failing tests** (`tests/fingering/test_states.py`)
+- [x] **Step 3: Write the failing tests** (`tests/fingering/test_states.py`)
 
 ```python
 def test_a_wide_chord_stretches_the_hand_over_its_own_span() -> None:
@@ -694,12 +697,12 @@ def test_the_stretch_is_carried_across_an_all_open_shape() -> None:
     assert shift_window(hand, [17]) == ((12, 17), 0)
 ```
 
-- [ ] **Step 4: Run them to verify they fail**
+- [x] **Step 4: Run them to verify they fail**
 
 Run: `uv run pytest tests/fingering/test_states.py -q`
 Expected: the four new tests fail (the hand is still an int).
 
-- [ ] **Step 5: Rewrite the oracle's movement from ADR 0030's text, before the code**
+- [x] **Step 5: Rewrite the oracle's movement from ADR 0030's text, before the code**
 
 In `tests/decode/brute_force.py`, `path_cost` keeps `hand` as `(start, end)` and, for a
 shape not inside it, searches the candidate starts literally:
@@ -726,7 +729,7 @@ shape not inside it, searches the candidate starts literally:
         hand = (new_start, max(new_start + 4, high))
 ```
 
-- [ ] **Step 6: Implement**
+- [x] **Step 6: Implement**
 
 `types.py`: `Hand = tuple[int, int]`, documented as the fret range a hand covers; the
 Protocol's `transition_cost_from(self, previous_hand: Hand | None, curr: ChordState)`.
@@ -760,12 +763,12 @@ def shift_window(
 were ints (`test_states`, `test_costs`, `test_viterbi`, `test_forward_backward`,
 `test_playability`, `test_types`) to the `(start, end)` pairs, each value derived by hand.
 
-- [ ] **Step 7: Run the oracle and the suite**
+- [x] **Step 7: Run the oracle and the suite**
 
 Run: `make oracle` — Expected: all oracle tests pass, including the span-6 ones.
 Run: `make check` — Expected: exit 0. Commit: `Let a wide chord stretch the hand (ADR 0030)`.
 
-- [ ] **Step 8: Measure, compare, record**
+- [x] **Step 8: Measure, compare, record**
 
 Run `score_validation.py` again into `cache/validation/stretch.json`, then
 `scripts/compare_validation.py cache/validation/window.json cache/validation/stretch.json`,
@@ -789,7 +792,7 @@ nodes per state, and `scripts/bench_decode.py`; accept ADR 0030 with the result.
 - Produces: `speed_limit_for(pass_rate: float, speeds: Sequence[float], free: int,
   transitions: int) -> float`.
 
-- [ ] **Step 1: Write ADR 0031 as proposed and commit it**
+- [x] **Step 1: Write ADR 0031 as proposed and commit it**
 
 Hypothesis: with the window, the timing fix and the stretch, human hand moves have an upper
 speed that generalises across artists. Method, fixed now: on every cleared song of the
@@ -803,7 +806,7 @@ caveat; if not, 12 frets/s and the caveat stay. Supersedes ADR 0011's 12 frets/s
 0022's rejection of raising the limit: that rejection rested on a point model of the hand,
 which is gone. Commit: `Pre-register the E3 speed-limit experiment (ADR 0031)`.
 
-- [ ] **Step 2: Write the failing tests** (`tests/eval/test_speed.py`)
+- [x] **Step 2: Write the failing tests** (`tests/eval/test_speed.py`)
 
 ```python
 import pytest
@@ -826,9 +829,9 @@ def test_a_rate_no_finite_limit_reaches_is_refused() -> None:
         speed_limit_for(1.0, [1.0, 2.0, 3.0, 4.0], free=5, transitions=10)
 ```
 
-- [ ] **Step 3: Run them to verify they fail** — Expected: `tabsampler.eval.speed` missing.
+- [x] **Step 3: Run them to verify they fail** — Expected: `tabsampler.eval.speed` missing.
 
-- [ ] **Step 4: Implement `src/tabsampler/eval/speed.py`**
+- [x] **Step 4: Implement `src/tabsampler/eval/speed.py`**
 
 ```python
 """The speed limit under which a given share of human hand moves pass (ADR 0031).
@@ -859,9 +862,9 @@ def speed_limit_for(pass_rate: float, speeds: Sequence[float], free: int, transi
     return sorted(speeds)[needed - 1]
 ```
 
-- [ ] **Step 5: Run the tests** — Expected: 3 passed. `make check` — exit 0.
+- [x] **Step 5: Run the tests** — Expected: 3 passed. `make check` — exit 0.
 
-- [ ] **Step 6: Write `scripts/estimate_speed_limit.py` and commit**
+- [x] **Step 6: Write `scripts/estimate_speed_limit.py` and commit**
 
 For each side of the artist split, every cleared song: per track,
 `hand_moves([(g.onset, s.positions) for g, s in track.steps])`; count transitions, free
@@ -870,7 +873,7 @@ Print: the training limit (raw and rounded up), the training pass rate at 12 fre
 at the rounded limit, the validation pass rate at the rounded limit, and the distances of
 the moves that still fail. Commit: `Add the speed-limit estimate (ADR 0031)`.
 
-- [ ] **Step 7: Run it, decide by the rule, record**
+- [x] **Step 7: Run it, decide by the rule, record**
 
 Run (background): `caffeinate -i uv run python -u scripts/estimate_speed_limit.py
 data/dadagp/DadaGP-v1.1.zip data/dadagp/track_meta.json`.
@@ -888,7 +891,7 @@ test pinning the value and a comment citing ADR 0031. Results rows either way; a
 - Modify: `scripts/fit_cost_weights.py` (`--part {all,clean,distorted}`),
   `src/tabsampler/cli.py` (default decoder config)
 
-- [ ] **Step 1: Write ADR 0032 as proposed and commit it**
+- [x] **Step 1: Write ADR 0032 as proposed and commit it**
 
 Hypothesis: fitted on one style's training parts alone, the four weights beat the hand-set
 ones on that style's validation parts — the fits so far lost on clean parts because three
@@ -902,16 +905,16 @@ the clean one, because clean or acoustic guitar is the typical recording (and Gu
 `configs/phase1_baseline.yaml` stays as the record of the hand-set baseline. Commit:
 `Pre-register the style decoders (ADR 0032)`.
 
-- [ ] **Step 2: Add `--part`** — training sequences are filtered to that part; validation
+- [x] **Step 2: Add `--part`** — training sequences are filtered to that part; validation
   is still scored on all parts. Commit: `Fit the cost weights on one style's parts`.
 
-- [ ] **Step 3: Run the two fits** (background, one at a time):
+- [x] **Step 3: Run the two fits** (background, one at a time):
 
 `caffeinate -i uv run python -u scripts/fit_cost_weights.py data/dadagp/DadaGP-v1.1.zip
 data/dadagp/track_meta.json --split artist --part clean --skip-halves
 --per-song-out cache/validation/fit-clean` and the same with `--part distorted`.
 
-- [ ] **Step 4: Apply the fair test** with `compare_validation.py` on the style's part
+- [x] **Step 4: Apply the fair test** with `compare_validation.py` on the style's part
   (hand-set.json against fitted.json). Write both decoder configs (temperature 2.9974 until
   Task 7), point the CLI's default `--decoder-config`/`--config` at
   `configs/decoder_clean.yaml`, results rows, accept ADR 0032. Commit:
@@ -925,14 +928,14 @@ data/dadagp/track_meta.json --split artist --part clean --skip-halves
 - Create: `docs/adr/0033-per-style-temperature.md` (+ index row)
 - Modify: `scripts/calibrate_temperature.py` (`--part`), both decoder configs
 
-- [ ] **Step 1: Write ADR 0033 as proposed and commit it** — Hypothesis: the styles need
+- [x] **Step 1: Write ADR 0033 as proposed and commit it** — Hypothesis: the styles need
   different temperatures, and clean parts, where the decoder recovers far more of the human
   fingering, need a **lower** one than distorted parts. Calibrating each style's decoder on
   its own validation parts lowers that style's calibration error against T = 2.9974.
 
-- [ ] **Step 2: Add `--part`** (validation sequences filtered to that part). Commit.
+- [x] **Step 2: Add `--part`** (validation sequences filtered to that part). Commit.
 
-- [ ] **Step 3: Run both calibrations** (background), write each T into its config, results
+- [x] **Step 3: Run both calibrations** (background), write each T into its config, results
   rows, accept ADR 0033. Commit: `Calibrate a temperature per style (ADR 0033)`.
 
 ---
@@ -956,14 +959,14 @@ and, for Task 9, `low_region` and `high_region` (default 0).
   `FEATURE_GROUPS = {"base": ..., "string": ..., "region": ...}`;
   `fit_weights(sequences, initial, active: Sequence[str] = FEATURE_GROUPS["base"])`.
 
-- [ ] **Step 1: Write ADR 0034 as proposed and commit it** — the two feature groups, why
+- [x] **Step 1: Write ADR 0034 as proposed and commit it** — the two feature groups, why
   each could help, their identifiability (string 0 and the middle region 5–11 are the
   references), and the rule, fixed now: a group is kept for a style iff its refit beats the
   same style's refit without it on that style's validation parts, with the 95% paired
   interval above zero and the chord-shape rate not lower by more than 0.0005. A kept model
   then replaces the style's decoder only by ADR 0032's fair test against it.
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 ```python
 def test_an_old_config_loads_with_the_new_weights_at_zero() -> None:
@@ -990,10 +993,10 @@ plus a hypothesis test that `weights_to_vector(w) @ path_features(path)` equals 
 `path_cost` for random weights with every group non-zero, and the finite-difference
 gradient test extended to all 11 columns.
 
-- [ ] **Step 3: Run them to verify they fail** — Expected: `CostWeights` has no
+- [x] **Step 3: Run them to verify they fail** — Expected: `CostWeights` has no
   `string_bias`; `fit_weights` has no `active`.
 
-- [ ] **Step 4: Implement** — `CostWeights` fields with a length check on `string_bias`;
+- [x] **Step 4: Implement** — `CostWeights` fields with a length check on `string_bias`;
   the loader accepts `string_bias` (a list of six numbers), `low_region`, `high_region`;
   `HandSetScorer.emission_cost` adds `sum(w.string_bias[p.string] for p in positions)`,
   `w.low_region * (fretted notes at frets 1-4)` and `w.high_region * (fretted notes at fret
@@ -1029,10 +1032,10 @@ def fit_weights(
     )
 ```
 
-- [ ] **Step 5: Run the tests, the oracle and the suite** — all pass; `make check` exit 0.
+- [x] **Step 5: Run the tests, the oracle and the suite** — all pass; `make check` exit 0.
   Commit: `Add per-string and fret-region weights to the cost model (ADR 0034)`.
 
-- [ ] **Step 6: Run the string-group fits** — `--features base,string` with `--part clean`
+- [x] **Step 6: Run the string-group fits** — `--features base,string` with `--part clean`
   and `--part distorted`, per-song outputs to `cache/validation/fit-<part>-string`; compare
   each against Task 6's `fitted.json` for the same part. Record rows; note the result in
   the plan. Commit: `Record the per-string feature experiment`.
@@ -1041,11 +1044,11 @@ def fit_weights(
 
 ### Task 9: C3 feature group 2 — fret regions
 
-- [ ] **Step 1: Run the region-group fits** — `--features base,region` (plus `string` for a
+- [x] **Step 1: Run the region-group fits** — `--features base,region` (plus `string` for a
   style that kept it in Task 8), both parts, compared against that style's best model so
   far by ADR 0034's rule. Record rows. Commit: `Record the fret-region feature experiment`.
 
-- [ ] **Step 2: Consolidate** — for each style, the best kept model faces ADR 0032's fair test
+- [x] **Step 2: Consolidate** — for each style, the best kept model faces ADR 0032's fair test
   against the style's decoder; a winner is written to the style's config and its temperature
   recalibrated (Task 7's script). Accept ADR 0034 with all results. Commit:
   `Settle the style decoders after the first C3 features`.
@@ -1056,15 +1059,15 @@ def fit_weights(
 
 ⚠️ Reads the test set — once, logged, nothing chosen from it.
 
-- [ ] **Step 1: Pre-register** `configs/m2_style_eval.yaml` — hypothesis, single variable
+- [x] **Step 1: Pre-register** `configs/m2_style_eval.yaml` — hypothesis, single variable
   (the default decoder as this plan leaves it), predictions from validation only, and every
   guardrail of ADR 0016. Write ADR 0035 as proposed: under ADR 0029–0031's rule, ADR 0016's
   transition guardrail has no baseline, and this run sets it. Commit both.
 
-- [ ] **Step 2: Run** `uv run tabsampler eval-m1 --config configs/m2_style_eval.yaml
+- [x] **Step 2: Run** `uv run tabsampler eval-m1 --config configs/m2_style_eval.yaml
   --decoder-config configs/decoder_clean.yaml`.
 
-- [ ] **Step 3: Refresh the README results in the same commit** — previous default kept for
+- [x] **Step 3: Refresh the README results in the same commit** — previous default kept for
   comparison, every guardrail stated including any breach; accept ADR 0035 with the numbers.
 
 ---
