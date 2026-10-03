@@ -1,6 +1,6 @@
 # ADR 0029: E3 times a hand move from the last fretted group
 
-Status: proposed (2026-10-03) — pre-registration; accepted with its result
+Status: accepted (2026-10-03) — prediction held
 
 Changes how ADR 0011's transition rule measures time, as ADR 0025 left it. The window, the
 12 frets-per-second limit and the chord rules are unchanged.
@@ -49,3 +49,14 @@ speed-limit experiment (ADR 0031) starts from a timing that is no longer an arte
 
 **Harder.** GuitarSet's transition figures (0.9944 / 0.9834) were measured with the old
 timing. They are refreshed at the next GuitarSet run, not by a second look now.
+
+## Result (2026-10-03)
+
+| on 16,732,524 human moves, shipped training list | transition pass rate |
+|---|---|
+| timed from the previous group (ADR 0025) | 0.9795 |
+| **timed from the last fretted group (this ADR)** | **0.9823** |
+
+**Held: the rate rose by 0.0028 and stays below 0.99.** The chord-shape rate is unchanged
+at 0.9986. About one failure in seven was the open-string artefact; the rest is the speed
+limit's question (ADR 0031).

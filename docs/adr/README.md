@@ -36,7 +36,7 @@ of the old record to point at its replacement.
 | [0026](0026-default-temperature.md) | Default decoder's temperature calibrated on artist validation: **T = 2.9974, ECE −62%** | D7 | accepted |
 | [0027](0027-fitted-weights-fair-test.md) | Fair test for fitted weights: **failed** (clean and E3 lose) — hand-set stays the default | D7 | accepted |
 | [0028](0028-hand-window-kept.md) | The hand window stays after **missing its validation check** by 0.0023 on distorted parts (Ege's decision) | 2.2 / D9 | accepted |
-| [0029](0029-e3-move-timing.md) | E3 times a hand move from the **last fretted group**, not from an open group in between | D9 (defect) | proposed |
+| [0029](0029-e3-move-timing.md) | E3 times a hand move from the **last fretted group**, not from an open group in between: human tab 0.9795 → 0.9823 | D9 (defect) | accepted |
 | [0030](0030-hand-stretch.md) | A chord wider than the window **stretches the hand** instead of anchoring it (supersedes one sentence of 0025) | 2.2 / D9 | proposed |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
