@@ -51,9 +51,12 @@ class Side:
                 self.speeds.append(distance / seconds)
                 self.distances.append(distance)
 
+    def moves_passing(self, limit: float) -> int:
+        """Timed moves at or under ``limit`` -- moves where the hand actually shifts."""
+        return int(np.count_nonzero(np.asarray(self.speeds) <= limit))
+
     def pass_rate(self, limit: float) -> float:
-        passing = self.free + int(np.count_nonzero(np.asarray(self.speeds) <= limit))
-        return passing / self.transitions
+        return (self.free + self.moves_passing(limit)) / self.transitions
 
 
 def collect(archive: Path, meta: Path, split: Split) -> Side:
@@ -87,6 +90,15 @@ def main() -> None:
     verdict = "HOLDS" if rate >= CHECK else "FAILS"
     print(f"validation pass rate at {limit:.0f} frets/s: {rate:.4f}  (check >= {CHECK}: {verdict})")
 
+    # 0.9986 is a share of transitions, most of which move nothing; count the moves too.
+    for name, side in (("training", train), ("validation", val)):
+        for at in (current, limit):
+            moved = len(side.speeds) + side.instant
+            print(
+                f"{name:10s} at {at:.0f} frets/s: {side.free + side.moves_passing(at)}/"
+                f"{side.transitions} transitions pass; {side.moves_passing(at)}/{moved} "
+                f"of the moves where the hand shifts ({side.moves_passing(at) / moved:.4%})"
+            )
     speeds, distances = np.asarray(val.speeds), np.asarray(val.distances)
     failing = Counter(int(d) for d in distances[speeds > limit])
     print(

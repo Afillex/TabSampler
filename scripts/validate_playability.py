@@ -114,7 +114,7 @@ def main() -> None:
     print()
     print(
         "E3 transitions, hand window timed from the last fretted group (ADR 0029): "
-        f"{share(transitions_passed, transitions)}"
+        f"{share(transitions_passed, transitions)} ({transitions_passed} of {transitions})"
     )
     print("acceptance (ADR 0022, fixed in advance): >= 0.99")
 

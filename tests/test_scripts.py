@@ -76,3 +76,27 @@ def test_the_fit_script_runs_end_to_end_with_a_feature_group(
     assert len(weights["string_bias"]) == 6 and weights["string_bias"][0] == 0.0
     assert (tmp_path / "songs" / "hand-set.json").exists()
     assert (tmp_path / "songs" / "fitted.json").exists()
+
+
+def test_the_comparison_prints_exact_chord_shape_counts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # A pre-registered rule with a 0.0005 threshold cannot be judged from four decimals.
+    compare = load("compare_validation")
+    for name, playable in (("a", 58148), ("b", 58142)):
+        (tmp_path / f"{name}.json").write_text(
+            json.dumps(
+                {
+                    "per_song": {"s": {"clean": [5, 10]}},
+                    "shapes": {"clean": [playable, 58163]},
+                    "single_candidate": 0,
+                }
+            )
+        )
+    monkeypatch.setattr(
+        sys, "argv", ["compare", str(tmp_path / "a.json"), str(tmp_path / "b.json")]
+    )
+    compare.main()
+    out = capsys.readouterr().out
+    assert "58148/58163 -> 58142/58163" in out
+    assert "drop +0.000103" in out
