@@ -115,5 +115,6 @@ reference notes]`, whose pooled ratio is the micro-averaged E2 F1, and chord-sha
 ### Task 5: Close out
 
 - [x] Devlog, HANDOFF, plan boxes; check that no local tooling files are tracked.
-- [ ] `make check`, `make oracle`; independent review; one fix pass; merge into `main` and
-  push both this branch and the one held back on 2026-10-03.
+- [x] `make check`, `make oracle`; independent review; one fix pass (2026-10-04: seven
+  findings fixed, `docs/devlog/2026-10-04.md`).
+- [ ] Merge into `main` and push both this branch and the one held back on 2026-10-03.

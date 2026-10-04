@@ -1,8 +1,8 @@
 # HANDOFF — read this first
 
 You are picking up Tab Sampler with no prior context. This file is the shortest path to
-being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-03, after the
-held-out-player session.
+being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-04, after the
+review of the held-out-player branch.
 
 ## In one paragraph
 
@@ -25,30 +25,19 @@ enough for M2, audio conditioning, and an app a guitarist can use.
 
 ## Where the last session stopped (2026-10-04) — read before anything else
 
-Work is complete on disk, but **not reviewed in full and not public**:
+Work is complete, reviewed and fixed, but **not merged and not public**:
 
 1. **Local `main` is 33 commits ahead of `origin/main` and has not been pushed.** It holds
-   the timing / stretch / style-decoder work (ADRs 0029–0036), which *was* reviewed and
+   the timing / stretch / style-decoder work (ADRs 0029–0036), which was reviewed and
    fixed. The push was held on purpose so the public default changes only once, to the
    decoder re-decided on player 00.
-2. **Branch `guitarset-validation-player` (8 commits on top of `main`) is not merged.** It
-   holds ADRs 0037–0038: player 00 as validation, the default back to hand-set weights
-   (T = 1.5728), and the two 300-track test runs. `make check` (456 tests) and
-   `make oracle` (10) pass on it. **Its independent review was started and cancelled
-   before it reported.** Review it next — the split in `data/splits.py` is the most
-   sensitive change in the project — with particular attention to:
-   - every path by which test-player (01–05) data could reach a choice: callers of
-     `guitarset_test_ids` vs `guitarset_validation_ids`, and that every test read logs
-     to `experiments/test_set_access.log`;
-   - that ADR 0038's rule was applied exactly (`scripts/compare_validation.py` on
-     `cache/validation/p00-hand-set.json` and `p00-clean-fit.json`; exact chord-shape
-     counts);
-   - that README, devlog and ADRs 0037/0038 never present the 300-track figures as
-     independent confirmation (they were part of earlier 360-track runs);
-   - two rows in `results.csv` stamped `14a316d` for `configs/decoder_clean.yaml` with
-     temperature 1.5728: they ran on an uncommitted config and carry a note saying so.
-3. **Then:** one fix pass, merge the branch into `main` (fast-forward), and push `main`.
-   Ege approved the push for after the review.
+2. **Branch `guitarset-validation-player` (17 commits on top of `main`) is reviewed and
+   fixed, and not merged.** It holds ADRs 0037–0038 — player 00 as validation, the default
+   back to hand-set weights (T = 1.5728), the two 300-track test runs — and the review's
+   fix pass of 2026-10-04 (`docs/devlog/2026-10-04.md`): `eval-m1` needs `--split`, and
+   per-track counts can be neither written for nor compared on the test players.
+   `make check` (466 tests) and `make oracle` (10) pass on it.
+3. **Next:** merge the branch into `main` (fast-forward) and push `main`, once Ege confirms.
 
 Deferred small items, not yet fixed: `fit_weights` silently accepts unknown or empty
 `active` names; `paired_bootstrap({}, {})` fails with a raw numpy error; `CostWeights.
@@ -58,7 +47,8 @@ the 2026-10-03 devlog). The decisions waiting for Ege are listed under "Open ite
 
 ## Rules that are not negotiable
 
-1. **GuitarSet and EGDB are test-only** (ADR 0003). No tuning, selection, or threshold
+1. **GuitarSet's players 01–05 and EGDB are test-only** (ADRs 0003, 0037); GuitarSet's
+   player 00 is validation data. No tuning, selection, or threshold
    sweeping against them. `data/splits.py` enforces it; every look is logged to
    `experiments/test_set_access.log` with a written reason.
 2. **Never invent a number.** Every figure in the README and `experiments/results.csv` came
@@ -72,23 +62,24 @@ the 2026-10-03 devlog). The decisions waiting for Ege are listed under "Open ite
 
 ```bash
 make install                       # uv sync --all-groups, Python 3.13
-make check                         # lint + pyright --strict + 456 tests. Must be green.
+make check                         # lint + pyright --strict + 466 tests. Must be green.
 make oracle                        # the correctness core. Must be green.
 ```
 
 `make check` piped into `tail` hides its exit code — check the status, not the output.
 
 Then read, in this order: `docs/spec.md` → `docs/plans/2026-10-01-phase-2.md` (the live
-plan; C1, C2 and C5 are done, C3 is under way) → `docs/devlog/2026-10-03.md` (the most
-recent session) → `docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`.
+plan; C1, C2 and C5 are done, C3 is under way) → `docs/devlog/2026-10-04.md` and
+`2026-10-03.md` (the most recent sessions) → `docs/plans/2026-09-27-rest-of-project.md` →
+`docs/adr/README.md`.
 
 ## Where things stand
 
 | | |
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
-| Tags | `v0.0-phase0`, `v0.1-m1` |
-| Tests | 456, all offline — no test needs the dataset or the transcriber |
+| Tags | **None on GitHub.** `v0.0-phase0` and `v0.1-m1`, listed here before, exist nowhere; Phase 0's and M1's commits, `d50f4f0` and `1147495`, survive only locally, under the tag `pre-publication-backup` |
+| Tests | 466, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
 | Current phase | Phase 2, **in progress**: C3 under way; choose on player 00, judge on players 01–05 |
 
@@ -200,8 +191,9 @@ Still open:
 
 Read the ADR before proposing a change to any of these. `docs/adr/README.md` is the index.
 
-- GuitarSet is test-only, and `audio_hex` is **forbidden as transcriber input** because one
-  channel per string is the E2 ground truth (ADR 0003, 0005).
+- GuitarSet's players 01–05 are test-only and player 00 is validation (ADRs 0003, 0037),
+  and `audio_hex` is **forbidden as transcriber input** because one channel per string is
+  the E2 ground truth (ADR 0005).
 - Reference MIDI floats are **rounded, not truncated**, for the reference tab; floats are kept
   for E1 (ADR 0006).
 - Contract collections are **tuples, not lists** — a list in a frozen dataclass leaves it
@@ -251,7 +243,9 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
   counts to `cache/validation/` (never committed: they name DadaGP songs), and
   `scripts/compare_validation.py` gives the paired difference with a song-level bootstrap
   interval. `scripts/fit_cost_weights.py --part {clean,distorted} --features string,region
-  --per-song-out ... --weights-out ...` writes the same for its fits.
+  --per-song-out ... --weights-out ...` writes the same for its fits. On GuitarSet,
+  `eval-m1 --split validation --per-track-out ...` writes the same per track; it is refused
+  on the test split, and `compare_validation.py` refuses any file holding a test track.
 - **The window makes moves asymmetric**: from fret 3 (frets 3–7), reaching fret 9 moves the
   window 2; from fret 9, reaching fret 3 moves it 6, because a hand is placed at its lowest
   note. Tests pin both directions.
