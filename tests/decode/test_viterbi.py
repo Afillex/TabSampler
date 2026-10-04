@@ -289,3 +289,24 @@ def test_a_seven_string_tuning_decodes_with_the_default_weights() -> None:
     ctx = Context(tuning=seven, max_span=4)
     path, cost = viterbi([group(67), group(35, onset=0.5)], SCORER, ctx)
     assert len(path) == 2 and math.isfinite(cost)
+
+
+@pytest.mark.oracle
+@SLOW
+@given(groups=group_sequence(max_groups=5, max_notes=3))
+def test_viterbi_matches_brute_force_with_the_acoustic_term_switched_on(
+    groups: list[NoteGroup],
+) -> None:
+    # ADR 0047: the term lives in the emission cost, so the oracle charges it unchanged.
+    import math
+
+    evidence = {
+        note: tuple(math.log((1 + (note.pitch + s) % 4) / 10) for s in range(6))
+        for group in groups
+        for note in group.notes
+    }
+    scorer = HandSetScorer(weights=CostWeights(acoustic=0.8), evidence=evidence)
+    _, expected = brute_force_min(groups, scorer, CTX)
+    path, got = viterbi(groups, scorer, CTX)
+    assert got == pytest.approx(expected, abs=1e-9)
+    assert path_cost(groups, path, scorer, CTX) == pytest.approx(got, abs=1e-9)

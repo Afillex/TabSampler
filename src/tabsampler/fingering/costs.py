@@ -15,7 +15,7 @@ with the emission term itself carrying the span, neck-height and open-string par
              + sum of string_bias over the strings its notes are on    # ADR 0034
              + low_region * (fretted notes at frets 1-4)               # ADR 0034
              + high_region * (fretted notes at fret 12 or above)       # ADR 0034
-             + lambda_ac * acoustic          # zero until Phase 3
+             + lambda_ac * sum(-log P(string | audio))   # ADR 0047; zero weight by default
 
 Weights are hand-set for M1 and live in ``configs/phase1_baseline.yaml``. ADR 0012
 explains why they are not tuned: Phase 1 has no legal validation data, because GuitarSet
@@ -37,6 +37,7 @@ the next group.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 from tabsampler.fingering.states import carry_hand, shift_window
@@ -45,6 +46,7 @@ from tabsampler.types import (
     Context,
     CostWeights,
     Hand,
+    NoteEvent,
     NoteGroup,
     assert_state_matches_group,
 )
@@ -112,6 +114,11 @@ class HandSetScorer:
     """A :class:`~tabsampler.types.FingeringScorer` with hand-set weights."""
 
     weights: CostWeights = field(default_factory=CostWeights)
+    #: ADR 0047: per note -- the event itself -- six log-probabilities of its string from the
+    #: audio, low string first, finite. Charged only when ``weights.acoustic`` is not zero.
+    evidence: Mapping[NoteEvent, tuple[float, ...]] = field(
+        default_factory=dict[NoteEvent, tuple[float, ...]], hash=False
+    )
 
     def emission_cost(self, group: NoteGroup, state: ChordState, ctx: Context) -> float:
         """How uncomfortable one shape is, on its own.
@@ -129,11 +136,20 @@ class HandSetScorer:
             + string_cost(w, state)
             + w.low_region * count_low_region(state)
             + w.high_region * count_high_region(state)
-            # The acoustic term (spec 2.2's lambda_ac) enters at Phase 3, when a
-            # per-note -log P(string | audio) exists. Until then it is identically 0,
-            # so the weight is inert by construction rather than by omission.
-            + w.acoustic * 0.0
+            # The acoustic term (spec 2.2's lambda_ac, ADR 0047): skipped, not multiplied by
+            # zero, when its weight is zero, so the ablation is Phase 2's decoder exactly.
+            + (w.acoustic * self.acoustic_cost(group, state) if w.acoustic else 0.0)
         )
+
+    def acoustic_cost(self, group: NoteGroup, state: ChordState) -> float:
+        """Minus the log-probability the audio gives each note's string, summed; a note with no
+        evidence adds nothing (ADR 0047)."""
+        total = 0.0
+        for note, position in zip(group.notes, state.positions, strict=True):
+            heard = self.evidence.get(note)
+            if heard is not None:
+                total -= heard[position.string]
+        return total
 
     def transition_cost_from(self, previous_hand: Hand | None, curr: ChordState) -> float:
         """Movement cost given where the hand *was*, not which shape it was in.

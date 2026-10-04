@@ -195,6 +195,58 @@ def test_the_hand_a_shape_is_played_with_is_the_one_after_the_move() -> None:
     assert up.transition_cost_from(None, state((2, 0), (3, 0))) == 0.0
 
 
+# ------------------------------------------------------------------ the acoustic term (ADR 0047)
+
+
+#: What the audio says of pitch 52's string: mostly the A string, a little the low E or the D.
+HEARD = tuple(math.log(p) for p in (0.1, 0.7, 0.2, 1e-9, 1e-9, 1e-9))
+
+
+def test_each_note_is_charged_minus_the_log_probability_of_its_string() -> None:
+    note = n(52)  # low E fret 12, A fret 7, D fret 2
+    group = NoteGroup.of([note])
+    heard = HandSetScorer(weights=CostWeights(acoustic=1.0), evidence={note: HEARD})
+    plain = HandSetScorer(weights=CostWeights(acoustic=1.0))
+    for string, fret in ((0, 12), (1, 7), (2, 2)):
+        shape = state((string, fret))
+        assert heard.emission_cost(group, shape, ctx()) == pytest.approx(
+            plain.emission_cost(group, shape, ctx()) - HEARD[string]
+        )
+
+
+def test_with_the_acoustic_weight_at_zero_the_evidence_changes_nothing() -> None:
+    # The ablation: Phase 2's decoder exactly, evidence or not.
+    note = n(52)
+    group = NoteGroup.of([note])
+    heard = HandSetScorer(evidence={note: HEARD})
+    for string, fret in ((0, 12), (1, 7), (2, 2)):
+        shape = state((string, fret))
+        assert heard.emission_cost(group, shape, ctx()) == scorer().emission_cost(
+            group, shape, ctx()
+        )
+
+
+def test_a_note_without_evidence_costs_nothing_extra() -> None:
+    group = NoteGroup.of([n(55)])
+    heard = HandSetScorer(weights=CostWeights(acoustic=1.0), evidence={n(52): HEARD})
+    plain = HandSetScorer(weights=CostWeights(acoustic=1.0))
+    assert heard.emission_cost(group, state((3, 0)), ctx()) == plain.emission_cost(
+        group, state((3, 0)), ctx()
+    )
+
+
+def test_a_chord_is_charged_for_every_note_it_has_evidence_for() -> None:
+    low, high = n(52), n(59)
+    group = NoteGroup.of([low, high])
+    other = tuple(math.log(p) for p in (1e-9, 1e-9, 0.25, 0.25, 0.5, 1e-9))
+    heard = HandSetScorer(weights=CostWeights(acoustic=2.0), evidence={low: HEARD, high: other})
+    plain = HandSetScorer(weights=CostWeights(acoustic=2.0))
+    shape = state((1, 7), (4, 0))  # notes in pitch order: 52 on the A string, 59 the open B
+    assert heard.emission_cost(group, shape, ctx()) == pytest.approx(
+        plain.emission_cost(group, shape, ctx()) - 2.0 * (HEARD[1] + other[4])
+    )
+
+
 # ------------------------------------------------------------------ robustness
 
 

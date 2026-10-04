@@ -54,6 +54,7 @@ of the old record to point at its replacement.
 | [0044](0044-learned-model-measured.md) | The learned model on player 00: DadaGP NLL 0.4327 → 0.3136, but oracle E2 0.8273 → 0.7970 (−0.030, interval [−0.086, +0.020]) — **not preferred**; Phase 2's comparison exists on validation | D12 | accepted |
 | [0045](0045-phase-2-test-evaluation.md) | **Phase 2's test evaluation**: today's default 0.6819 oracle E2 on players 01–05 (+0.026, confirming ADR 0039) — **M2 missed by 7.8 points**; the comparison on the test players: (a) 0.6819, (b) 0.4514, (c) 0.6856 | D10 | accepted |
 | [0046](0046-audio-evidence.md) | **The audio evidence**: a string probability per note, from a small CNN over a constant-Q window, through the acoustic term; pretrained on SynthTab | D13 | accepted |
+| [0047](0047-acoustic-term.md) | **The acoustic term**: `HandSetScorer` carries per-note string log-probabilities; a note on string s adds `acoustic × −log P(s)`; zero weight is Phase 2's decoder | D13 | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D14 (app surface — **now due, M1 is met**), and D15 for corpora other than DadaGP

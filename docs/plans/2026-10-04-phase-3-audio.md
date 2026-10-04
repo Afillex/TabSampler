@@ -97,6 +97,8 @@ picking the string the decoder's cost model alone would prefer.
 without changing what the decoder does when the weight is zero. Oracle-checked like every other
 term.
 
+- [x] ADR 0047; `HandSetScorer.evidence`; scorer tests and an oracle test with the term on.
+
 ## Task 5: The ablation on player 00, then the test players once
 
 Pre-registered: oracle E2 with the acoustic term against the same decoder without it (Phase 2's
