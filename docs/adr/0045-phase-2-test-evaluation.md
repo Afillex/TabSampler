@@ -1,6 +1,6 @@
 # ADR 0045: Phase 2's test evaluation — M2 missed by 7.8 points; the comparison on the test players
 
-Status: accepted (2026-10-04) — closing Phase 2 is Ege's sign-off
+Status: accepted (2026-10-04) — **Phase 2 closed on this record by Ege's sign-off**
 
 Reports task C6 of `docs/plans/2026-10-01-phase-2.md`, which Ege chose to run after ADR 0044:
 Phase 2's one evaluation on GuitarSet's test players 01–05, pre-registered in 65fa8ae

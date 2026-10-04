@@ -25,37 +25,29 @@ enough for M2, audio conditioning, and an app a guitarist can use.
 
 ## Where the last session stopped (2026-10-04) — read before anything else
 
-**`main` and `origin/main` are the same commit, `26499d5`:** everything up to the review of
-the held-out-player work is public (`docs/devlog/2026-10-04.md`, first part).
+**Phase 2 is closed (Ege's sign-off, ADR 0045), and everything is merged into `main` and
+public.** Ege asked for the plan to continue in its natural order, with problems brought to
+them; the second half of 2026-10-04 (`docs/devlog/2026-10-04.md`) did, on branch
+`c3-guitarset-errors`, now merged:
 
-**Branch `c3-guitarset-errors` is not merged or pushed, and it changes the default decoder.**
-Ege asked for the plan to continue in its natural order — Phase 2 task C3 — with problems
-brought to them. On the branch (plan `docs/plans/2026-10-04-c3-guitarset-errors.md`):
-
-- `scripts/analyse_errors.py`: where the default loses fingerings on player 00. A third of
-  its errors were an open string where the player fretted the note.
-- **ADR 0039, accepted:** a cost on open strings played with the hand up the neck,
-  `open_up_neck` 0.7615, adopted on player 00 (oracle E2 0.8065 → 0.8273, interval
-  [+0.0066, +0.0363]). `configs/decoder_clean.yaml` now carries it, at T = 1.2934. **It has
-  not been measured on the test players**; the README's test table is the hand-set
-  default's.
+- **C3 on GuitarSet's own playing:** `scripts/analyse_errors.py` found a third of the default's
+  errors on player 00 to be an open string where the player fretted the note. **ADR 0039**
+  added a cost on open strings played up the neck (`open_up_neck` 0.7615), adopted on player 00
+  (+0.021) and confirmed on the test players (+0.026). **ADR 0040**: fret regions and
+  per-string preferences, re-judged on player 00, did not win.
 - **Ege's decision:** a challenger's chord-shape condition on player 00 is *no clear drop* —
   it fails only if its interval lies wholly below zero — instead of the fixed 0.0005.
-- **ADR 0040, accepted:** ADR 0034's fret regions and per-string preferences, each fitted
-  on top of the default and judged on player 00: +0.0009 and +0.0010, intervals across
-  zero — neither adopted.
 - **C4, a learned model (ADRs 0041–0044):** PyTorch in a `model` group (CPU-only on Linux);
-  weights trained on DadaGP stay unpublished (Ege's decision); today's decoder plus a
+  weights trained on DadaGP stay unpublished (Ege's decision, ADR 0042); today's decoder plus a
   learned cost from a bidirectional GRU (`src/tabsampler/model/`, `scripts/train_model.py`,
-  `scripts/evaluate_model.py`). It fitted DadaGP better (NLL 0.4327 → 0.3136) and player 00
-  worse (oracle E2 0.8273 → 0.7970, interval across zero): **not preferred**. The spec's
-  Phase 2 comparison exists on validation.
-- **C6, Phase 2's one test evaluation (ADR 0045):** today's default 0.6819 oracle E2 on the
-  test players, confirming ADR 0039 independently; **M2 missed by 7.8 points**; every other
-  ADR 0016 value held. Closing Phase 2 on that record is Ege's sign-off.
+  `scripts/evaluate_model.py`). It fitted DadaGP better and player 00 worse: not preferred.
+- **C6, Phase 2's one test evaluation (ADR 0045):** today's default scores 0.6819 oracle E2 on
+  players 01–05; **M2 missed by 7.8 points**; every other ADR 0016 value held. The spec's
+  comparison on the test players: decoder 0.6819, learned term alone 0.4514, learned model
+  0.6856.
 
-`make check` (510 tests) and `make oracle` (12) pass on it. Merging and pushing wait for
-Ege's go-ahead.
+`make check` (510 tests) and `make oracle` (12) pass. **Next: Ege chooses the next phase** —
+the spec's Phase 3 (audio conditioning), or the application track (plan tasks B1–B4).
 
 Deferred small items, not yet fixed: `fit_weights` silently accepts unknown or empty
 `active` names; `paired_bootstrap({}, {})` fails with a raw numpy error; `CostWeights.
@@ -99,7 +91,7 @@ plan; C1, C2 and C5 are done, C3 is under way) → `docs/devlog/2026-10-04.md` a
 | Tags | **None on GitHub.** `v0.0-phase0` and `v0.1-m1`, listed here before, exist nowhere; Phase 0's and M1's commits, `d50f4f0` and `1147495`, survive only locally, under the tag `pre-publication-backup` |
 | Tests | 510, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
-| Current phase | Phase 2, **in progress**: C3 under way; choose on player 00, judge on players 01–05 |
+| Current phase | **Phase 2 closed (2026-10-04, Ege's sign-off), M2 missed by 7.8 points** (ADR 0045); the next phase is Ege's to choose |
 
 **Current results** — GuitarSet's test players 01–05, 300 tracks, `audio_mic`, today's
 default `configs/decoder_clean.yaml`: the hand-set weights plus ADR 0039's open-string cost,

@@ -8,7 +8,8 @@ Turn a guitar recording into guitar tablature.
 audio -> note events -> string/fret candidates -> fingering scorer -> decoder -> tab
 ```
 
-Status: **Milestone M1 reached; Phase 2 (learned fingering) in progress.**
+Status: **Milestone M1 reached. Phase 2 (learned fingering) closed on 2026-10-04 with M2
+missed: oracle E2 0.6819 against 0.760** (ADR 0045). The next phase is to be chosen.
 
 ## Results
 
