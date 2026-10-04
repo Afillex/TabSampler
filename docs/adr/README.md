@@ -50,7 +50,8 @@ of the old record to point at its replacement.
 | [0040](0040-regions-and-strings-on-player-00.md) | ADR 0034's **fret regions and per-string preferences, re-judged on player 00**, each on top of the default: +0.0009 and +0.0010, intervals include zero — **neither adopted** | D7 | accepted |
 | [0041](0041-framework-and-compute.md) | The learned model's **framework and compute**: PyTorch 2.14.1 in a `model` group, CPU-only on Linux, the M4 CPU first | D11 | accepted |
 | [0042](0042-dadagp-trained-weights.md) | **Weights trained on DadaGP stay unpublished**; code and results public; fitted cost weights stay | D15 | accepted |
-| [0043](0043-learned-model-design.md) | **The learned model**: today's decoder plus a learned cost from a bidirectional GRU over the groups; the CRF stays the output layer | D12 | accepted |
+| [0043](0043-learned-model-design.md) | **The learned model**: today's decoder plus a learned cost from a bidirectional GRU over the groups; the CRF stays the output layer | D12 | accepted; measured by 0044 |
+| [0044](0044-learned-model-measured.md) | The learned model on player 00: DadaGP NLL 0.4327 → 0.3136, but oracle E2 0.8273 → 0.7970 (−0.030, interval [−0.086, +0.020]) — **not preferred**; Phase 2's comparison exists on validation | D12 | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),

@@ -3,7 +3,7 @@
 > Tasks run in order; steps use checkbox (`- [ ]`) syntax. Every run that produces a
 > reported number is pre-registered in a commit made before it runs.
 
-**Status:** in progress (2026-10-04).
+**Status:** executed 2026-10-04; result in ADR 0044.
 
 **Goal:** Phase 2 task C4 (`docs/plans/2026-10-01-phase-2.md`) and the spec's Phase 2 gate: build
 ADR 0043's model — today's decoder plus a learned cost in context — train it on DadaGP's clean
@@ -100,5 +100,7 @@ higher with the 95% track-level paired interval wholly above zero, and no clear 
 choices judged on player 00 before (ADR 0040). (c) − (a) between −0.01 and +0.03 in oracle E2;
 (b) below (a).
 
-- [ ] Commit this; train; evaluate on player 00; apply the rule to (c) against (a); results
-  rows; ADR 0043's result; devlog.
+- [x] Commit this; train; evaluate on player 00; apply the rule to (c) against (a); results
+  rows; the result (in ADR 0044, since ADR 0043 was accepted before the run); devlog.
+  *(Hypothesis 1 held: DadaGP clean validation NLL 0.4327 → 0.3136. Hypothesis 2 failed:
+  oracle E2 on player 00 0.8273 → 0.7970, −0.0303 [−0.0861, +0.0199]: not preferred.)*

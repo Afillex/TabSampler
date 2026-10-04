@@ -43,10 +43,15 @@ brought to them. On the branch (plan `docs/plans/2026-10-04-c3-guitarset-errors.
   it fails only if its interval lies wholly below zero — instead of the fixed 0.0005.
 - **ADR 0040, accepted:** ADR 0034's fret regions and per-string preferences, each fitted
   on top of the default and judged on player 00: +0.0009 and +0.0010, intervals across
-  zero — neither adopted. Every C3 candidate of the Phase 2 plan is now judged on player
-  00; whether C4 (a learned sequence model) is due is Ege's call.
+  zero — neither adopted.
+- **C4, a learned model (ADRs 0041–0044):** PyTorch in a `model` group (CPU-only on Linux);
+  weights trained on DadaGP stay unpublished (Ege's decision); today's decoder plus a
+  learned cost from a bidirectional GRU (`src/tabsampler/model/`, `scripts/train_model.py`,
+  `scripts/evaluate_model.py`). It fitted DadaGP better (NLL 0.4327 → 0.3136) and player 00
+  worse (oracle E2 0.8273 → 0.7970, interval across zero): **not preferred**. The spec's
+  Phase 2 comparison exists on validation; the test-set version is task C6's, Ege's call.
 
-`make check` (490 tests) and `make oracle` (12) pass on it. Merging and pushing wait for
+`make check` (509 tests) and `make oracle` (12) pass on it. Merging and pushing wait for
 Ege's go-ahead.
 
 Deferred small items, not yet fixed: `fit_weights` silently accepts unknown or empty
@@ -72,7 +77,7 @@ the 2026-10-03 devlog). The decisions waiting for Ege are listed under "Open ite
 
 ```bash
 make install                       # uv sync --all-groups, Python 3.13
-make check                         # lint + pyright --strict + 490 tests. Must be green.
+make check                         # lint + pyright --strict + 509 tests. Must be green.
 make oracle                        # the correctness core. Must be green.
 ```
 
@@ -89,7 +94,7 @@ plan; C1, C2 and C5 are done, C3 is under way) → `docs/devlog/2026-10-04.md` a
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | **None on GitHub.** `v0.0-phase0` and `v0.1-m1`, listed here before, exist nowhere; Phase 0's and M1's commits, `d50f4f0` and `1147495`, survive only locally, under the tag `pre-publication-backup` |
-| Tests | 490, all offline — no test needs the dataset or the transcriber |
+| Tests | 509, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
 | Current phase | Phase 2, **in progress**: C3 under way; choose on player 00, judge on players 01–05 |
 
