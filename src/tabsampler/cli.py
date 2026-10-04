@@ -8,7 +8,7 @@ writing ``experiments/results.csv`` and printing. ``eval/``, ``decode/`` and
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -60,7 +60,7 @@ from tabsampler.render.ascii import render_ascii_with_legend
 from tabsampler.render.json_out import render_json
 from tabsampler.results import append_row, describe_weights, m1_row_notes, results_row
 from tabsampler.transcribe.basic_pitch_cli import BasicPitchCLITranscriber
-from tabsampler.types import NoteEvent, TabNote
+from tabsampler.types import CostWeights, NoteEvent, TabNote
 
 app = typer.Typer(
     add_completion=False,
@@ -329,12 +329,9 @@ def eval_m1(
     )
 
     if per_track_out is not None:
-        per_track = RecoveryReport()
-        for mode, report in reports.items():
-            for result in report.tracks:
-                add_track(per_track, result.track_id, mode, result.e2, result.e3)
+        payload = _per_track_payload(reports, split=split, decoder=decoder, weights=dec.weights)
         per_track_out.parent.mkdir(parents=True, exist_ok=True)
-        per_track_out.write_text(json.dumps({"decoder": str(decoder), **per_track.to_dict()}))
+        per_track_out.write_text(json.dumps(payload))
         console.print(f"[green]wrote per-track counts to {per_track_out}[/green]")
 
     if dry_run:
@@ -371,6 +368,27 @@ def eval_m1(
             ),
         )
     console.print(f"[green]appended {len(reports)} results rows to {results}[/green]")
+
+
+def _per_track_payload(
+    reports: Mapping[str, FullReport], *, split: str, decoder: Path, weights: CostWeights
+) -> dict[str, Any]:
+    """Per-track E2 and E3 counts for ``scripts/compare_validation.py``, and what made them.
+
+    The weights are written out, not only the decoder's path, because the file at a path
+    can change after the run: ``configs/decoder_clean.yaml`` held the clean fit until ADR
+    0038 put the hand-set weights there.
+    """
+    per_track = RecoveryReport()
+    for mode, report in reports.items():
+        for result in report.tracks:
+            add_track(per_track, result.track_id, mode, result.e2, result.e3)
+    return {
+        "split": split,
+        "decoder": str(decoder),
+        "weights": describe_weights(weights),
+        **per_track.to_dict(),
+    }
 
 
 def _print_m1_table(reports: dict[str, FullReport], decoder: Path) -> None:

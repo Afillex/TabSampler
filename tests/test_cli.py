@@ -94,3 +94,34 @@ def test_a_test_set_look_names_the_decoder(looks: list[str]) -> None:
     )
     assert isinstance(result.exception, Stopped)
     assert len(looks) == 1 and decoder in looks[0]
+
+
+def test_per_track_counts_record_the_split_and_the_weights() -> None:
+    # A config path alone can name other weights after the run: configs/decoder_clean.yaml
+    # held the clean fit when cache/validation/p00-clean-fit.json was written, and the
+    # hand-set weights from ADR 0038 on.
+    from types import SimpleNamespace
+
+    from tabsampler.eval.metrics import PRF
+    from tabsampler.eval.playability import PlayabilityReport
+    from tabsampler.eval.recovery import RecoveryReport
+    from tabsampler.results import describe_weights
+    from tabsampler.types import CostWeights
+
+    track = SimpleNamespace(
+        track_id="00_a",
+        e2=PRF(0.8, 0.8, 0.8, n_ref=10, n_est=10, n_match=8),
+        e3=PlayabilityReport(n_groups=5, n_groups_pass=5, n_transitions=4, n_transitions_pass=4),
+    )
+    weights = CostWeights(temperature=1.5728)
+    payload = cli._per_track_payload(  # pyright: ignore[reportPrivateUsage]
+        {"oracle": SimpleNamespace(tracks=(track,))},
+        split="validation",
+        decoder=Path("configs/decoder_clean.yaml"),
+        weights=weights,
+    )
+    assert payload["split"] == "validation"
+    assert payload["weights"] == describe_weights(weights)
+    assert "temperature 1.5728" in payload["weights"]
+    # Still what scripts/compare_validation.py reads.
+    assert RecoveryReport.from_dict(payload).song_counts("oracle") == {"00_a": (16, 20)}
