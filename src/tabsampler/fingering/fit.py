@@ -7,6 +7,7 @@ The hand-set cost model is **linear in its weights**::
     C(path) = move * sum|dhand| + span * sum span
             + high * sum(mean fret / 12) - open_reward * sum n_open
             + string biases and fret-region weights (ADR 0034)
+            + open_up_neck * sum open strings played with the hand up the neck (ADR 0039)
             = w . Phi(path)
 
 and the decoder scores a path as ``exp(-C / T)``, so the decoder is already a linear-chain
@@ -36,12 +37,13 @@ from numpy.typing import NDArray
 from scipy.optimize import minimize  # pyright: ignore[reportUnknownVariableType]
 from scipy.special import logsumexp  # pyright: ignore[reportUnknownVariableType]
 
-from tabsampler.decode.viterbi import build_lattice
+from tabsampler.decode.viterbi import LatticeNode, build_lattice
 from tabsampler.fingering.costs import (
     FRETS_PER_OCTAVE,
     count_high_region,
     count_low_region,
     count_open,
+    count_open_up_neck,
     mean_fretted_fret,
 )
 from tabsampler.fingering.states import shift_window
@@ -63,14 +65,20 @@ WEIGHT_NAMES = (
     "string_5",
     "low_region",
     "high_region",
+    "open_up_neck",
 )
 
 #: The weights each experiment can switch on; the rest stay at their starting values.
 FEATURE_GROUPS: dict[str, tuple[str, ...]] = {
     "base": WEIGHT_NAMES[:4],
     "string": WEIGHT_NAMES[4:9],
-    "region": WEIGHT_NAMES[9:],
+    "region": WEIGHT_NAMES[9:11],
+    "open": WEIGHT_NAMES[11:12],
 }
+
+#: ADR 0039's feature depends on the hand a shape is played with, so it is a feature of a
+#: lattice node rather than of a bare shape, and it is charged from the second group on.
+OPEN_UP_NECK = WEIGHT_NAMES.index("open_up_neck")
 
 Vector = NDArray[np.float64]
 
@@ -134,6 +142,7 @@ def weights_to_vector(weights: CostWeights) -> Vector:
             *weights.string_bias[1:],
             weights.low_region,
             weights.high_region,
+            weights.open_up_neck,
         ],
         dtype=float,
     )
@@ -149,12 +158,14 @@ def weights_from_vector(vector: Vector, temperature: float = 1.0) -> CostWeights
         string_bias=(0.0, *v[4:9]),
         low_region=v[9],
         high_region=v[10],
+        open_up_neck=v[11],
         temperature=temperature,
     )
 
 
 def _shape_features(state: ChordState) -> Vector:
-    """Emission features of one shape. ``w . this`` is ``HandSetScorer.emission_cost``."""
+    """Emission features of one shape. ``w . this`` is ``HandSetScorer.emission_cost``; the
+    hand-dependent ``open_up_neck`` column is zero here and filled per node."""
     strings = [0.0] * 5
     for position in state.positions:
         if position.string > 5:
@@ -173,18 +184,32 @@ def _shape_features(state: ChordState) -> Vector:
             *strings,
             float(count_low_region(state)),
             float(count_high_region(state)),
+            0.0,
         ]
     )
 
 
+def _node_features(node: LatticeNode, first: bool) -> Vector:
+    """A lattice node's emission features: its shape's, plus the open strings it plays with
+    the hand up the neck (ADR 0039), which the decoder charges on the move into the node,
+    so never at the first group."""
+    features = _shape_features(node.state)
+    if not first:
+        features[OPEN_UP_NECK] = count_open_up_neck(node.carried_hand, node.state)
+    return features
+
+
 def path_features(states: Sequence[ChordState]) -> Vector:
-    """``Phi`` of one path: the shape features summed, plus the hand window's movement."""
+    """``Phi`` of one path: the shape features summed, plus the hand window's movement and,
+    from the second shape on, the open strings played with the hand up the neck."""
     total = np.zeros(len(WEIGHT_NAMES))
     hand: Hand | None = None
-    for state in states:
+    for index, state in enumerate(states):
         total += _shape_features(state)
         hand, moved = shift_window(hand, state.fretted_frets)
         total[0] += moved
+        if index > 0:
+            total[OPEN_UP_NECK] += count_open_up_neck(hand, state)
     return total
 
 
@@ -203,7 +228,10 @@ def sequence_features(sequence: HumanSequence, ctx: Context) -> SequenceFeatures
                 f"(span bound {sequence.spans[index]}); widen the bound or drop the group"
             )
 
-    emission = tuple(np.array([_shape_features(node.state) for node in nodes]) for nodes in lattice)
+    emission = tuple(
+        np.array([_node_features(node, first=level == 0) for node in nodes])
+        for level, nodes in enumerate(lattice)
+    )
     movement: list[Vector] = []
     allowed: list[NDArray[np.bool_]] = []
     for previous, current in itertools.pairwise(lattice):

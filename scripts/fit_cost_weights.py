@@ -100,7 +100,13 @@ def main() -> None:
         "--features",
         default="",
         help="Feature groups to fit beyond the four base weights, comma-separated: "
-        "string, region (ADR 0034).",
+        "string, region (ADR 0034), open (ADR 0039).",
+    )
+    parser.add_argument(
+        "--hold-base",
+        action="store_true",
+        help="Hold the four base weights at their hand-set values and fit only the groups "
+        "named by --features (ADR 0039).",
     )
     parser.add_argument(
         "--weights-out",
@@ -121,7 +127,12 @@ def main() -> None:
     ctx = Context(tuning=DADAGP_TUNING, max_span=5)
 
     started = time.perf_counter()
-    feature_groups = ["base", *(g for g in args.features.split(",") if g)]
+    feature_groups = [
+        *([] if args.hold_base else ["base"]),
+        *(g for g in args.features.split(",") if g),
+    ]
+    if not feature_groups:
+        parser.error("--hold-base with no --features leaves nothing to fit")
     unknown = sorted(set(feature_groups) - set(FEATURE_GROUPS))
     if unknown:
         parser.error(f"unknown feature groups {unknown}; known: {sorted(FEATURE_GROUPS)}")
@@ -181,6 +192,8 @@ def main() -> None:
         )
 
     fitted = fits["all"].weights
+    if "open" in feature_groups:
+        print(f"    open_up_neck {fitted.open_up_neck:.4f}")
     if len(feature_groups) > 1:
         print(
             f"    string_bias {tuple(round(b, 4) for b in fitted.string_bias)}  "

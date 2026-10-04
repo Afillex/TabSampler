@@ -178,3 +178,10 @@ def test_described_weights_list_the_feature_groups_only_when_used() -> None:
     )
     assert "string_bias (0, 1, 0, 0, -0.5, 0)" in used
     assert "low_region 0.25" in used and "high_region" not in used
+
+
+def test_described_weights_name_the_open_string_cost_only_when_used() -> None:
+    from tabsampler.types import CostWeights
+
+    assert "open_up_neck" not in describe_weights(CostWeights())
+    assert "open_up_neck 0.7" in describe_weights(CostWeights(open_up_neck=0.7))

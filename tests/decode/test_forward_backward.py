@@ -143,6 +143,30 @@ def test_marginals_equal_brute_force_marginals(groups: list[NoteGroup]) -> None:
 
 @pytest.mark.oracle
 @SLOW
+@given(groups=group_sequence(max_groups=4, max_notes=3))
+def test_marginals_equal_brute_force_with_open_strings_up_the_neck_charged(
+    groups: list[NoteGroup],
+) -> None:
+    # ADR 0039's term rides on the move into a shape; the oracle charges it independently.
+    from tabsampler.types import CostWeights
+
+    scorer = HandSetScorer(weights=CostWeights(open_up_neck=0.7))
+    expected = brute_force_marginals(groups, scorer, CTX, temperature=1.0)
+    got = forward_backward(groups, scorer, CTX, temperature=1.0)
+    for nodes, level_got, level_expected in zip(
+        build_lattice(groups, CTX), got, expected, strict=True
+    ):
+        per_state: dict[ChordState, float] = {}
+        for node, weight in zip(nodes, level_got, strict=True):
+            per_state[node.state] = per_state.get(node.state, 0.0) + float(weight)
+        for state in set(per_state) | set(level_expected):
+            assert per_state.get(state, 0.0) == pytest.approx(
+                level_expected.get(state, 0.0), abs=1e-9
+            )
+
+
+@pytest.mark.oracle
+@SLOW
 @given(groups=group_sequence(max_groups=4, max_notes=2))
 def test_log_partition_matches_a_direct_sum_over_paths(groups: list[NoteGroup]) -> None:
     import math

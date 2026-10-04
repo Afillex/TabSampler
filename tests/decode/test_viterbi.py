@@ -14,7 +14,7 @@ from tabsampler.decode.viterbi import build_lattice, viterbi
 from tabsampler.errors import UnfingerableGroupError
 from tabsampler.fingering.costs import HandSetScorer
 from tabsampler.fingering.states import HAND_WINDOW, enumerate_states
-from tabsampler.types import Context, NoteEvent, NoteGroup, Position, Tuning
+from tabsampler.types import Context, CostWeights, NoteEvent, NoteGroup, Position, Tuning
 
 from .brute_force import brute_force_min, path_cost
 from .strategies import group_sequence
@@ -22,6 +22,8 @@ from .strategies import group_sequence
 STANDARD = Tuning.STANDARD
 CTX = Context(tuning=STANDARD, max_span=4)
 SCORER = HandSetScorer()
+#: ADR 0039's cost on open strings up the neck, charged by the oracle from the ADR's text.
+OPEN_UP_NECK = HandSetScorer(weights=CostWeights(open_up_neck=0.7))
 
 SLOW = settings(
     max_examples=75,
@@ -48,6 +50,18 @@ def test_viterbi_cost_equals_brute_force_minimum(groups: list[NoteGroup]) -> Non
     _, expected = brute_force_min(groups, SCORER, CTX)
     _, got = viterbi(groups, SCORER, CTX)
     assert got == pytest.approx(expected, abs=1e-9)
+
+
+@pytest.mark.oracle
+@SLOW
+@given(groups=group_sequence(max_groups=6, max_notes=3))
+def test_viterbi_matches_brute_force_with_open_strings_up_the_neck_charged(
+    groups: list[NoteGroup],
+) -> None:
+    _, expected = brute_force_min(groups, OPEN_UP_NECK, CTX)
+    path, got = viterbi(groups, OPEN_UP_NECK, CTX)
+    assert got == pytest.approx(expected, abs=1e-9)
+    assert path_cost(groups, path, OPEN_UP_NECK, CTX) == pytest.approx(got, abs=1e-9)
 
 
 @pytest.mark.oracle

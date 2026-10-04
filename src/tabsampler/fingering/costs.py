@@ -5,6 +5,7 @@ Pure: no I/O, no global state.
 Total cost of a path, from spec 2.2::
 
     C = sum(emission) + lambda_move * sum(movement)
+      + open_up_neck * sum(open strings played with the hand up the neck)   # ADR 0039
 
 with the emission term itself carrying the span, neck-height and open-string parts::
 
@@ -97,6 +98,15 @@ def count_high_region(state: ChordState) -> int:
     return sum(1 for fret in state.fretted_frets if fret >= HIGH_REGION_BOTTOM)
 
 
+def count_open_up_neck(hand: Hand | None, state: ChordState) -> int:
+    """ADR 0039: the open strings of a shape played with ``hand`` -- the frets the hand
+    covers after it -- when the index is above open position. None before anything has
+    been fretted, and then nothing counts."""
+    if hand is None or hand[0] <= LOW_REGION_TOP:
+        return 0
+    return count_open(state)
+
+
 @dataclass(frozen=True, slots=True)
 class HandSetScorer:
     """A :class:`~tabsampler.types.FingeringScorer` with hand-set weights."""
@@ -135,8 +145,15 @@ class HandSetScorer:
         so a finger reaching within one position costs nothing. ``previous_hand`` is None
         before the first fretted shape, and an all-open ``curr`` needs no move, so both
         cost nothing.
+
+        It also carries ADR 0039's cost on open strings played with the hand up the neck,
+        because this is where the hand ``curr`` is played with is known. So a passage's
+        first shape is never charged it, as it is never charged movement.
         """
-        return self.weights.move * shift_window(previous_hand, curr.fretted_frets)[1]
+        hand, moved = shift_window(previous_hand, curr.fretted_frets)
+        return self.weights.move * moved + self.weights.open_up_neck * count_open_up_neck(
+            hand, curr
+        )
 
     def transition_cost(self, prev: ChordState, curr: ChordState) -> float:
         """How far the hand must move between two consecutive shapes.

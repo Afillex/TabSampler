@@ -81,6 +81,7 @@ WEIGHTS = (
         string_bias=(0.0, 0.2, -0.1, 0.4, 0.05, -0.3),
         low_region=0.6,
         high_region=-0.2,
+        open_up_neck=0.7,  # ADR 0039
     ),
 )
 
@@ -112,7 +113,25 @@ def test_the_weight_vector_round_trips() -> None:
         "string_5",
         "low_region",
         "high_region",
+        "open_up_neck",
     )
+
+
+def test_features_count_open_strings_played_up_the_neck() -> None:
+    # ADR 0039, on a passage that certainly uses it: fret 7 on the A string, then two open
+    # strings while the hand stays at 7, then fret 2 beside an open string in open position.
+    groups = [group(52, onset=0.0), group(55, 59, onset=0.5), group(47, 59, onset=1.0)]
+    states = (
+        ChordState(positions=(Position(1, 7),)),
+        ChordState(positions=(Position(3, 0), Position(4, 0))),
+        ChordState(positions=(Position(1, 2), Position(4, 0))),
+    )
+    phi = path_features(states)
+    assert phi[WEIGHT_NAMES.index("open_up_neck")] == 2.0
+    weights = CostWeights(open_up_neck=0.7)
+    expected = path_cost(groups, states, HandSetScorer(weights=weights), CTX)
+    assert float(weights_to_vector(weights) @ phi) == pytest.approx(expected, abs=1e-9)
+    assert FEATURE_GROUPS["open"] == ("open_up_neck",)
 
 
 def test_the_low_e_string_is_the_pinned_reference() -> None:

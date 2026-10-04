@@ -53,31 +53,45 @@ def path_cost(
       and the shape's highest fret: stretched only while a shape needs it;
     - an all-open shape leaves the hand as it was, stretch included;
     - movement is the distance the index moves, charged at ``move`` per fret.
+
+    And ADR 0039, from its text: from the second shape on, each open string in a shape costs
+    ``open_up_neck`` when the hand the shape is played with -- the hand after it -- has its
+    index on fret 5 or higher. Before anything has been fretted there is no hand, and nothing
+    is charged.
     """
     total = 0.0
     for group, state in zip(groups, path, strict=True):
         total += scorer.emission_cost(group, state, ctx)
 
     hand: tuple[int, int] | None = None  # (index fret, highest fret the hand covers)
-    for state in path:
-        fretted = sorted(p.fret for p in state.positions if p.fret > 0)
-        if not fretted:
-            continue  # open strings need no hand; it stays as it was, stretch and all
-        low, high = fretted[0], fretted[-1]
-        if hand is None:
-            hand = (low, max(low + 4, high))  # the first fretted shape places it, free
-            continue
-        index, covered_to = hand
-        if index <= low and high <= covered_to:
-            new_index = index  # inside what the hand covers: a finger reaches
-        elif high - low > 4:
-            new_index = low  # only a stretch holds it, from its own lowest fret
-        else:
-            holding = range(high - 4, low + 1)  # every rest window that holds the shape
-            new_index = min(holding, key=lambda start: abs(start - index))
-        total += scorer.weights.move * abs(new_index - index)  # type: ignore[attr-defined]
-        hand = (new_index, max(new_index + 4, high))
+    for number, state in enumerate(path):
+        hand, moved = _hand_after(hand, state)
+        total += scorer.weights.move * moved  # type: ignore[attr-defined]
+        if number > 0 and hand is not None and hand[0] >= 5:
+            open_strings = sum(1 for p in state.positions if p.fret == 0)
+            total += scorer.weights.open_up_neck * open_strings  # type: ignore[attr-defined]
     return total
+
+
+def _hand_after(
+    hand: tuple[int, int] | None, state: ChordState
+) -> tuple[tuple[int, int] | None, int]:
+    """The hand after ``state`` and how far its index moved, by the rules in ``path_cost``."""
+    fretted = sorted(p.fret for p in state.positions if p.fret > 0)
+    if not fretted:
+        return hand, 0  # open strings need no hand; it stays as it was, stretch and all
+    low, high = fretted[0], fretted[-1]
+    if hand is None:
+        return (low, max(low + 4, high)), 0  # the first fretted shape places it, free
+    index, covered_to = hand
+    if index <= low and high <= covered_to:
+        new_index = index  # inside what the hand covers: a finger reaches
+    elif high - low > 4:
+        new_index = low  # only a stretch holds it, from its own lowest fret
+    else:
+        holding = range(high - 4, low + 1)  # every rest window that holds the shape
+        new_index = min(holding, key=lambda start: abs(start - index))
+    return (new_index, max(new_index + 4, high)), abs(new_index - index)
 
 
 def brute_force_min(

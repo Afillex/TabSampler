@@ -79,6 +79,34 @@ def test_the_fit_script_runs_end_to_end_with_a_feature_group(
     assert (tmp_path / "songs" / "fitted.json").exists()
 
 
+def test_the_fit_script_can_hold_the_base_weights_and_fit_one_group(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # ADR 0039's experiment: one weight fitted, every other held at its hand-set value.
+    from tabsampler.config import load_phase1_config
+
+    fit = load("fit_cost_weights")
+
+    def fake_sequences(*_: object) -> list[tuple[str, str, HumanSequence]]:
+        return [(f"song{i}", "clean", sequence([52 + i, 55, 59, 62 - i], i)) for i in range(6)]
+
+    monkeypatch.setattr(fit, "sequences_for", fake_sequences)
+    out = tmp_path / "weights.json"
+    argv = ["fit_cost_weights.py", "archive.zip", "meta.json", "--split", "artist"]
+    argv += ["--skip-halves", "--hold-base"]
+    monkeypatch.setattr(sys, "argv", [*argv, "--features", "open", "--weights-out", str(out)])
+    fit.main()
+    weights = json.loads(out.read_text())
+    hand_set = load_phase1_config(Path("configs/phase1_baseline.yaml")).weights
+    for name in ("move", "span", "high", "open_reward"):
+        assert weights[name] == getattr(hand_set, name)
+    assert "open_up_neck" in weights
+
+    monkeypatch.setattr(sys, "argv", argv)  # holding the base and naming no group fits nothing
+    with pytest.raises(SystemExit):
+        fit.main()
+
+
 def test_the_comparison_prints_exact_chord_shape_counts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

@@ -37,6 +37,7 @@ PROBE: dict[str, object] = {
     "string_bias": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     "low_region": 0.0,
     "high_region": 0.0,
+    "open_up_neck": 0.0,
     "max_span_low": 4,
     "max_span_high": 5,
     "high_neck_fret": 12,
@@ -153,6 +154,7 @@ def test_an_old_config_loads_with_the_new_weights_at_zero() -> None:
     weights = load_phase1_config(root / "configs" / "phase1_baseline.yaml").weights
     assert weights.string_bias == (0.0,) * 6
     assert (weights.low_region, weights.high_region) == (0.0, 0.0)
+    assert weights.open_up_neck == 0.0  # ADR 0039
 
 
 def test_a_string_bias_needs_one_entry_per_string(tmp_path: Path) -> None:

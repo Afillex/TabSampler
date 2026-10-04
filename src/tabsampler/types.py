@@ -238,6 +238,9 @@ class CostWeights:
     #: reference (ADR 0034).
     low_region: float = 0.0
     high_region: float = 0.0
+    #: Cost of each open string in a shape played with the hand's index at fret 5 or above,
+    #: charged with the move into the shape (ADR 0039).
+    open_up_neck: float = 0.0
 
     def __post_init__(self) -> None:
         if self.temperature <= 0.0:

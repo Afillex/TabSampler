@@ -201,6 +201,7 @@ def load_phase1_config(path: Path | str) -> Phase1Config:
             "string_bias",
             "low_region",
             "high_region",
+            "open_up_neck",
         ),
     )
     defaults = CostWeights()
@@ -214,6 +215,7 @@ def load_phase1_config(path: Path | str) -> Phase1Config:
         string_bias=tuple(float(b) for b in weights_raw.get("string_bias", defaults.string_bias)),
         low_region=float(weights_raw.get("low_region", defaults.low_region)),
         high_region=float(weights_raw.get("high_region", defaults.high_region)),
+        open_up_neck=float(weights_raw.get("open_up_neck", defaults.open_up_neck)),
     )
 
     rules_raw: dict[str, Any] = raw.get("rules") or {}

@@ -157,6 +157,44 @@ def test_transition_cost_is_transition_cost_from_the_hand_the_previous_shape_lea
             assert s.transition_cost(prev, curr) == expected
 
 
+# ------------------------------------------------------------------ open strings up the neck
+
+
+def test_an_open_string_costs_extra_while_the_hand_is_up_the_neck() -> None:
+    # ADR 0039: per open string, when the hand the shape is played with has its index on
+    # fret 5 or above. From a hand at 7 (frets 7-11), fretting 9 beside an open string
+    # leaves the hand at 7.
+    up, plain = scorer(open_up_neck=0.7), scorer()
+    shape = state((0, 9), (3, 0))
+    assert up.transition_cost_from((7, 11), shape) == pytest.approx(
+        plain.transition_cost_from((7, 11), shape) + 0.7
+    )
+
+
+def test_an_all_open_shape_is_charged_with_the_hand_it_inherits() -> None:
+    up = scorer(open_up_neck=0.7)
+    assert up.transition_cost_from((7, 11), state((2, 0), (3, 0))) == pytest.approx(1.4)
+    assert up.transition_cost_from((2, 6), state((2, 0), (3, 0))) == 0.0
+
+
+def test_open_position_is_frets_one_to_four() -> None:
+    up = scorer(open_up_neck=0.7)
+    shape = state((1, 6), (3, 0))
+    assert up.transition_cost_from((4, 8), shape) == 0.0  # index on 4: open position
+    assert up.transition_cost_from((5, 9), shape) == pytest.approx(0.7)  # index on 5
+
+
+def test_the_hand_a_shape_is_played_with_is_the_one_after_the_move() -> None:
+    # From a hand at 2 (frets 2-6), fretting 9 moves the index to 5: the move is charged,
+    # and so is the open string beside it, now played up the neck.
+    up = scorer(open_up_neck=0.7)
+    assert up.transition_cost_from((2, 6), state((0, 9), (3, 0))) == pytest.approx(
+        3.0 * up.weights.move + 0.7
+    )
+    # Before anything is fretted there is no hand, so an all-open shape is not charged.
+    assert up.transition_cost_from(None, state((2, 0), (3, 0))) == 0.0
+
+
 # ------------------------------------------------------------------ robustness
 
 

@@ -106,6 +106,8 @@ def describe_weights(weights: CostWeights) -> str:
         parts.append(f"low_region {weights.low_region:g}")
     if weights.high_region:
         parts.append(f"high_region {weights.high_region:g}")
+    if weights.open_up_neck:
+        parts.append(f"open_up_neck {weights.open_up_neck:g}")
     if weights.acoustic:
         parts.append(f"acoustic {weights.acoustic:g}")
     parts.append(f"temperature {weights.temperature:g}")
