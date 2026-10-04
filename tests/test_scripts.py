@@ -647,3 +647,51 @@ def test_the_string_evaluation_reads_only_the_validation_player(
     assert asked == validation
     out = capsys.readouterr().out
     assert "the classifier" in out and "the default decoder" in out and "chance" in out
+
+
+def test_the_acoustic_ablation_reads_only_the_validation_player(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # And with the weight at zero, (c) is (a): the ablation's two arms differ only by the term.
+    import numpy as np
+    import torch
+
+    from tabsampler.model.strings import StringClassifier
+
+    ablation = load("evaluate_acoustic")
+    validation = ["00_BN1-129-Eb_comp", "00_Jazz1-130-D_solo"]
+    asked: list[str] = []
+
+    class Track:
+        def __init__(self, track_id: str) -> None:
+            self.audio_mic_path = track_id
+
+    class Dataset:
+        def track(self, track_id: str) -> Track:
+            asked.append(track_id)
+            return Track(track_id)
+
+    def reference(track: Track, tuning: Tuning) -> list[tuple[NoteEvent, Position]]:
+        return [
+            (NoteEvent(0.5 * i, 0.5 * i + 0.4, pitch, 1.0), Position(string, fret))
+            for i, (pitch, string, fret) in enumerate(
+                [(55, 3, 0), (57, 2, 7), (64, 4, 5), (52, 1, 7)]
+            )
+        ]
+
+    monkeypatch.setattr(ablation, "guitarset_validation_ids", lambda: tuple(validation))
+    monkeypatch.setattr(ablation, "load_dataset", lambda *_: Dataset())
+    monkeypatch.setattr(ablation, "reference_tab", reference)
+    monkeypatch.setattr(
+        ablation, "reference_notes", lambda t: [n for n, _ in reference(t, Tuning())]
+    )
+    monkeypatch.setattr(ablation, "load_audio", lambda _: np.zeros(44100, dtype=np.float32))
+    torch.manual_seed(0)
+    (tmp_path / "run").mkdir()
+    torch.save(StringClassifier().state_dict(), tmp_path / "run" / "best.pt")
+    argv = ["evaluate_acoustic.py", "--run", str(tmp_path / "run"), "--out", str(tmp_path / "out")]
+    monkeypatch.setattr(sys, "argv", [*argv, "--weight", "0.0"])
+    ablation.main()
+    assert asked == validation
+    a, c = (json.loads((tmp_path / "out" / f"{x}.json").read_text()) for x in "ac")
+    assert a["per_song"] == c["per_song"] and a["split"] == c["split"] == "validation"
