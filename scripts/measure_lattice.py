@@ -4,8 +4,9 @@ Complexity instrumentation, not a metric: it computes no E-number and no thresho
 chosen from it. Viterbi is ``O(T * S^2)``, so the question the ADR had to answer is how
 much the hand-position augmentation grows S. Synthetic inputs need nothing external.
 
-``--guitarset`` additionally measures it on real reference notes. That reads the test set,
-so it logs the access with a written reason (ADR 0003); it still computes no metric.
+``--guitarset N`` additionally measures it on the reference notes of the first N of
+GuitarSet's validation player's 60 tracks (player 00, ADR 0037). That is validation data,
+so no test-set look is logged; it still computes no metric.
 
 Usage:
     uv run python scripts/measure_lattice.py
@@ -19,6 +20,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from tabsampler.data.splits import guitarset_validation_ids
 from tabsampler.decode.viterbi import build_lattice
 from tabsampler.fingering.states import enumerate_states
 from tabsampler.types import Context, NoteEvent, NoteGroup, Tuning
@@ -58,7 +60,6 @@ def report(label: str, groups: Sequence[NoteGroup], ctx: Context) -> None:
 
 def measure_guitarset(n_tracks: int, ctx: Context, window_s: float) -> None:
     from tabsampler.data.guitarset import load_dataset, reference_notes
-    from tabsampler.data.splits import guitarset_validation_ids
     from tabsampler.fingering.candidates import group_notes
 
     # The validation player's tracks (ADR 0037) -- the same first 60 tracks this always
@@ -66,11 +67,12 @@ def measure_guitarset(n_tracks: int, ctx: Context, window_s: float) -> None:
     dataset = load_dataset(Path("data/guitarset"))
     tracks: dict[str, Any] = dataset.load_tracks()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
     groups: list[NoteGroup] = []
-    for track_id in list(guitarset_validation_ids())[:n_tracks]:
+    ids = guitarset_validation_ids()[:n_tracks]
+    for track_id in ids:
         for group in group_notes(reference_notes(tracks[track_id]), window_s=window_s):
             if enumerate_states(group, ctx.tuning, ctx.max_span):
                 groups.append(group)
-    report(f"GuitarSet reference notes, {n_tracks} tracks", groups, ctx)
+    report(f"GuitarSet validation, {len(ids)} tracks", groups, ctx)
 
 
 def main() -> None:
@@ -78,9 +80,17 @@ def main() -> None:
     parser.add_argument("--max-span", type=int, default=5)
     parser.add_argument("--window-s", type=float, default=0.03)
     parser.add_argument(
-        "--guitarset", type=int, default=0, help="Also measure on N GuitarSet tracks."
+        "--guitarset",
+        type=int,
+        default=0,
+        help="Also measure on N of the validation player's tracks (at most 60).",
     )
     args = parser.parse_args()
+    available = len(guitarset_validation_ids())
+    if not 0 <= args.guitarset <= available:
+        parser.error(
+            f"--guitarset {args.guitarset}: the validation player has {available} tracks (ADR 0037)"
+        )
     ctx = Context(tuning=STANDARD, max_span=args.max_span)
 
     print(f"node lattice vs state count, max_span {args.max_span}")

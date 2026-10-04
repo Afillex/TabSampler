@@ -201,3 +201,20 @@ def test_the_comparison_names_what_it_counted(
     )
     compare.main()
     assert f"({label})" in capsys.readouterr().out
+
+
+def test_the_lattice_measure_refuses_more_tracks_than_the_validation_player_has(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # It once measured player 00's 60 tracks and labelled them with whatever N was asked for.
+    lattice = load("measure_lattice")
+
+    def unreachable(*_: object) -> None:
+        raise AssertionError("measured although more tracks were asked for than exist")
+
+    monkeypatch.setattr(lattice, "measure_guitarset", unreachable)
+    monkeypatch.setattr(sys, "argv", ["measure_lattice", "--guitarset", "61"])
+    with pytest.raises(SystemExit) as stopped:
+        lattice.main()
+    assert stopped.value.code == 2
+    assert "60" in capsys.readouterr().err
