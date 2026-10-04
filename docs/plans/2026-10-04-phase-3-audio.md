@@ -137,4 +137,7 @@ between −0.02 and +0.02.
 
 - [x] `tempered()` for the classifier's log-probabilities; `scripts/calibrate_acoustic.py`;
   `--temperature` on `scripts/evaluate_acoustic.py`; tests; commit.
-- [ ] Calibrate on SynthTab; record τ and the weight; then the ablation on player 00 once.
+- [x] Calibrate on SynthTab; record τ and the weight; then the ablation on player 00 once.
+  *(τ 1.8985, weight 0.25 — both predictions held; on SynthTab the evidence gains about 3
+  points. On player 00: 0.8273 → 0.7865, −0.0408 [−0.0724, −0.0142], no chord-shape drop:
+  still a clear loss, a third of Task 5's. The rerun's prediction failed.)*
