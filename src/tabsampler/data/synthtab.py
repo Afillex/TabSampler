@@ -25,6 +25,16 @@ from tabsampler.types import NoteEvent, Position
 TICKS_PER_QUARTER = 960
 STRINGS = 6
 
+#: How much later than its label a note sounds in the rendered audio, per family: measured by
+#: ``scripts/check_synthtab.py`` against GuitarSet's player 00 as the control (2026-10-04),
+#: at 5.8 ms resolution. Applied where note windows are cut, never to the labels themselves.
+RENDER_LATENCY = {
+    "acoustic": 0.029,
+    "electric_clean": 0.017,
+    "electric_distortion_di": 0.017,
+    "electric_muted": 0.017,
+}
+
 
 @dataclass(frozen=True, slots=True)
 class SynthTabTrack:

@@ -572,3 +572,34 @@ def test_the_model_evaluation_on_the_test_players_logs_the_look_and_writes_no_co
     with pytest.raises(SystemExit):
         evaluate.main()
     assert not (tmp_path / "x").exists()
+
+
+def test_the_string_training_runs_checkpoints_and_resumes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import numpy as np
+
+    from tabsampler.audio.windows import WINDOW_BINS, WINDOW_FRAMES
+
+    train = load("train_strings")
+    rng = np.random.default_rng(0)
+
+    def side(count: int) -> dict[str, np.ndarray]:
+        return {
+            "windows": rng.standard_normal((count, WINDOW_BINS, WINDOW_FRAMES)).astype(np.float16),
+            "pitches": rng.integers(45, 70, count).astype(np.int16),
+            "possible": np.ones((count, 6), dtype=bool),
+            "strings": rng.integers(0, 6, count).astype(np.int8),
+        }
+
+    monkeypatch.setattr(train, "examples_for", lambda *_: (side(12), side(6)))
+    run = tmp_path / "run"
+    argv = ["train_strings.py", "root", "--run", str(run), "--batch-size", "4"]
+    monkeypatch.setattr(sys, "argv", [*argv, "--max-epochs", "1"])
+    train.main()
+    monkeypatch.setattr(sys, "argv", [*argv, "--max-epochs", "2"])
+    train.main()  # resumes from the checkpoint, reusing the cached examples
+    history = [json.loads(line) for line in (run / "history.jsonl").read_text().splitlines()]
+    assert [entry["epoch"] for entry in history] == [1, 2]
+    assert history[0]["chance"] == pytest.approx(1 / 6)
+    assert (run / "best.pt").exists() and (run / "examples.npz").exists()

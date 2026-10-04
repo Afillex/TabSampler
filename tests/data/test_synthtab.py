@@ -92,3 +92,15 @@ def test_unusable_tracks_are_skipped_with_their_reason(tmp_path: Path) -> None:
     assert (
         reasons["Unlabelled Song"] == "no label file" and "string 7" in reasons["Seven String Song"]
     )
+
+
+def test_every_family_has_its_measured_latency() -> None:
+    from tabsampler.data.synthtab import RENDER_LATENCY
+
+    assert set(RENDER_LATENCY) == {
+        "acoustic",
+        "electric_clean",
+        "electric_distortion_di",
+        "electric_muted",
+    }
+    assert RENDER_LATENCY["acoustic"] > RENDER_LATENCY["electric_clean"] > 0
