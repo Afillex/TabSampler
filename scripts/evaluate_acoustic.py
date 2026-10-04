@@ -32,7 +32,7 @@ from tabsampler.eval.playability import playability_rate
 from tabsampler.eval.recovery import RecoveryReport, add_track
 from tabsampler.fingering.candidates import group_notes
 from tabsampler.fingering.costs import HandSetScorer
-from tabsampler.model.strings import StringClassifier
+from tabsampler.model.strings import StringClassifier, tempered
 from tabsampler.types import NoteEvent
 
 ONSET_TOLERANCE = 0.05  # E2's
@@ -49,6 +49,7 @@ def heard(
     notes: list[NoteEvent],
     open_pitches: Any,
     max_fret: int,
+    temperature: float = 1.0,
 ) -> dict[NoteEvent, tuple[float, ...]]:
     """Each note's six string log-probabilities from the audio around its onset."""
     cqt = track_cqt(signal)
@@ -63,7 +64,7 @@ def heard(
                 torch.tensor([note.pitch]),
                 torch.tensor([possible]),
             )
-        out[note] = tuple(float(v) for v in log_probs[0])
+        out[note] = tuple(float(v) for v in tempered(log_probs, temperature)[0])
     return out
 
 
@@ -71,6 +72,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", type=Path, required=True, help="The classifier's run (best.pt).")
     parser.add_argument("--weight", type=float, required=True, help="The acoustic weight for (c).")
+    parser.add_argument("--temperature", type=float, default=1.0, help="The classifier's (Task 6).")
     parser.add_argument("--decoder-config", type=Path, default=Path("configs/decoder_clean.yaml"))
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
@@ -94,6 +96,7 @@ def main() -> None:
             notes,
             dec.tuning.open_pitches,
             dec.tuning.max_fret,
+            args.temperature,
         )
         groups = group_notes(notes, window_s=dec.group_window_s)
         for name, weights in variants.items():

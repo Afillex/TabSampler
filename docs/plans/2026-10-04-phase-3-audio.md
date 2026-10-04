@@ -135,6 +135,6 @@ validation data, never GuitarSet:
 weight chosen is small, 0.1 to 0.5; on player 00 the calibrated term is no longer a clear loss,
 between −0.02 and +0.02.
 
-- [ ] `tempered()` for the classifier's log-probabilities; `scripts/calibrate_acoustic.py`;
+- [x] `tempered()` for the classifier's log-probabilities; `scripts/calibrate_acoustic.py`;
   `--temperature` on `scripts/evaluate_acoustic.py`; tests; commit.
 - [ ] Calibrate on SynthTab; record τ and the weight; then the ablation on player 00 once.

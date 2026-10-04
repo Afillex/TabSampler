@@ -695,3 +695,9 @@ def test_the_acoustic_ablation_reads_only_the_validation_player(
     assert asked == validation
     a, c = (json.loads((tmp_path / "out" / f"{x}.json").read_text()) for x in "ac")
     assert a["per_song"] == c["per_song"] and a["split"] == c["split"] == "validation"
+
+
+def test_the_calibration_keeps_the_best_weight_and_the_smaller_on_a_tie() -> None:
+    calibrate = load("calibrate_acoustic")
+    assert calibrate.choose_weight({0.0: 10, 0.1: 12, 0.25: 11}) == 0.1
+    assert calibrate.choose_weight({0.0: 12, 0.5: 12, 1.0: 3}) == 0.0
