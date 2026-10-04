@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import inspect
+import re
 from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
 
 from tabsampler import cli
+
+
+def plain(output: str) -> str:
+    """CLI output without colour codes. Typer colours its errors when GITHUB_ACTIONS,
+    FORCE_COLOR or PY_COLORS is set, which splits '--split' into '-' and '-split'."""
+    return re.sub(r"\x1b\[[0-9;]*m", "", output)
 
 
 class Stopped(Exception):
@@ -56,7 +63,7 @@ def test_eval_m1_runs_only_on_a_split_named_on_the_command_line(looks: list[str]
     # forgotten flag would read the test players; DadaGP's scripts likewise refuse to run
     # without --split (ADR 0024).
     result = CliRunner().invoke(cli.app, ["eval-m1", "--dry-run"])
-    assert result.exit_code == 2 and "--split" in result.output
+    assert result.exit_code == 2 and "--split" in plain(result.output)
     assert looks == []
     assert "--split test" in make_recipe("eval-m1")
 
@@ -79,7 +86,7 @@ def test_per_track_counts_are_refused_on_the_test_split(looks: list[str], tmp_pa
     args = ["eval-m1", "--per-track-out", str(out), "--dry-run"]
     runner = CliRunner()
     result = runner.invoke(cli.app, [*args, "--split", "test"])
-    assert result.exit_code == 2 and "--per-track-out" in result.output
+    assert result.exit_code == 2 and "--per-track-out" in plain(result.output)
     assert looks == []  # refused before the test set is looked at
     assert not out.exists()
     result = runner.invoke(cli.app, [*args, "--split", "validation"])
