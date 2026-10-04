@@ -54,9 +54,10 @@ and Viterbi.
 The group encoder (two bidirectional GRU layers, 64 units), the node scorer `g`, and a switch
 that turns `g` off.
 
-- [ ] Tests: output shapes; `g` off gives Task 2's energies; a fixed seed gives the same
+- [x] Tests: output shapes; `g` off gives Task 2's energies; a fixed seed gives the same
   output twice.
-- [ ] Implement; `make check`; commit.
+- [x] Implement; `make check`; commit. *(A new model starts exactly at the default; a
+  sequence scores the same alone and padded, and dropping the packing is caught.)*
 
 ## Task 4: Training (`scripts/train_model.py`)
 
