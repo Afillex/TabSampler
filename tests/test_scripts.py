@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -142,3 +143,30 @@ def test_the_comparison_reads_modes_when_the_parts_are_oracle_and_e2e(
     lines = capsys.readouterr().out.splitlines()
     starts = [line.split(":")[0].strip() for line in lines if not line.startswith(" ")]
     assert starts == ["e2e", "oracle"]
+
+
+def test_the_comparison_refuses_a_report_holding_a_test_track(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Comparing decoders on test-player tracks would choose on the test set (ADR 0003,
+    # ADR 0037); the 2026-10-04 review found such counts beside the validation ones.
+    from tabsampler.data.splits import guitarset_test_ids
+
+    compare = load("compare_validation")
+    test_track = guitarset_test_ids()[0]
+    for name in ("a", "b"):
+        (tmp_path / f"{name}.json").write_text(
+            json.dumps(
+                {
+                    "per_song": {"00_x": {"oracle": [5, 10]}, test_track: {"oracle": [6, 10]}},
+                    "shapes": {"oracle": [9, 10]},
+                    "single_candidate": 0,
+                }
+            )
+        )
+    monkeypatch.setattr(
+        sys, "argv", ["compare", str(tmp_path / "a.json"), str(tmp_path / "b.json")]
+    )
+    with pytest.raises(SystemExit, match=re.escape(test_track)):
+        compare.main()
+    assert capsys.readouterr().out == ""

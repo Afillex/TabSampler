@@ -14,6 +14,8 @@ This module exists to make that mechanical rather than remembered:
   :func:`split_by_player` derives the two lists from it.
 - :func:`assert_tuning_allowed` raises for :attr:`Split.TEST`. Every tuning entry point
   calls it first.
+- :func:`assert_no_test_tracks` raises for a set of tracks holding a test track, so
+  per-track counts that a decoder is chosen with cannot come from the test players.
 - :func:`record_test_set_access` appends to an audit log, so looking at test numbers is
   a deliberate act with a written reason.
 """
@@ -23,7 +25,7 @@ from __future__ import annotations
 import datetime as dt
 import subprocess
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from enum import Enum
 from pathlib import Path
 
@@ -161,6 +163,25 @@ def assert_tuning_allowed(split: Split) -> None:
             "refusing to tune against the test split: GuitarSet's players 01-05 are "
             "test-only (ADR 0003, ADR 0037). Tune on a validation split: GuitarSet's "
             "player 00, or DadaGP's validation side."
+        )
+
+
+def assert_no_test_tracks(track_ids: Iterable[str], snapshot: Path | None = None) -> None:
+    """Refuse a set of tracks that holds any of GuitarSet's test tracks.
+
+    For whatever chooses with per-track counts, such as ``scripts/compare_validation.py``:
+    a test-player track among them would make the choice on the test set. Ids that are not
+    GuitarSet tracks at all, such as DadaGP songs, pass.
+
+    Raises:
+        TestSetMisuseError: naming the test tracks found.
+    """
+    found = sorted(set(track_ids) & set(guitarset_test_ids(snapshot)))
+    if found:
+        shown = ", ".join(found[:3]) + (" ..." if len(found) > 3 else "")
+        raise TestSetMisuseError(
+            f"{len(found)} GuitarSet test tracks (players 01-05), which nothing may be chosen "
+            f"with (ADR 0003, ADR 0037): {shown}"
         )
 
 

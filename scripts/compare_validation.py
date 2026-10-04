@@ -2,8 +2,9 @@
 
     uv run python scripts/compare_validation.py cache/validation/a.json cache/validation/b.json
 
-Each file is what scripts/score_validation.py (or fit_cost_weights.py --per-song-out)
-writes. The delta is the second minus the first.
+Each file is what scripts/score_validation.py (or fit_cost_weights.py --per-song-out, or
+tabsampler eval-m1 --split validation --per-track-out) writes. The delta is the second
+minus the first. A file holding any of GuitarSet's test tracks is refused (ADR 0037).
 """
 
 from __future__ import annotations
@@ -12,6 +13,8 @@ import argparse
 import json
 from pathlib import Path
 
+from tabsampler.data.splits import assert_no_test_tracks
+from tabsampler.errors import TestSetMisuseError
 from tabsampler.eval.bootstrap import paired_bootstrap
 from tabsampler.eval.recovery import RecoveryReport
 
@@ -28,6 +31,11 @@ def main() -> None:
     parser.add_argument("new", type=Path, help="the decoder being judged")
     args = parser.parse_args()
     a, b = (RecoveryReport.from_dict(json.loads(p.read_text())) for p in (args.base, args.new))
+    for path, report in ((args.base, a), (args.new, b)):
+        try:
+            assert_no_test_tracks(report.per_song)
+        except TestSetMisuseError as exc:
+            raise SystemExit(f"{path}: {exc}") from exc
     parts = sorted(set(a.shapes) | set(b.shapes))
     # DadaGP reports split by style and pool meaningfully; GuitarSet ones split by mode
     # (oracle, end to end), and pooling the two modes would mean nothing.

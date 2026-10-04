@@ -212,12 +212,22 @@ def eval_m1(
     ] = "test",
     per_track_out: Annotated[
         Path | None,
-        typer.Option("--per-track-out", help="Write per-track E2 and E3 counts as JSON."),
+        typer.Option(
+            "--per-track-out",
+            help="Write per-track E2 and E3 counts as JSON. Validation split only.",
+        ),
     ] = None,
 ) -> None:
     """E1-E5 and E7 on GuitarSet, in oracle and end-to-end mode. The M1 gate."""
     if split not in ("test", "validation"):
         raise typer.BadParameter(f"--split must be test or validation, not {split!r}")
+    if split == "test" and per_track_out is not None:
+        # Per-track counts are what scripts/compare_validation.py chooses a decoder with.
+        raise typer.BadParameter(
+            "per-track counts are for choosing between decoders, and nothing may be chosen "
+            "on the test players (ADR 0003, ADR 0037); use --split validation",
+            param_hint="--per-track-out",
+        )
     cfg = load_eval_config(config)
     dec = load_phase1_config(decoder)
     console.print(f"[bold]config[/bold] {config}  [bold]decoder[/bold] {decoder}")

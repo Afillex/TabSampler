@@ -7,6 +7,7 @@ producing a number that looks fine.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from tabsampler.data.splits import (
     EXPECTED_GUITARSET_TRACKS,
     VALIDATION_PLAYER,
     Split,
+    assert_no_test_tracks,
     assert_tuning_allowed,
     guitarset_test_ids,
     guitarset_track_ids,
@@ -132,8 +134,8 @@ def test_guitarset_has_360_excerpts() -> None:
 
 
 def test_tuning_against_the_test_split_is_refused() -> None:
-    # ADR 0003. There is no legal way to tune on GuitarSet, because there is no
-    # GuitarSet training or validation split in this project at all.
+    # ADR 0003, ADR 0037: GuitarSet's players 01-05 are test-only; only player 00 is
+    # validation data.
     with pytest.raises(TestSetMisuseError, match="ADR 0003"):
         assert_tuning_allowed(Split.TEST)
 
@@ -141,6 +143,19 @@ def test_tuning_against_the_test_split_is_refused() -> None:
 def test_tuning_is_allowed_on_validation_and_train() -> None:
     assert_tuning_allowed(Split.VALIDATION)
     assert_tuning_allowed(Split.TRAIN)
+
+
+def test_a_set_holding_a_test_track_is_refused() -> None:
+    # Per-track counts are what a decoder is chosen with; a test-player track among them
+    # would make the choice on the test set (ADR 0003, ADR 0037).
+    leaked = guitarset_test_ids()[0]
+    with pytest.raises(TestSetMisuseError, match=re.escape(leaked)):
+        assert_no_test_tracks([*guitarset_validation_ids(), leaked])
+
+
+def test_validation_tracks_and_dadagp_songs_pass_the_test_track_check() -> None:
+    assert_no_test_tracks(guitarset_validation_ids())
+    assert_no_test_tracks(["Some Artist - Some Song"])
 
 
 def test_split_has_exactly_the_three_expected_members() -> None:
