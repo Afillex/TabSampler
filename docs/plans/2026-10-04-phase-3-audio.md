@@ -44,7 +44,13 @@ JAMS `note_tab` annotations per string → notes with onset (seconds), pitch, st
 times are in ticks with a tempo annotation, so their unit must be **verified against the audio**
 (onsets should line up with energy rises), not assumed.
 
-- [ ] Tests on a synthetic JAMS fixture; a check script on the real files; commit.
+- [x] Tests on a synthetic JAMS fixture; a check script on the real files; commit.
+  *(168 usable tracks, 146,877 notes; 3 skipped — two seven-string, one without labels.
+  Ticks are 960 to the quarter note. **SynthTab's audio lags its labels**: measured at
+  5.8 ms frames, the onset-strength peak trails the labelled onsets by 29.0 ms on electric
+  tracks and 40.6 ms on acoustic ones, against 11.6 ms on GuitarSet's player 00, whose
+  onsets are trusted — so about 17 ms and 29 ms of real latency. Task 3 corrects for it
+  when it cuts the audio windows.)*
 
 ## Task 3: The note windows and the string classifier (`src/tabsampler/audio/`, `model/`)
 
