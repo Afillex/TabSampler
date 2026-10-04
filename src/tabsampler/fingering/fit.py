@@ -189,7 +189,7 @@ def _shape_features(state: ChordState) -> Vector:
     )
 
 
-def _node_features(node: LatticeNode, first: bool) -> Vector:
+def node_features(node: LatticeNode, first: bool) -> Vector:
     """A lattice node's emission features: its shape's, plus the open strings it plays with
     the hand up the neck (ADR 0039), which the decoder charges on the move into the node,
     so never at the first group."""
@@ -213,6 +213,28 @@ def path_features(states: Sequence[ChordState]) -> Vector:
     return total
 
 
+def transition_arrays(
+    lattice: Sequence[Sequence[LatticeNode]],
+) -> tuple[list[Vector], list[NDArray[np.bool_]]]:
+    """Per transition, the hand window's movement between each pair of nodes, and whether the
+    lattice allows the pair at all: a node's hand must be what its predecessor's becomes."""
+    movement: list[Vector] = []
+    allowed: list[NDArray[np.bool_]] = []
+    for previous, current in itertools.pairwise(lattice):
+        move = np.zeros((len(previous), len(current)))
+        ok = np.ones((len(previous), len(current)), dtype=bool)
+        for i, prior in enumerate(previous):
+            for j, node in enumerate(current):
+                new, moved = shift_window(prior.carried_hand, node.state.fretted_frets)
+                if new != node.carried_hand:
+                    ok[i, j] = False
+                    continue
+                move[i, j] = moved
+        movement.append(move)
+        allowed.append(ok)
+    return movement, allowed
+
+
 def sequence_features(sequence: HumanSequence, ctx: Context) -> SequenceFeatures:
     """Build the lattice once and keep only what scoring it under new weights needs.
 
@@ -229,23 +251,10 @@ def sequence_features(sequence: HumanSequence, ctx: Context) -> SequenceFeatures
             )
 
     emission = tuple(
-        np.array([_node_features(node, first=level == 0) for node in nodes])
+        np.array([node_features(node, first=level == 0) for node in nodes])
         for level, nodes in enumerate(lattice)
     )
-    movement: list[Vector] = []
-    allowed: list[NDArray[np.bool_]] = []
-    for previous, current in itertools.pairwise(lattice):
-        move = np.zeros((len(previous), len(current)))
-        ok = np.ones((len(previous), len(current)), dtype=bool)
-        for i, prior in enumerate(previous):
-            for j, node in enumerate(current):
-                new, moved = shift_window(prior.carried_hand, node.state.fretted_frets)
-                if new != node.carried_hand:
-                    ok[i, j] = False
-                    continue
-                move[i, j] = moved
-        movement.append(move)
-        allowed.append(ok)
+    movement, allowed = transition_arrays(lattice)
     return SequenceFeatures(
         emission=emission,
         movement=tuple(movement),

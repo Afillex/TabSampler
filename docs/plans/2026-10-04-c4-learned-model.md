@@ -33,10 +33,10 @@ Per sequence: each level's node features Φ (as `fit._node_features`), node desc
 inputs, the movement and allowed-transition matrices, and the human path's node at each level.
 Pure numpy.
 
-- [ ] Tests: Φ equals `fit.sequence_features`'s; the human node at each level is the human
+- [x] Tests: Φ equals `fit.sequence_features`'s; the human node at each level is the human
   shape with the hand the human path carries; ψ and the group inputs have the documented
   shapes and ranges.
-- [ ] Implement; `make check`; commit.
+- [x] Implement; `make check`; commit.
 
 ## Task 2: The CRF in torch (`src/tabsampler/model/crf.py`)
 
