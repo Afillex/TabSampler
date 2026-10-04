@@ -93,3 +93,14 @@ def test_a_fixed_seed_gives_the_same_model_twice() -> None:
 def test_the_cost_weights_start_at_the_given_decoders() -> None:
     m = model()
     assert m.weights.detach().tolist() == pytest.approx(weights_to_vector(DEFAULT).tolist())
+
+
+def test_the_energies_are_the_cost_model_plus_the_learned_term() -> None:
+    b = batch(LONG, SHORT)
+    m = nudge(model())
+    energies, _ = m.energies(b)
+    learned = m.learned_term(b)
+    w = torch.tensor(weights_to_vector(DEFAULT), dtype=torch.float64)
+    cost = cost_energies(b, w)[0]
+    assert torch.allclose(energies[b.nodes], (cost + learned)[b.nodes], atol=1e-12)
+    assert bool((learned[~b.nodes] == PAD).all())

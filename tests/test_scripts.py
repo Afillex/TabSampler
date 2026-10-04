@@ -477,3 +477,43 @@ def test_a_resumed_run_trains_exactly_as_an_uninterrupted_one(
     interrupted = run(tmp_path / "interrupted", 1, 3)
     assert straight.keys() == interrupted.keys()
     assert all(torch.equal(straight[k], interrupted[k]) for k in straight)
+
+
+def test_the_model_evaluation_reads_only_the_validation_player(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Player 00 only (ADR 0037); and the untrained model, whose learned term is zero, must place
+    # the notes as the default decoder does -- the plumbing check on real data, here on fakes.
+    from tabsampler.fingering.states import enumerate_states as states_for
+
+    evaluate = load("evaluate_model")
+    validation = ["00_BN1-129-Eb_comp", "00_Funk2-108-Eb_solo"]
+    asked: list[str] = []
+
+    class Dataset:
+        def track(self, track_id: str) -> str:
+            asked.append(track_id)
+            return track_id
+
+    def reference(track: str, tuning: Tuning) -> list[tuple[NoteEvent, Position]]:
+        shift = len(track) % 3
+        out = []
+        for i, pitch in enumerate([52 + shift, 55, 59, 64, 57 + shift, 60]):
+            group = NoteGroup.of([NoteEvent(0.5 * i, 0.5 * i + 0.4, pitch, 1.0)])
+            out.append((group.notes[0], states_for(group, tuning, 5)[0].positions[0]))
+        return out
+
+    monkeypatch.setattr(evaluate, "guitarset_validation_ids", lambda: tuple(validation))
+    monkeypatch.setattr(evaluate, "load_dataset", lambda *_: Dataset())
+    monkeypatch.setattr(evaluate, "reference_tab", reference)
+    monkeypatch.setattr(
+        evaluate, "reference_notes", lambda track: [n for n, _ in reference(track, Tuning())]
+    )
+    monkeypatch.setattr(
+        sys, "argv", ["evaluate_model.py", "--untrained", "--out", str(tmp_path / "out")]
+    )
+    evaluate.main()
+    assert asked == validation
+    scores = {name: json.loads((tmp_path / "out" / f"{name}.json").read_text()) for name in "abc"}
+    assert scores["c"]["per_song"] == scores["a"]["per_song"]
+    assert all(score["split"] == "validation" for score in scores.values())

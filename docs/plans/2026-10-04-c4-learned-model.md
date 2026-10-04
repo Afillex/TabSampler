@@ -74,8 +74,9 @@ resumable; the device and commit recorded.
 Player 00 only, oracle mode: decodings (a), (b) and (c) of ADR 0043, E2 and E3, per-track
 counts for `scripts/compare_validation.py`.
 
-- [ ] Offline test on a synthetic track; a test that it reads only `guitarset_validation_ids()`.
-- [ ] Implement; `make check`; commit.
+- [x] Offline test on a synthetic track; a test that it reads only `guitarset_validation_ids()`.
+- [x] Implement; `make check`; commit. *(On player 00 the untrained model's (c) equals (a)
+  exactly: E2 0.8273 both, chord shapes 6541/6607 both, every track identical.)*
 
 ## Task 6: The run
 

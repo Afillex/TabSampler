@@ -57,13 +57,17 @@ class LearnedModel(nn.Module):
         energies, transitions = cost_energies(batch, self.weights)
         if not self.learned:
             return energies, transitions
+        return torch.where(batch.nodes, energies + self.learned_term(batch), PAD), transitions
+
+    def learned_term(self, batch: Batch) -> Tensor:
+        """``g`` alone, ``(B, T, N)``, ``PAD`` on padded nodes: ADR 0043's decoding (b)."""
         context = self.context(batch)  # (B, T, 2 * WIDTH)
         width = batch.descriptors.shape[2]
         paired = torch.cat(
             [context.unsqueeze(2).expand(-1, -1, width, -1), batch.descriptors], dim=-1
         )
         learned: Tensor = self.scorer(paired).squeeze(-1)
-        return torch.where(batch.nodes, energies + learned, PAD), transitions
+        return torch.where(batch.nodes, learned, PAD)
 
     def context(self, batch: Batch) -> Tensor:
         """The encoder's state at every group, each sequence read at its own length."""
