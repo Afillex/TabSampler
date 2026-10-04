@@ -104,7 +104,7 @@ term.
 Pre-registered: oracle E2 with the acoustic term against the same decoder without it (Phase 2's
 default), on player 00; then both on players 01–05, once.
 
-- [ ] **The run on player 00, pre-registered:** `scripts/evaluate_acoustic.py --run
+- [x] **The run on player 00, pre-registered:** `scripts/evaluate_acoustic.py --run
   cache/acoustic/dev --weight 1.0 --out cache/validation/p3`, then `compare_validation.py` on
   `a.json` and `c.json`. The weight is fixed at **1.0**, not chosen: log-probabilities in nats are
   already on the cost model's temperature-1 scale, and choosing it on player 00 and then judging
@@ -114,3 +114,5 @@ default), on player 00; then both on players 01–05, once.
   of the time where the decoder's context gets 82%, so it helps only where the decoder is
   unsure, and a confident wrong string can hurt. Whatever the sign, the measured change is the
   M3 deliverable.
+  *(Measured: 0.8273 → 0.7001, −0.1273 [−0.1834, −0.0729], with a clear chord-shape drop:
+  the audio hurts at weight 1.0. The hypothesis and the prediction failed.)*
