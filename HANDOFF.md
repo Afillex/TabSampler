@@ -49,9 +49,12 @@ brought to them. On the branch (plan `docs/plans/2026-10-04-c3-guitarset-errors.
   learned cost from a bidirectional GRU (`src/tabsampler/model/`, `scripts/train_model.py`,
   `scripts/evaluate_model.py`). It fitted DadaGP better (NLL 0.4327 → 0.3136) and player 00
   worse (oracle E2 0.8273 → 0.7970, interval across zero): **not preferred**. The spec's
-  Phase 2 comparison exists on validation; the test-set version is task C6's, Ege's call.
+  Phase 2 comparison exists on validation.
+- **C6, Phase 2's one test evaluation (ADR 0045):** today's default 0.6819 oracle E2 on the
+  test players, confirming ADR 0039 independently; **M2 missed by 7.8 points**; every other
+  ADR 0016 value held. Closing Phase 2 on that record is Ege's sign-off.
 
-`make check` (509 tests) and `make oracle` (12) pass on it. Merging and pushing wait for
+`make check` (510 tests) and `make oracle` (12) pass on it. Merging and pushing wait for
 Ege's go-ahead.
 
 Deferred small items, not yet fixed: `fit_weights` silently accepts unknown or empty
@@ -77,7 +80,7 @@ the 2026-10-03 devlog). The decisions waiting for Ege are listed under "Open ite
 
 ```bash
 make install                       # uv sync --all-groups, Python 3.13
-make check                         # lint + pyright --strict + 509 tests. Must be green.
+make check                         # lint + pyright --strict + 510 tests. Must be green.
 make oracle                        # the correctness core. Must be green.
 ```
 
@@ -94,40 +97,43 @@ plan; C1, C2 and C5 are done, C3 is under way) → `docs/devlog/2026-10-04.md` a
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | **None on GitHub.** `v0.0-phase0` and `v0.1-m1`, listed here before, exist nowhere; Phase 0's and M1's commits, `d50f4f0` and `1147495`, survive only locally, under the tag `pre-publication-backup` |
-| Tests | 509, all offline — no test needs the dataset or the transcriber |
+| Tests | 510, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
 | Current phase | Phase 2, **in progress**: C3 under way; choose on player 00, judge on players 01–05 |
 
-**Current results** — GuitarSet's test players 01–05, 300 tracks, `audio_mic`, the hand-set
-default: hand-set weights, T = 1.5728, the hand window with the stretch — the last default
-measured there. Today's default adds ADR 0039's open-string cost and has not been measured
-on the test players. **These 300 tracks were part of every earlier 360-track run (ADR 0037)**, so a
-figure on them is a baseline, not an independent confirmation, until decisions are made on
-player 00 alone. Rows before 2026-10-01 have a `commit` column that
-references the pre-publication history, which was squashed into the initial commit; the
-rows are still the record of which runs produced which numbers. Likewise, commit ids
-recorded on 2026-10-02 and 10-03 — in `results.csv`, `experiments/test_set_access.log`,
-ADRs 0026–0028 and that devlog — name commits from before a wording clean-up of the
-history on 2026-10-03. Each has a counterpart with the same message, in the same order,
-with the same code. Reproduce the current ones with
-`uv run tabsampler eval-m1 --split test --config configs/m2_heldout_eval.yaml`. The previous default
-(clean-fitted weights, `configs/fitted_clean_dadagp.yaml`) is in brackets:
+**Current results** — GuitarSet's test players 01–05, 300 tracks, `audio_mic`, today's
+default `configs/decoder_clean.yaml`: the hand-set weights plus ADR 0039's open-string cost,
+T = 1.2934, the hand window with the stretch — measured once, as Phase 2's test evaluation
+(ADR 0045). **It was chosen on player 00 alone, so this is an independent check** (+0.026 on
+the test players after +0.021 on player 00); figures for decoders chosen before ADR 0037 are
+baselines, because the 300 tracks were part of every earlier 360-track run. Rows before
+2026-10-01 have a `commit` column that references the pre-publication history, which was
+squashed into the initial commit; the rows are still the record of which runs produced which
+numbers. Likewise, commit ids recorded on 2026-10-02 and 10-03 — in `results.csv`,
+`experiments/test_set_access.log`, ADRs 0026–0028 and that devlog — name commits from before a
+wording clean-up of the history on 2026-10-03. Each has a counterpart with the same message, in
+the same order, with the same code. The run was
+`uv run tabsampler eval-m1 --split test --config configs/m2_c6_eval.yaml`. The hand-set default
+before it (T = 1.5728, measured 2026-10-03) is in brackets:
 
 | | oracle | end-to-end |
 |---|---|---|
 | E1 note F1, transcriber (raw) | 1.0000 | 0.7493 |
 | E1 note F1, pipeline (placed) | 1.0000 | 0.7507 |
-| **E2 exact tab F1 (headline)** | **0.6559** (0.6258) | **0.4277** (0.4337) |
-| E3 playable groups | 0.9980 (0.9970) | 0.9912 (0.9899) |
-| E3 playable transitions, 48 frets/s rule | 0.9997 (0.9995) | 0.9984 (0.9974) |
+| **E2 exact tab F1 (headline)** | **0.6819** (0.6559) | **0.4418** (0.4277) |
+| E3 playable groups | 0.9978 (0.9980) | 0.9906 (0.9912) |
+| E3 playable transitions, 48 frets/s rule | 0.9996 (0.9997) | 0.9981 (0.9984) |
 | E4 pitch validity | 1.0000 | 1.0000 |
-| E5 calibration error | **0.0794** (0.1260) | 0.2189 (0.3117) |
+| E5 calibration error | **0.0792** (0.0794) | 0.2439 (0.2189) |
 
 E1 = 1.0 in oracle mode is a plumbing check, not a result. **E4 = 1.0 is an invariant, not a
 score: anything below 1.0 is a bug**, because it means a (string, fret) pair does not sound
-the pitch we claimed. **Every ADR 0016 value holds on the 300** for the default; M2's
-target of 0.760 is 10.4 points away. Player 00, the validation player, is much easier
-(oracle E2 0.81), so its absolute figures do not carry over to the test players.
+the pitch we claimed. **Every ADR 0016 value holds on the 300** — the oracle transition rate on
+its guardrail at four decimals — and **M2's target of 0.760 is missed by 7.8 points**. Player
+00, the validation player, is much easier (oracle E2 0.83), so its absolute figures do not carry
+over to the test players. The spec's Phase 2 comparison on the test players: the decoder 0.6819,
+the learned term alone 0.4514, the learned model 0.6856 (ADR 0045; the learned model was 0.030
+*below* the decoder on player 00).
 
 **E1 is two numbers now.** Raw = the transcriber's score; on the same 360 tracks it
 reproduces Phase 0's 0.7437 exactly (0.7493 on the 300 test tracks). Placed = the

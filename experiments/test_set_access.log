@@ -24,3 +24,5 @@
 2026-10-03T19:07:44+00:00 | 0dd856d | eval-m1 (oracle + e2e) on 360 GuitarSet tracks via configs/m2_style_eval.yaml
 2026-10-03T19:58:43+00:00 | 322536b | eval-m1 (oracle + e2e) on 300 GuitarSet test tracks via configs/m2_heldout_eval.yaml
 2026-10-03T19:59:26+00:00 | 322536b | eval-m1 (oracle + e2e) on 300 GuitarSet test tracks via configs/m2_heldout_eval.yaml
+2026-10-04T18:54:17+00:00 | 65fa8ae | eval-m1 (oracle + e2e) on 300 GuitarSet test tracks via configs/m2_c6_eval.yaml + configs/decoder_clean.yaml
+2026-10-04T18:55:01+00:00 | 65fa8ae | evaluate_model.py, decodings (a) (b) (c) in oracle mode, on 300 GuitarSet test tracks: model cache/model/c4, decoder configs/decoder_clean.yaml; task C6

@@ -13,47 +13,58 @@ Status: **Milestone M1 reached; Phase 2 (learned fingering) in progress.**
 ## Results
 
 **The test set is GuitarSet's players 01–05: 300 tracks, `audio_mic`** (ADR 0037). Player
-00's 60 tracks are validation data, chosen by rule. **The default decoder changed on
-2026-10-04 and has not yet been measured on the test players** (ADR 0039): to the hand-set
-cost weights re-chosen on player 00 (ADR 0038) it adds a cost on open strings played with
-the hand up the neck, at T = 1.2934. Its test figures wait for the next pre-registered test
-evaluation, so **the table below is the hand-set default's** (T = 1.5728), the last default
-measured on the 300. Both model the hand as a 4-fret window that a wide chord can stretch
-(ADRs 0025, 0030). Distorted guitar has its own decoder,
-`configs/decoder_distorted.yaml`. Both modes per spec 3.2: *oracle* feeds reference notes
-to the fingering stage and so measures fingering alone; *end-to-end* feeds Basic Pitch's
-notes and is what a user gets.
+00's 60 tracks are validation data, chosen by rule. The default decoder is the hand-set cost
+weights re-chosen on player 00 (ADR 0038) plus a cost on open strings played with the hand up
+the neck (ADR 0039), at T = 1.2934, the hand modelled as a 4-fret window that a wide chord can
+stretch (ADRs 0025, 0030). It was measured on the test players once, as Phase 2's one test
+evaluation (ADR 0045). Distorted guitar has its own decoder, `configs/decoder_distorted.yaml`.
+Both modes per spec 3.2: *oracle* feeds reference notes to the fingering stage and so measures
+fingering alone; *end-to-end* feeds Basic Pitch's notes and is what a user gets.
 
-| | metric | oracle | end-to-end | the default before it (oracle / e2e) |
+| | metric | oracle | end-to-end | the hand-set default (oracle / e2e) |
 |---|---|---|---|---|
 | E1 | note F1, transcriber (raw) | 1.0000 | 0.7493 | 1.0000 / 0.7493 |
 | E1 | note F1, pipeline (placed) | 1.0000 | 0.7507 | 1.0000 / 0.7507 |
-| **E2** | **exact tab F1 (headline)** | **0.6559** | **0.4277** | 0.6258 / 0.4337 |
-| E3 | playable groups | 0.9980 | 0.9912 | 0.9970 / 0.9899 |
-| E3 | playable transitions | 0.9997 | 0.9984 | 0.9995 / 0.9974 |
+| **E2** | **exact tab F1 (headline)** | **0.6819** | **0.4418** | 0.6559 / 0.4277 |
+| E3 | playable groups | 0.9978 | 0.9906 | 0.9980 / 0.9912 |
+| E3 | playable transitions | 0.9996 | 0.9981 | 0.9997 / 0.9984 |
 | E4 | pitch validity | 1.0000 | 1.0000 | 1.0000 / 1.0000 |
-| E5 | calibration error (ECE) | **0.0794** | 0.2189 | 0.1260 / 0.3117 |
+| E5 | calibration error (ECE) | **0.0792** | 0.2439 | 0.0794 / 0.2189 |
 
-*The default before it*: weights fitted on clean DadaGP playing, T = 1.1975 (ADR 0032), kept as
-`configs/fitted_clean_dadagp.yaml`. 49 253 reference notes; 49 253 placed in oracle mode,
-50 167 end to end. End to end, 105 notes lay outside the guitar's range, 100 more were
-dropped as unfingerable, and 39 groups (1 in oracle mode) were decoded with the span bound
-relaxed. **The transcriber costs 0.2281 of E2** (0.6559 → 0.4277).
+*The hand-set default*: T = 1.5728 (ADR 0038), measured on 2026-10-03; the clean-fitted
+default before it scored 0.6258 / 0.4337 in E2 on the same tracks. 49 253 reference notes;
+49 253 placed in oracle mode, 50 167 end to end. End to end, 105 notes lay outside the
+guitar's range, 100 more were dropped as unfingerable, and 39 groups (1 in oracle mode) were
+decoded with the span bound relaxed. **The transcriber costs 0.2402 of E2** (0.6819 → 0.4418).
 
-**These 300 tracks are not untouched.** They were part of every earlier 360-track run, so
-the choice between these two decoders was made knowing how both had done on them in
-aggregate, and the figures above confirm nothing about that choice (ADR 0037). Before the
-runs, they were derived from the earlier ones — 0.656 and 0.6257 for oracle E2 — and came
-out at 0.6559 and 0.6258. They are the baseline that the next decisions, made on player 00
-alone, will be judged against.
+**An independent check, the first since the split.** The 300 tracks were part of every earlier
+360-track run, so figures for decoders chosen before ADR 0037 confirm nothing about those
+choices. ADR 0039's open-string cost was chosen on player 00 alone: it gained 0.0209 there,
+and 0.0260 here.
 
-| ADR 0016's values, judged on the 300 (ADR 0037) | required | the hand-set default | |
+| ADR 0016's values, judged on the 300 (ADR 0037) | required | today's default | |
 |---|---|---|---|
 | E4 | 1.0000 | 1.0000 / 1.0000 | held |
-| E3 groups, oracle / end to end | ≥ 0.9970 / 0.9896 | 0.9980 / 0.9912 | held |
-| E3 transitions (ADR 0035) | ≥ 0.9996 / 0.9969 | 0.9997 / 0.9984 | held |
-| E5 end to end | < 0.3851 | 0.2189 | held |
-| **M2 target**, E2 oracle | ≥ 0.760 | 0.6559 | **missed, by 10.4 points** |
+| E3 groups, oracle / end to end | ≥ 0.9970 / 0.9896 | 0.9978 / 0.9906 | held |
+| E3 transitions (ADR 0035) | ≥ 0.9996 / 0.9969 | 0.9996 / 0.9981 | held — oracle on the boundary at four decimals |
+| E5 end to end | < 0.3851 | 0.2439 | held |
+| **M2 target**, E2 oracle | ≥ 0.760 | 0.6819 | **missed, by 7.8 points** |
+
+### The spec's Phase 2 comparison (ADRs 0043–0045)
+
+A learned model — today's decoder plus a learned cost from a bidirectional GRU over the note
+groups, trained on DadaGP's clean parts — against the decoder, in oracle mode:
+
+| | player 00 (validation) | players 01–05 (test) |
+|---|---|---|
+| (a) the Viterbi decoder (today's default) | **0.8273** | 0.6819 |
+| (b) the learned term alone | 0.4652 | 0.4514 |
+| (c) the learned model, decoded by Viterbi | 0.7970 | **0.6856** |
+
+The learned model fitted DadaGP better and GuitarSet's validation player worse, so it was not
+preferred (ADR 0044); on the test players it came out 0.0037 ahead. No interval is computed
+there and nothing is chosen from it — one held-out player is a noisy guide, in both directions.
+Its weights are not published (ADR 0042).
 
 ### Validation on GuitarSet's own playing (ADRs 0037–0039)
 
@@ -240,22 +251,20 @@ this project's own baseline (ADR 0016), not from anyone else's figure.
 
 ### What the numbers say, honestly
 
-- Given perfect notes, the hand-set default placed about **66%** of notes on the string a
-  human actually used, on the test players — 81% on the easier validation player, where
-  today's default places 83% (ADR 0039; not yet measured on the test players). ADR 0016's
-  M2 target is 76%.
+- Given perfect notes, the default places about **68%** of notes on the string a human
+  actually used, on the test players — 83% on the easier validation player. ADR 0016's M2
+  target is 76%, which Phase 2 did not reach.
 - End to end, E2 is bounded by note F1: you cannot finger a note you did not hear. On the
   test players the transcriber's own F1 is 0.7493, which is the ceiling to argue about,
   not the pipeline's 0.7507.
-- **Calibration.** On the test players, given perfect notes the hand-set default's
-  posteriors were fairly honest (E5 0.08); end to end less so (0.22), because the decoder
-  cannot see the transcriber's mistakes. ADR 0016's E5 guardrail (< 0.3851) held.
+- **Calibration.** Given perfect notes the default's posteriors are fairly honest (E5
+  0.08); end to end less so (0.24), because the decoder cannot see the transcriber's
+  mistakes. ADR 0016's E5 guardrail (< 0.3851) holds.
 - **Both halves of E3 are now measured against human tab.** 99.86% of 16.8 million human
   chord shapes pass the chord rules (ADR 0022), and human tab passes the transition rule on
   99.88% of transitions — 98.6% of the moves where the hand actually shifts — on artists the
-  speed limit was not taken from (ADRs 0031, 0036). The hand-set default's output passed
-  0.9980 / 0.9912 of its chord shapes and 0.9997 / 0.9984 of its transitions on the test
-  players.
+  speed limit was not taken from (ADRs 0031, 0036). The default's output passes 0.9978 /
+  0.9906 of its chord shapes and 0.9996 / 0.9981 of its transitions on the test players.
 - **DadaGP validation does not yet predict GuitarSet.** Three times its clean parts were a
   poor guide: the pooled fitted weights (−11 points on clean validation, +3.9 on GuitarSet,
   ADR 0023), the hand window (+0.4 and +2.8: right direction, far off in size) and the clean
