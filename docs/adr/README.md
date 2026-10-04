@@ -53,11 +53,12 @@ of the old record to point at its replacement.
 | [0043](0043-learned-model-design.md) | **The learned model**: today's decoder plus a learned cost from a bidirectional GRU over the groups; the CRF stays the output layer | D12 | accepted; measured by 0044 |
 | [0044](0044-learned-model-measured.md) | The learned model on player 00: DadaGP NLL 0.4327 → 0.3136, but oracle E2 0.8273 → 0.7970 (−0.030, interval [−0.086, +0.020]) — **not preferred**; Phase 2's comparison exists on validation | D12 | accepted |
 | [0045](0045-phase-2-test-evaluation.md) | **Phase 2's test evaluation**: today's default 0.6819 oracle E2 on players 01–05 (+0.026, confirming ADR 0039) — **M2 missed by 7.8 points**; the comparison on the test players: (a) 0.6819, (b) 0.4514, (c) 0.6856 | D10 | accepted |
+| [0046](0046-audio-evidence.md) | **The audio evidence**: a string probability per note, from a small CNN over a constant-Q window, through the acoustic term; pretrained on SynthTab | D13 | accepted |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
-Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),
-D13 (form of audio evidence, Phase 3), D14 (app surface — **now due, M1 is met**),
-D15 (licensing — **code and publication settled by ADR 0020**; weight release still open, per corpus).
+Phase 4), D14 (app surface — **now due, M1 is met**), and D15 for corpora other than DadaGP
+and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).
+D11, D12 and D13 are decided by ADRs 0041, 0043 and 0046.
 
 **D10 is settled** by ADR 0016: oracle E2 must reach baseline + 10 points (0.760) at M2.
 
