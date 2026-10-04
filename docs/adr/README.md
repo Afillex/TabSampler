@@ -46,6 +46,7 @@ of the old record to point at its replacement.
 | [0036](0036-corrections-to-0030-and-0031.md) | Corrections after review: **48 frets/s passes 98.6% of real hand moves** (99.88% of transitions); the stretch relaxes | D9 | accepted |
 | [0037](0037-guitarset-validation-player.md) | **GuitarSet's player 00 becomes validation data**; players 01–05 stay test-only (amends 0003) | D8 | accepted |
 | [0038](0038-default-redecided-on-player-00.md) | The default decoder **re-decided on player 00**: the clean fit did not clearly win (+0.023, interval [−0.003, +0.051]) — **hand-set again**, T = 1.5728 | D7 | accepted |
+| [0039](0039-open-strings-up-the-neck.md) | **Open strings played up the neck cost extra**: `open_up_neck`, one fitted weight, judged on player 00 | D7 | proposed |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),

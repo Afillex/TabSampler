@@ -74,20 +74,35 @@ string for one note.
 - [x] Run it; check that its overall accuracy agrees with ADR 0038's E2 for the default
   (0.8065). *(The first run was one note short, 10,663 against 10,664: a unison on two
   strings paired in order. Fixed with a test; the rerun agrees exactly.)*
-- [ ] Question 7: add it to the script, commit, run; write all seven answers into the devlog.
+- [x] Question 7: add it to the script, commit, run; write all seven answers into the devlog.
 
-## Task 2: Regularisation in the fitter
+## Task 2: Open strings played up the neck (ADR 0039)
 
-To be detailed after Task 1. An L2 penalty in `fingering/fit.py`, with its gradient checked
-against the brute-force oracle, so that correlated features (the per-string biases and
-`high`) can be fitted without trading one against the other.
+**Argued by** questions 5 and 7: a third of the default's errors are an open string where the
+player fretted the note, and in 430 of those 860 the decoder's hand was up the neck.
 
-## Task 3: Feature groups argued by Task 1, judged on player 00
+**Files:** `docs/adr/0039-open-strings-up-the-neck.md`, `types.py` (`CostWeights.open_up_neck`),
+`fingering/costs.py`, `fingering/fit.py`, `config.py`, `results.py`,
+`scripts/fit_cost_weights.py` (`--hold-base`, `--features open`), `tests/decode/brute_force.py`
+and their tests.
 
-To be detailed after Task 1. Each group gets its own ADR with a rule fixed before its run,
-in the form of ADR 0038's: a challenger replaces the default only with the 95% track-level
-paired interval of its oracle E2 gain wholly above zero, and a chord-shape rate not lower
-by more than an allowance.
+- [x] ADR 0039, proposed: the contract, where the cost is charged, the experiment, its rule.
+- [x] Implement it in the scorer, the fitter and, from the ADR's text, the oracle. Oracle
+  tests with the term switched on; mutations of its threshold and of where it is charged
+  are caught.
+- [ ] Ege sets the rule's chord-shape allowance; commit the rule before any run.
+- [ ] Fit the one weight on DadaGP's clean training parts with the base weights held
+  (`--hold-base --features open --part clean`); write the challenger's config with the
+  fitted value; commit it before the runs.
+- [ ] `eval-m1 --split validation --per-track-out` for the default and the challenger;
+  `scripts/compare_validation.py`; apply the rule; results rows; accept ADR 0039.
+
+## Task 3: Regularisation and position features, if Task 2 leaves the gap
+
+Argued by question 4 (69% of errors with the player at frets 5–11, 87% of misplaced notes
+in another region): an L2 penalty in the fitter first, so that correlated features such as
+the per-string biases and `high` can be fitted together, then position features judged on
+player 00 like Task 2's. Detailed after Task 2.
 
 ## Then
 
