@@ -1,0 +1,30 @@
+# ADR 0040, experiment 2 on GuitarSet's validation player 00: the default as experiment 1 left
+# it, and the challenger with per-string preferences fitted on top of it, run once each before
+# anything is chosen. The rule in ADR 0040, committed with this file, decides.
+
+hypothesis: >-
+  On GuitarSet's validation player (00, 60 tracks, ADR 0037), the default decoder as ADR 0040's
+  first experiment left it, plus per-string preferences (ADR 0034's string_bias, low E the
+  reference), fitted on DadaGP's clean training parts with every other weight held at the
+  default's values, places more notes on the player's string than the default: oracle E2
+  higher with the 95% track-level paired interval wholly above zero, and no clear drop in the
+  chord-shape rate. Predicted: no clear gain. Variable: the five string biases. Metrics:
+  oracle E2 and the oracle chord-shape rate; end-to-end figures recorded only. Split:
+  validation.
+
+dataset:
+  name: guitarset
+  data_home: data/guitarset
+  channel: audio_mic
+
+transcriber:
+  exe: basic-pitch
+  cache_dir: cache/note_events
+  onset_threshold: 0.5
+  frame_threshold: 0.3
+  minimum_note_length_ms: 127.70
+  model_serialization: coreml
+  version_tag: basic-pitch-0.4.0
+
+onset_tolerance: 0.05
+seed: 0

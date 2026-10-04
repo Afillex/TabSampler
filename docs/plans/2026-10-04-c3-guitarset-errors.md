@@ -102,12 +102,21 @@ and their tests.
   *(Adopted: oracle E2 0.8065 → 0.8273, interval [+0.0066, +0.0363], no clear chord-shape
   drop; recalibrated to T = 1.2934.)*
 
-## Task 3: Regularisation and position features, if Task 2 leaves the gap
+## Task 3: Position features — ADR 0034's groups, re-judged on player 00 (ADR 0040)
 
-Argued by question 4 (69% of errors with the player at frets 5–11, 87% of misplaced notes
-in another region): an L2 penalty in the fitter first, so that correlated features such as
-the per-string biases and `high` can be fitted together, then position features judged on
-player 00 like Task 2's. Detailed after Task 2.
+**Argued by** the analysis re-run on today's default: 69% of its errors are notes the player
+fretted at 5–11, 88% of misplaced notes land in another region, and the decoder plays 64% of
+them lower on the neck than the player. **Changed from the plan:** each group is fitted with
+every other weight held at the default's values, as in Task 2, so the per-string biases cannot
+trade against `high`; regularisation waits until groups are fitted together.
+
+- [x] `scripts/fit_cost_weights.py --base-config`: a fit can start from, and hold, today's
+  default.
+- [x] ADR 0040, proposed, with `configs/m2_validation_regions.yaml` and
+  `configs/m2_validation_strings.yaml`, committed before any run.
+- [ ] Experiment 1, fret regions: fit, write the challenger's config, commit, run both on
+  player 00, apply the rule.
+- [ ] Experiment 2, per-string preference: the same, against the default experiment 1 leaves.
 
 ## Then
 

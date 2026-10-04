@@ -47,6 +47,7 @@ of the old record to point at its replacement.
 | [0037](0037-guitarset-validation-player.md) | **GuitarSet's player 00 becomes validation data**; players 01–05 stay test-only (amends 0003) | D8 | accepted |
 | [0038](0038-default-redecided-on-player-00.md) | The default decoder **re-decided on player 00**: the clean fit did not clearly win (+0.023, interval [−0.003, +0.051]) — **hand-set again**, T = 1.5728 | D7 | accepted |
 | [0039](0039-open-strings-up-the-neck.md) | **Open strings played up the neck cost extra**: one fitted weight, 0.7615; on player 00 oracle E2 0.8065 → 0.8273 (+0.021, interval [+0.007, +0.036]) — **adopted**, T = 1.2934. Chord-shape rule: no clear drop | D7 | accepted |
+| [0040](0040-regions-and-strings-on-player-00.md) | ADR 0034's **fret regions and per-string preferences, re-judged on player 00**, each fitted on top of the default | D7 | proposed |
 
 Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
 Phase 4), D11 (framework and compute, Phase 2), D12 (fingering model design, Phase 2),
