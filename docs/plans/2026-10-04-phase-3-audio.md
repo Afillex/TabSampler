@@ -54,11 +54,32 @@ times are in ticks with a tempo annotation, so their unit must be **verified aga
 
 ## Task 3: The note windows and the string classifier (`src/tabsampler/audio/`, `model/`)
 
-A constant-Q window around each onset, the classifier, and its training on SynthTab's
-development set split by song, stopping on the held-out songs.
+**The window, centred on the note's pitch.** A constant-Q transform of the whole track (22,050 Hz,
+hop 256 — 11.6 ms; two bins per semitone from MIDI 28 to 124), cropped per note to the 48
+semitones from an octave below its pitch to three octaves above, and to the frames from 35 ms
+before its onset to 300 ms after. Centring on the pitch leaves what differs between strings —
+the harmonics' balance, the attack — in the same place for every note, so the network learns
+timbre rather than pitch; the pitch itself goes in beside it. Log magnitude, normalised per
+window.
 
-- [ ] Tests (offline, synthetic audio); training script; per-note string accuracy on held-out
-  SynthTab songs and — the real question — on player 00's notes.
+**SynthTab's latency is corrected where the windows are cut**: onsets move later by 29 ms on
+acoustic tracks and 17 ms on electric ones (Task 2's measurement); GuitarSet's onsets are not
+moved.
+
+**The classifier.** A small CNN over the window, the pitch beside it, six logits, and a softmax
+over only the strings that can sound the pitch in the track's tuning. Trained on SynthTab's
+development set, all four families, split by track (about 85% to train, 15% to stop on), Adam
+1e-3, early stopping on the held-out tracks' negative log-likelihood, seed 0.
+
+**What it is judged by, before it touches the decoder:** per-note string accuracy, among the
+notes with more than one possible string, on the held-out SynthTab tracks and on player 00's
+notes from `audio_mic` — against two floors, chance among the possible strings and always
+picking the string the decoder's cost model alone would prefer.
+
+- [ ] Tests (offline, synthetic audio): the window's shape and centring, the latency shift, the
+  mask over possible strings; the classifier's masked softmax.
+- [ ] Training script, checkpointing as `scripts/train_model.py` does; pre-registered run; the
+  per-note accuracies on SynthTab's held-out tracks and on player 00.
 
 ## Task 4: The acoustic term in the decoder (ADR)
 
