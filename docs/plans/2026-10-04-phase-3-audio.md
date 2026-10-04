@@ -141,3 +141,13 @@ between −0.02 and +0.02.
   *(τ 1.8985, weight 0.25 — both predictions held; on SynthTab the evidence gains about 3
   points. On player 00: 0.8273 → 0.7865, −0.0408 [−0.0724, −0.0142], no chord-shape drop:
   still a clear loss, a third of Task 5's. The rerun's prediction failed.)*
+
+## Task 7: The test players once, then Phase 3 for sign-off (Ege's choice after Task 6)
+
+**Pre-registered:** `scripts/evaluate_acoustic.py --split test --run cache/acoustic/dev --weight 0.25
+--temperature 1.8985` — today's decoder from the test players' reference notes, without the audio
+evidence and with it as Task 6 calibrated it; one logged look, nothing chosen. **Prediction:** as on
+player 00, a loss with the evidence, between −0.06 and −0.02 in oracle E2. The figure is Phase 3's
+measured change on the test players; Phase 3 then goes to Ege for sign-off.
+
+- [ ] Run once; record; write Phase 3's result (ADR); README, HANDOFF, devlog.

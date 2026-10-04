@@ -689,10 +689,13 @@ def test_the_acoustic_ablation_reads_only_the_validation_player(
     torch.manual_seed(0)
     (tmp_path / "run").mkdir()
     torch.save(StringClassifier().state_dict(), tmp_path / "run" / "best.pt")
-    argv = ["evaluate_acoustic.py", "--run", str(tmp_path / "run"), "--out", str(tmp_path / "out")]
+    looks: list[str] = []
+    monkeypatch.setattr(ablation, "record_test_set_access", looks.append)
+    argv = ["evaluate_acoustic.py", "--split", "validation", "--run", str(tmp_path / "run")]
+    argv += ["--out", str(tmp_path / "out")]
     monkeypatch.setattr(sys, "argv", [*argv, "--weight", "0.0"])
     ablation.main()
-    assert asked == validation
+    assert asked == validation and looks == []
     a, c = (json.loads((tmp_path / "out" / f"{x}.json").read_text()) for x in "ac")
     assert a["per_song"] == c["per_song"] and a["split"] == c["split"] == "validation"
 
@@ -701,3 +704,60 @@ def test_the_calibration_keeps_the_best_weight_and_the_smaller_on_a_tie() -> Non
     calibrate = load("calibrate_acoustic")
     assert calibrate.choose_weight({0.0: 10, 0.1: 12, 0.25: 11}) == 0.1
     assert calibrate.choose_weight({0.0: 12, 0.5: 12, 1.0: 3}) == 0.0
+
+
+def test_the_acoustic_ablation_on_the_test_players_logs_the_look_and_writes_no_counts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import numpy as np
+    import torch
+
+    from tabsampler.model.strings import StringClassifier
+
+    ablation = load("evaluate_acoustic")
+    test = ["01_BN1-129-Eb_comp", "02_Jazz1-130-D_solo"]
+    order: list[str] = []
+
+    class Track:
+        def __init__(self, track_id: str) -> None:
+            self.audio_mic_path = track_id
+
+    class Dataset:
+        def track(self, track_id: str) -> Track:
+            order.append(f"read {track_id}")
+            return Track(track_id)
+
+    def reference(track: Track, tuning: Tuning) -> list[tuple[NoteEvent, Position]]:
+        return [
+            (NoteEvent(0.0, 0.4, 55, 1.0), Position(3, 0)),
+            (NoteEvent(0.5, 0.9, 57, 1.0), Position(2, 7)),
+        ]
+
+    monkeypatch.setattr(ablation, "guitarset_test_ids", lambda: tuple(test))
+    monkeypatch.setattr(ablation, "load_dataset", lambda *_: Dataset())
+    monkeypatch.setattr(ablation, "reference_tab", reference)
+    monkeypatch.setattr(
+        ablation, "reference_notes", lambda t: [n for n, _ in reference(t, Tuning())]
+    )
+    monkeypatch.setattr(ablation, "load_audio", lambda _: np.zeros(44100, dtype=np.float32))
+    monkeypatch.setattr(ablation, "record_test_set_access", lambda reason: order.append("look"))
+    torch.manual_seed(0)
+    (tmp_path / "run").mkdir()
+    torch.save(StringClassifier().state_dict(), tmp_path / "run" / "best.pt")
+    argv = [
+        "evaluate_acoustic.py",
+        "--split",
+        "test",
+        "--run",
+        str(tmp_path / "run"),
+        "--weight",
+        "0.25",
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    ablation.main()
+    assert order == ["look", *(f"read {t}" for t in test)]
+    assert "(c)" in capsys.readouterr().out
+    monkeypatch.setattr(sys, "argv", [*argv, "--out", str(tmp_path / "x")])
+    with pytest.raises(SystemExit):
+        ablation.main()
+    assert not (tmp_path / "x").exists()

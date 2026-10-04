@@ -1,13 +1,14 @@
 """Phase 3's ablation: the decoder with and without the audio evidence (ADRs 0046, 0047).
 
-    uv run python scripts/evaluate_acoustic.py --run cache/acoustic/dev --weight 1.0 \\
-        --out cache/validation/p3
+    uv run python scripts/evaluate_acoustic.py --split validation --run cache/acoustic/dev \\
+        --weight 0.25 --temperature 1.8985 --out cache/validation/p3-calibrated
 
-Oracle mode on GuitarSet's player 00: every track decoded from its reference notes twice by the
+Oracle mode on GuitarSet: every track decoded from its reference notes twice by the
 default decoder -- (a) with the acoustic weight at zero, which is Phase 2's decoder exactly, and
 (c) with ``--weight`` and, for every note, the string classifier's log-probabilities heard
 through ``audio_mic``. Per-track counts for ``scripts/compare_validation.py``. Reads player 00
-only (ADR 0037).
+only on ``--split validation`` (ADR 0037); ``--split test`` is Phase 3's one look at players
+01-05, logged before anything is read, with no per-track counts written.
 """
 
 from __future__ import annotations
@@ -25,7 +26,11 @@ import torch
 from tabsampler.audio.windows import RATE, note_window, possible_strings, track_cqt
 from tabsampler.config import load_phase1_config
 from tabsampler.data.guitarset import load_dataset, reference_notes, reference_tab
-from tabsampler.data.splits import guitarset_validation_ids
+from tabsampler.data.splits import (
+    guitarset_test_ids,
+    guitarset_validation_ids,
+    record_test_set_access,
+)
 from tabsampler.decode.robust import decode_best_effort
 from tabsampler.eval.metrics import exact_tab_f1, tab_notes_to_placed
 from tabsampler.eval.playability import playability_rate
@@ -70,23 +75,42 @@ def heard(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--split",
+        choices=("validation", "test"),
+        required=True,
+        help="validation: player 00 (ADR 0037); test: players 01-05, Phase 3's one logged look.",
+    )
     parser.add_argument("--run", type=Path, required=True, help="The classifier's run (best.pt).")
     parser.add_argument("--weight", type=float, required=True, help="The acoustic weight for (c).")
     parser.add_argument("--temperature", type=float, default=1.0, help="The classifier's (Task 6).")
     parser.add_argument("--decoder-config", type=Path, default=Path("configs/decoder_clean.yaml"))
-    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--out", type=Path, help="Per-track counts (validation only).")
     args = parser.parse_args()
+    on_test = args.split == "test"
+    if on_test and args.out is not None:
+        # Per-track counts are what choices are made with; none is made on the test players.
+        parser.error("--out is for the validation split only (ADR 0003, ADR 0037)")
+    if not on_test and args.out is None:
+        parser.error("--out is required on the validation split")
     dec = load_phase1_config(args.decoder_config)
     model = StringClassifier()
     model.load_state_dict(torch.load(args.run / "best.pt", weights_only=True))
     model.eval()
+    track_ids = guitarset_test_ids() if on_test else guitarset_validation_ids()
+    if on_test:
+        record_test_set_access(
+            f"evaluate_acoustic.py, oracle, acoustic 0 and {args.weight:g} at temperature "
+            f"{args.temperature:g}, on {len(track_ids)} GuitarSet test tracks: classifier "
+            f"{args.run}, decoder {args.decoder_config}; Phase 3's one test look"
+        )
     dataset: Any = load_dataset(Path("data/guitarset"))
     variants = {
         "a": replace(dec.weights, acoustic=0.0),
         "c": replace(dec.weights, acoustic=args.weight),
     }
     reports = {name: RecoveryReport() for name in variants}
-    for track_id in guitarset_validation_ids():
+    for track_id in track_ids:
         track = dataset.track(track_id)
         reference = reference_tab(track, dec.tuning)
         notes = reference_notes(track)
@@ -105,10 +129,11 @@ def main() -> None:
             e2 = exact_tab_f1(reference, tab_notes_to_placed(tab), ONSET_TOLERANCE)
             e3 = playability_rate(tab, dec.rules, window_s=dec.group_window_s)
             add_track(reports[name], track_id, "oracle", e2, e3)
-    args.out.mkdir(parents=True, exist_ok=True)
     for name, report in reports.items():
-        payload = {"split": "validation", "acoustic": variants[name].acoustic, **report.to_dict()}
-        (args.out / f"{name}.json").write_text(json.dumps(payload))
+        if args.out is not None:
+            args.out.mkdir(parents=True, exist_ok=True)
+            payload = {"split": args.split, "acoustic": variants[name].acoustic, **report.to_dict()}
+            (args.out / f"{name}.json").write_text(json.dumps(payload))
         right, total = report.counts("oracle")
         passed, shapes = report.shapes["oracle"]
         print(
