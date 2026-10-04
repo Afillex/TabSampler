@@ -309,3 +309,33 @@ def test_the_error_report_answers_each_question_from_the_outcomes() -> None:
     assert f"player open, decoder fretted: {errors.share(1, 3)}" in text
     assert f"decoder open, player fretted: {errors.share(1, 3)}" in text
     assert f"errors in runs of 4 or more: {errors.share(4, 4)}" in text
+
+
+def test_the_error_analysis_follows_each_hand_from_group_to_group() -> None:
+    errors = load("analyse_errors")
+    # Fret 5 puts the hand at 5 (frets 5-9); an open string carries it; fret 10 moves it up
+    # one, to 6; a dropped note moves nothing.
+    groups = [0, 0, 1, 2, 3]
+    positions = [Position(1, 5), Position(2, 0), Position(3, 0), Position(2, 10), None]
+    assert errors.hand_indices(groups, positions) == [5, 5, 5, 6, 6]
+    assert errors.hand_indices([0, 1], [Position(5, 0), Position(4, 0)]) == [None, None]
+
+
+def test_question_seven_tables_the_decoders_open_strings_by_both_hands() -> None:
+    errors = load("analyse_errors")
+
+    def opened(player: int | None, decoder: int | None) -> object:
+        human, decoded = Position(2, 5), Position(3, 0)  # the same D, fretted and open
+        return errors.Outcome(
+            "00_BN1-129-Eb_solo", "BN", "solo", 0.0, False, human, decoded, player, decoder
+        )
+
+    outcomes = [opened(5, 5), opened(5, 2), opened(2, None)]
+    text = "\n".join(errors.report(outcomes))
+
+    def row(name: str, cells: tuple[int, int, int]) -> str:
+        return f"  {name:12s}" + "".join(f"{cell:10d}" for cell in cells)
+
+    assert row("none yet", (0, 1, 0)) in text
+    assert row("1-4", (0, 0, 1)) in text
+    assert row("5+", (0, 0, 1)) in text

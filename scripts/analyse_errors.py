@@ -1,7 +1,8 @@
 """Where the default decoder loses human fingerings on GuitarSet's validation player.
 
 Phase 2 task C3, ``docs/plans/2026-10-04-c3-guitarset-errors.md`` Task 1, whose questions
-and predictions were fixed before the run. A diagnostic, not a metric: it writes no
+and predictions were fixed before the run; question 7 was added after the first run, as a
+follow-up to question 5. A diagnostic, not a metric: it writes no
 ``results.csv`` row, and nothing is chosen from it except which feature groups are worth
 arguing for. Oracle mode: the decoder is given the player's own notes, so every error is a
 fingering error.
@@ -27,7 +28,8 @@ from tabsampler.decode.robust import decode_best_effort
 from tabsampler.eval.metrics import exact_tab_f1, tab_notes_to_placed
 from tabsampler.fingering.candidates import group_notes
 from tabsampler.fingering.costs import HandSetScorer
-from tabsampler.types import NoteEvent, Position, TabNote
+from tabsampler.fingering.states import shift_window
+from tabsampler.types import Hand, NoteEvent, Position, TabNote
 
 #: A GuitarSet track id: player, style and number, tempo, key, and comping or soloing.
 TRACK_ID = re.compile(r"^(\d\d)_([A-Za-z]+)\d-\d+-[A-G][#b]?_(comp|solo)$")
@@ -52,6 +54,10 @@ class Outcome(NamedTuple):
     human: Position
     #: ``None`` when the decoder dropped the note.
     decoded: Position | None
+    #: The index fret of each hand after this note's group (ADR 0025, ADR 0030); ``None``
+    #: before anything has been fretted.
+    player_hand: int | None = None
+    decoder_hand: int | None = None
 
     @property
     def right(self) -> bool:
@@ -96,13 +102,37 @@ def pair(
     return out
 
 
+def group_indices(reference: Sequence[tuple[NoteEvent, Position]], window_s: float) -> list[int]:
+    """The decoder's group of each reference note, numbered in time order."""
+    index: dict[tuple[float, int], int] = {}
+    for number, group in enumerate(group_notes([note for note, _ in reference], window_s=window_s)):
+        for note in group.notes:
+            index[(note.onset, note.pitch)] = number
+    return [index[(note.onset, note.pitch)] for note, _ in reference]
+
+
 def chord_flags(reference: Sequence[tuple[NoteEvent, Position]], window_s: float) -> list[bool]:
     """Whether each reference note sounds in a group of two or more, as the decoder groups."""
-    size: dict[tuple[float, int], int] = {}
-    for group in group_notes([note for note, _ in reference], window_s=window_s):
-        for note in group.notes:
-            size[(note.onset, note.pitch)] = len(group.notes)
-    return [size[(note.onset, note.pitch)] > 1 for note, _ in reference]
+    groups = group_indices(reference, window_s)
+    sizes = Counter(groups)
+    return [sizes[group] > 1 for group in groups]
+
+
+def hand_indices(groups: Sequence[int], positions: Sequence[Position | None]) -> list[int | None]:
+    """The index fret of the hand after each note's group, following ``positions`` group by
+    group as the decoder's hand window does (ADR 0025, ADR 0030). Open strings and dropped
+    notes do not move the hand; ``None`` until something has been fretted."""
+    fretted: dict[int, list[int]] = {}
+    for group, position in zip(groups, positions, strict=True):
+        frets = fretted.setdefault(group, [])
+        if position is not None and position.fret > 0:
+            frets.append(position.fret)
+    hand: Hand | None = None
+    after: dict[int, int | None] = {}
+    for group in sorted(fretted):
+        hand, _ = shift_window(hand, sorted(fretted[group]))
+        after[group] = None if hand is None else hand[0]
+    return [after[group] for group in groups]
 
 
 def outcomes_for(
@@ -113,10 +143,15 @@ def outcomes_for(
 ) -> list[Outcome]:
     style, mode = track_style_and_mode(track_id)
     placed = pair(reference, decoded)
-    in_chord = chord_flags(reference, window_s)
+    groups = group_indices(reference, window_s)
+    sizes = Counter(groups)
+    player_hands = hand_indices(groups, [human for _, human in reference])
+    decoder_hands = hand_indices(groups, placed)
     return [
-        Outcome(track_id, style, mode, note.onset, chord, human, where)
-        for (note, human), where, chord in zip(reference, placed, in_chord, strict=True)
+        Outcome(track_id, style, mode, note.onset, sizes[group] > 1, human, where, player, ours)
+        for (note, human), where, group, player, ours in zip(
+            reference, placed, groups, player_hands, decoder_hands, strict=True
+        )
     ]
 
 
@@ -129,6 +164,16 @@ def region(fret: int) -> str:
     if fret <= 11:
         return "5-11"
     return "12+"
+
+
+#: Question 7's hand positions: nothing fretted yet, open position, or up the neck.
+HAND_BUCKETS = ("none yet", "1-4", "5+")
+
+
+def hand_bucket(index: int | None) -> str:
+    if index is None:
+        return "none yet"
+    return "1-4" if index <= 4 else "5+"
 
 
 def errors_in_long_runs(wrong: Sequence[bool], long_run: int = LONG_RUN) -> int:
@@ -203,6 +248,23 @@ def report(outcomes: Sequence[Outcome]) -> list[str]:
         )
         in_runs += errors_in_long_runs([not o.right for o in ordered])
     lines.append(f"\n6. errors in runs of {LONG_RUN} or more: {share(in_runs, len(wrong))}")
+
+    lines.append(
+        "\n7. (follow-up) the decoder's open strings where the player fretted: rows are the"
+        "\n   decoder's hand, columns the player's, as index frets"
+    )
+    opened = [o for o in moved if o.decoded and o.decoded.fret == 0 and o.human.fret > 0]
+    lines.append(f"  {'':12s}" + "".join(f"{column:>10s}" for column in HAND_BUCKETS))
+    for row in HAND_BUCKETS:
+        cells = [
+            sum(
+                1
+                for o in opened
+                if hand_bucket(o.decoder_hand) == row and hand_bucket(o.player_hand) == column
+            )
+            for column in HAND_BUCKETS
+        ]
+        lines.append(f"  {row:12s}" + "".join(f"{cell:10d}" for cell in cells))
     return lines
 
 

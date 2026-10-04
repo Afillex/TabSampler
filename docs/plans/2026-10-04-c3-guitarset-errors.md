@@ -52,14 +52,29 @@ tracks. A note is right when the decoder put it on the string the player used, a
 6. Whether errors come in runs (a passage placed in another position) or alone: the share of
    errors that sit in runs of four or more consecutive misplaced notes.
 
+**Question 7, added after the first run** as a follow-up to question 5, which found a third
+of all errors to be the decoder playing an open string where the player fretted the note:
+
+7. For those notes, where each hand was — nothing fretted yet, open position (index fret
+   1–4), or up the neck (5 and above) — as the hand window follows each path.
+
+Prediction: mostly the decoder's hand at 1–4 and the player's at 5 or above, i.e. the
+decoder chose a lower position, not an open string inside the player's position. What it
+argues: with the decoder's hand mostly up the neck, a cost on open strings played there
+(the Phase 2 plan's "open strings conditioned on the neighbouring shapes") targets these
+errors; with it mostly in open position, that feature would not reach them, and the
+position features of Task 3 are argued instead.
+
 **Predictions:** notes in chords are placed better than single notes; soloing worse than
 comping; most misplaced notes are one string away; and most errors sit in runs of four or
 more, which would mean the decoder chooses the wrong *position* more often than the wrong
 string for one note.
 
-- [ ] Write the script and its tests (offline, synthetic notes). Commit before the run.
-- [ ] Run it; check that its overall accuracy agrees with ADR 0038's E2 for the default
-  (0.8065); write the answers into the devlog.
+- [x] Write the script and its tests (offline, synthetic notes). Commit before the run.
+- [x] Run it; check that its overall accuracy agrees with ADR 0038's E2 for the default
+  (0.8065). *(The first run was one note short, 10,663 against 10,664: a unison on two
+  strings paired in order. Fixed with a test; the rerun agrees exactly.)*
+- [ ] Question 7: add it to the script, commit, run; write all seven answers into the devlog.
 
 ## Task 2: Regularisation in the fitter
 
