@@ -1,6 +1,7 @@
 # ADR 0040: Fret regions and per-string preferences, re-judged on player 00
 
-Status: proposed (2026-10-04) — pre-registration; accepted with its results
+Status: accepted (2026-10-04) — **neither group clearly won on player 00: the default is
+unchanged**
 
 Continues Phase 2 task C3 (`docs/plans/2026-10-04-c3-guitarset-errors.md`, Task 3). Re-tries
 ADR 0034's two feature groups the way ADR 0039 tried its one: on top of today's default, and
@@ -55,3 +56,27 @@ E2 on player 00 and recovery on DadaGP's clean validation parts are recorded, no
 
 **Harder.** If both win, the default carries twelve cost weights, eight of them fitted in
 three separate experiments on top of one another.
+
+## Results (2026-10-04)
+
+Each fitted on the clean parts of the 600 training songs on top of the default, and run on
+player 00 against it at the default's temperature, both committed before the runs. Player
+00: 60 tracks, track-level paired bootstrap, exact counts.
+
+| | fitted weights | oracle E2, default → challenger | change, 95% interval | chord shapes |
+|---|---|---|---|---|
+| 1. fret regions | `low_region` −0.1403, `high_region` 0.2130 | 0.8273 → 0.8283 | +0.0009 [−0.0148, +0.0176] | 6541 → 6541 of 6607 |
+| 2. per-string | (0, −0.4515, −0.3215, −0.2268, −0.2830, −0.5123) | 0.8273 → 0.8283 | +0.0010 [−0.0104, +0.0130] | 6541 → 6540 |
+
+**Neither interval is wholly above zero, so neither group joins the default**, and no
+temperature changes. Both predictions held. Experiment 1's hypothesis did not: `low_region`
+fitted *negative* — DadaGP's clean tab favours frets 1–4 slightly, though the decoder already
+plays lower than GuitarSet's player. End to end both lost about a point, within noise:
+−0.0112 [−0.0294, +0.0103] and −0.0095 [−0.0193, +0.0026].
+
+Recorded, not ruled on — recovery on DadaGP's clean validation parts: regions 0.8460 → 0.8601
+(+0.0140 [+0.0008, +0.0340]), strings 0.8460 → 0.8521 (+0.0061 [−0.0081, +0.0256]). Once more
+DadaGP's clean parts favoured a change that GuitarSet's player did not confirm.
+
+`configs/decoder_clean_regions.yaml` and `configs/decoder_clean_strings.yaml` keep the two
+challengers as they were run.

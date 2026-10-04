@@ -114,9 +114,10 @@ trade against `high`; regularisation waits until groups are fitted together.
   default.
 - [x] ADR 0040, proposed, with `configs/m2_validation_regions.yaml` and
   `configs/m2_validation_strings.yaml`, committed before any run.
-- [ ] Experiment 1, fret regions: fit, write the challenger's config, commit, run both on
-  player 00, apply the rule.
-- [ ] Experiment 2, per-string preference: the same, against the default experiment 1 leaves.
+- [x] Experiment 1, fret regions: fit, write the challenger's config, commit, run both on
+  player 00, apply the rule. *(+0.0009 [−0.0148, +0.0176]: not adopted.)*
+- [x] Experiment 2, per-string preference: the same, against the default experiment 1 leaves.
+  *(+0.0010 [−0.0104, +0.0130]: not adopted.)*
 
 ## Then
 
