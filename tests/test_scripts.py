@@ -264,6 +264,16 @@ def test_the_error_analysis_prefers_the_players_string_among_equal_notes() -> No
     assert errors.pair(reference, decoded) == [Position(5, 0), Position(4, 5)]
 
 
+def test_the_error_analysis_pairs_a_unison_as_e2_matches_it() -> None:
+    # 00_Jazz1-200-B_solo: the player's D on the low E string and on the A string, 3 ms
+    # apart. Taken in order, the first note took the copy on the A string and neither
+    # counted as right; E2's matching counts one.
+    errors = load("analyse_errors")
+    reference = [placed(3.3245, 50, 0, 10), placed(3.3278, 50, 1, 5)]
+    decoded = [tab(3.3245, 50, 1, 5), tab(3.3278, 50, 2, 0)]
+    assert errors.pair(reference, decoded) == [Position(2, 0), Position(1, 5)]
+
+
 def test_the_error_analysis_marks_notes_that_sound_together() -> None:
     errors = load("analyse_errors")
     reference = [placed(0.0, 59, 4, 0), placed(0.01, 64, 5, 0), placed(1.0, 69, 5, 5)]

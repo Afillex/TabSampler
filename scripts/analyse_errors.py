@@ -71,31 +71,28 @@ def pair(
 ) -> list[Position | None]:
     """For each reference note, the decoder's position for the same note, or ``None``.
 
-    The same note means the same pitch within E2's onset tolerance. Among several, one on
-    the player's string is preferred, then the nearest onset, so that a note is right here
-    whenever E2 could match it.
+    The same note means the same pitch within E2's onset tolerance. Copies on the player's
+    string are paired first, for every note, and only then the rest by nearest onset: so a
+    unison played on two strings is paired as E2's maximum matching pairs it, not in
+    whichever order the notes come.
     """
-    unused = list(range(len(decoded)))
-    out: list[Position | None] = []
-    for note, human in reference:
-        candidates = [
-            j
-            for j in unused
-            if decoded[j].note.pitch == note.pitch
-            and round(abs(decoded[j].note.onset - note.onset), 4) <= ONSET_TOLERANCE
-        ]
-        if not candidates:
-            out.append(None)
-            continue
-        best = min(
-            candidates,
-            key=lambda j: (
-                decoded[j].position.string != human.string,
-                abs(decoded[j].note.onset - note.onset),
-            ),
-        )
-        unused.remove(best)
-        out.append(decoded[best].position)
+    unused = set(range(len(decoded)))
+    out: list[Position | None] = [None] * len(reference)
+    for on_the_players_string in (True, False):
+        for i, (note, human) in enumerate(reference):
+            if out[i] is not None:
+                continue
+            candidates = [
+                j
+                for j in unused
+                if decoded[j].note.pitch == note.pitch
+                and round(abs(decoded[j].note.onset - note.onset), 4) <= ONSET_TOLERANCE
+                and (not on_the_players_string or decoded[j].position.string == human.string)
+            ]
+            if candidates:
+                best = min(candidates, key=lambda j: (abs(decoded[j].note.onset - note.onset), j))
+                unused.discard(best)
+                out[i] = decoded[best].position
     return out
 
 
