@@ -78,8 +78,27 @@ counts for `scripts/compare_validation.py`.
 - [x] Implement; `make check`; commit. *(On player 00 the untrained model's (c) equals (a)
   exactly: E2 0.8273 both, chord shapes 6541/6607 both, every track identical.)*
 
-## Task 6: The run
+## Task 6: The run — pre-registered
 
-- [ ] Pre-register the hypothesis and prediction in a config; commit.
-- [ ] Train; evaluate on player 00; apply ADR 0039's rule to (c) against (a); results rows;
-  ADR 0043's result; devlog.
+**Data.** The clean parts of 1,500 artist-split DadaGP training songs (seed 0), and of the 300
+validation songs the cost-model fits use. Every training song would not fit in memory: arrays
+take about 5,800 bytes per group, about 310 groups per song's clean parts (measured on 50
+songs), so 1,500 songs is about 470,000 groups and 2.7 GB — 2.5 times the cost-model fits' 600.
+Every other setting is ADR 0043's: chunks of 128, batch 32, Adam 1e-3, patience 3, at most 30
+epochs, seed 0, the CPU, starting at `configs/decoder_clean.yaml`.
+
+    caffeinate -i uv run python -u scripts/train_model.py data/dadagp/DadaGP-v1.1.zip \
+        data/dadagp/track_meta.json --run cache/model/c4 --train-songs 1500
+    uv run python scripts/evaluate_model.py --run cache/model/c4 --out cache/validation/c4
+
+**Hypotheses.** (1) Training lowers the NLL on DadaGP's clean validation parts below the
+default's. (2) On player 00, (c) places more notes on the player's string than (a): oracle E2
+higher with the 95% track-level paired interval wholly above zero, and no clear chord-shape drop
+— ADR 0039's rule.
+
+**Prediction.** (1) holds by a wide margin. (2) is uncertain: DadaGP's clean parts have misled
+choices judged on player 00 before (ADR 0040). (c) − (a) between −0.01 and +0.03 in oracle E2;
+(b) below (a).
+
+- [ ] Commit this; train; evaluate on player 00; apply the rule to (c) against (a); results
+  rows; ADR 0043's result; devlog.
