@@ -28,6 +28,20 @@ dev = [
     "pyright>=1.1.414",
     "pre-commit>=4",
 ]
+# The learned model of Phase 2 task C4 (ADR 0041). Nothing else imports torch.
+model = [
+    "torch>=2.14.1,<2.15",
+]
+
+# Linux, which is CI, takes the CPU-only build: the default Linux wheel brings CUDA
+# libraries a CPU runner cannot use. macOS takes PyPI's, which includes MPS (ADR 0041).
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [build-system]
 requires = ["hatchling"]
