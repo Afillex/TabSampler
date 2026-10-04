@@ -65,8 +65,9 @@ DadaGP's clean artist-split parts in chunks of 128 groups; Adam 1e-3, batch 32, 
 stopping on DadaGP clean validation NLL (patience 3); checkpoints under `cache/model/`,
 resumable; the device and commit recorded.
 
-- [ ] Offline smoke test on synthetic sequences (one epoch, resume from a checkpoint).
-- [ ] Implement; `make check`; commit.
+- [x] Offline smoke test on synthetic sequences (one epoch, resume from a checkpoint), and
+  a test that a resumed run ends bit-identical to an uninterrupted one.
+- [x] Implement; `make check`; commit.
 
 ## Task 5: Evaluation on player 00 (`scripts/evaluate_model.py`)
 

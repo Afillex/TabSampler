@@ -424,3 +424,56 @@ def test_the_comparison_gives_the_chord_shape_change_an_interval(
     compare.main()
     out = capsys.readouterr().out
     assert "chord-shape change" in out and out.rstrip().endswith(verdict)
+
+
+def test_training_runs_checkpoints_and_resumes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # ADR 0041: background jobs here die at 30 minutes and when the machine sleeps, so a run
+    # must pick up where it stopped rather than start over.
+    train = load("train_model")
+
+    def fake_sequences(*_: object) -> list[HumanSequence]:
+        return [sequence([52 + i % 5, 55, 59, 62 - i % 3, 57, 64], i) for i in range(6)]
+
+    monkeypatch.setattr(train, "clean_sequences", fake_sequences)
+    run = tmp_path / "run"
+    argv = ["train_model.py", "archive.zip", "meta.json", "--run", str(run)]
+    argv += ["--chunk", "4", "--batch-size", "2"]
+    monkeypatch.setattr(sys, "argv", [*argv, "--max-epochs", "1"])
+    train.main()
+    history = [json.loads(line) for line in (run / "history.jsonl").read_text().splitlines()]
+    assert [entry["epoch"] for entry in history] == [1]
+    assert (run / "checkpoint.pt").exists() and (run / "best.pt").exists()
+    assert history[0]["device"] == "cpu" and history[0]["validation_nll_per_group"] > 0
+
+    monkeypatch.setattr(sys, "argv", [*argv, "--max-epochs", "2"])
+    train.main()  # resumes at epoch 2 rather than repeating epoch 1
+    history = [json.loads(line) for line in (run / "history.jsonl").read_text().splitlines()]
+    assert [entry["epoch"] for entry in history] == [1, 2]
+
+
+def test_a_resumed_run_trains_exactly_as_an_uninterrupted_one(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import torch
+
+    train = load("train_model")
+    monkeypatch.setattr(
+        train,
+        "clean_sequences",
+        lambda *_: [sequence([52 + i % 5, 55, 59, 62 - i % 3, 57, 64], i) for i in range(6)],
+    )
+
+    def run(directory: Path, *epochs: int) -> dict[str, torch.Tensor]:
+        argv = ["train_model.py", "a.zip", "m.json", "--run", str(directory)]
+        argv += ["--chunk", "4", "--batch-size", "2", "--patience", "99"]
+        for limit in epochs:
+            monkeypatch.setattr(sys, "argv", [*argv, "--max-epochs", str(limit)])
+            train.main()
+        return torch.load(directory / "checkpoint.pt", weights_only=True)["model"]
+
+    straight = run(tmp_path / "straight", 3)
+    interrupted = run(tmp_path / "interrupted", 1, 3)
+    assert straight.keys() == interrupted.keys()
+    assert all(torch.equal(straight[k], interrupted[k]) for k in straight)
