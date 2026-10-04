@@ -31,9 +31,16 @@ WINDOW_FRAMES = FRAMES_BEFORE + FRAMES_AFTER
 
 Matrix = NDArray[np.float32]
 
+#: The transform's lowest octave is computed at a 64th of the rate, with 512-point frames, so a
+#: signal needs 2 ** 15 samples (about 1.5 s); a shorter one is padded with silence, which
+#: changes no window within it.
+MIN_SAMPLES = 2**15
+
 
 def track_cqt(signal: NDArray[np.float32]) -> Matrix:
     """Log-magnitude constant-Q transform of a mono track at ``RATE``: (N_BINS, frames)."""
+    if len(signal) < MIN_SAMPLES:
+        signal = np.pad(signal, (0, MIN_SAMPLES - len(signal)))
     spectrum = librosa.cqt(  # pyright: ignore[reportUnknownMemberType]
         signal,
         sr=RATE,
