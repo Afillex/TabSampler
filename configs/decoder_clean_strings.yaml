@@ -1,0 +1,44 @@
+# ADR 0040's second challenger: the default decoder (configs/decoder_clean.yaml) plus per-string
+# preferences -- the only difference, at the default's temperature. Judged against the default
+# on GuitarSet's validation player 00 by the rule committed in 340db59. Written after the fit
+# and before any run.
+
+hypothesis: >-
+  The default decoder plus per-string preferences fitted on clean DadaGP parts (ADR 0040).
+
+tuning:
+  # Standard tuning, low E to high e, as MIDI note numbers (ADR 0008).
+  open_pitches: [40, 45, 50, 55, 59, 64]
+  n_frets: 22
+  capo: 0
+
+grouping:
+  window_s: 0.03
+
+# The enumeration bound, as configs/phase1_baseline.yaml explains; decode_best_effort
+# relaxes it per group when a chord needs more and reports it.
+max_span: 5
+
+weights:
+  move: 1.0
+  span: 1.0
+  high: 0.1
+  open_reward: 0.25
+  acoustic: 0.0
+  # ADR 0039: per open string played with the hand's index at fret 5 or above. Fitted by
+  # maximum likelihood on the clean parts of 600 artist-split DadaGP training songs, the
+  # four weights above held at their hand-set values; 0.761549..., rounded.
+  open_up_neck: 0.7615
+  # ADR 0040, experiment 2: per note on each string, low E first and the reference (ADR 0034).
+  # Fitted by maximum likelihood on the clean parts of 600 artist-split DadaGP training songs,
+  # every other weight held at the default's values; rounded to four places.
+  string_bias: [0, -0.4515, -0.3215, -0.2268, -0.283, -0.5123]
+  # Calibrated for these weights by per-note NLL on the clean parts of 300 artist-validation
+  # DadaGP songs (ADR 0033's method, ADR 0039): calibration error 0.1056 at the previous
+  # 1.5728, 0.0707 here -- measured on the songs it was fitted on.
+  temperature: 1.2934
+
+# Notes whose posterior falls below this are marked uncertain (ADR 0013). Not tuned.
+uncertainty_threshold: 0.6
+
+seed: 0
