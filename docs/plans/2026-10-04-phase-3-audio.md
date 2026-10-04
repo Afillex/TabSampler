@@ -116,3 +116,25 @@ default), on player 00; then both on players 01–05, once.
   M3 deliverable.
   *(Measured: 0.8273 → 0.7001, −0.1273 [−0.1834, −0.0729], with a clear chord-shape drop:
   the audio hurts at weight 1.0. The hypothesis and the prediction failed.)*
+
+## Task 6: Calibrate the evidence, then measure again (Ege's choice after Task 5)
+
+Task 5's ablation lost 12.7 points: the classifier, right 47% of the time on player 00, is
+overconfident, and at weight 1.0 its log-probabilities outweigh the cost model. **The rule, fixed
+before anything is computed, uses only SynthTab's held-out tracks** — the classifier's own
+validation data, never GuitarSet:
+
+1. **A temperature for the classifier**: the one minimising the negative log-likelihood of the
+   labelled strings over the held-out notes (temperature scaling), searched over 0.5 to 50.
+2. **The acoustic weight**: the default decoder, in each held-out track's own tuning (24 frets),
+   from its labelled notes, with the calibrated evidence at weights 0, 0.1, 0.25, 0.5 and 1.0;
+   kept is the weight that places the most notes on their labelled string, the smaller on a tie.
+3. **Then the ablation on player 00, once**, at that temperature and weight, by Task 5's rule.
+
+**Prediction:** the temperature comes out well above 1 (the classifier is overconfident); the
+weight chosen is small, 0.1 to 0.5; on player 00 the calibrated term is no longer a clear loss,
+between −0.02 and +0.02.
+
+- [ ] `tempered()` for the classifier's log-probabilities; `scripts/calibrate_acoustic.py`;
+  `--temperature` on `scripts/evaluate_acoustic.py`; tests; commit.
+- [ ] Calibrate on SynthTab; record τ and the weight; then the ablation on player 00 once.
