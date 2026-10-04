@@ -25,16 +25,26 @@ enough for M2, audio conditioning, and an app a guitarist can use.
 
 ## Where the last session stopped (2026-10-04) — read before anything else
 
-**Everything is merged and public.** `main` and `origin/main` are the same commit. The
-timing / stretch / style-decoder work (ADRs 0029–0036) and the held-out-player work (ADRs
-0037–0038), with its review's fix pass (`docs/devlog/2026-10-04.md`), were pushed together
-on 2026-10-04, so the public default changed once: to the hand-set weights at T = 1.5728,
-re-chosen on player 00. `eval-m1` now needs `--split`, and per-track counts can be neither
-written for nor compared on the test players. `make check` (466 tests) and `make oracle`
-(10) pass. CI failed once, on the first push (two new tests matched coloured error text),
-and passed after the fix, `084d704`. The branch `guitarset-validation-player` is merged.
+**`main` and `origin/main` are the same commit, `26499d5`:** everything up to the review of
+the held-out-player work is public (`docs/devlog/2026-10-04.md`, first part).
 
-What comes next is Ege's to order; see "Open items that need Ege, not you" below.
+**Branch `c3-guitarset-errors` is not merged or pushed, and it changes the default decoder.**
+Ege asked for the plan to continue in its natural order — Phase 2 task C3 — with problems
+brought to them. On the branch (plan `docs/plans/2026-10-04-c3-guitarset-errors.md`):
+
+- `scripts/analyse_errors.py`: where the default loses fingerings on player 00. A third of
+  its errors were an open string where the player fretted the note.
+- **ADR 0039, accepted:** a cost on open strings played with the hand up the neck,
+  `open_up_neck` 0.7615, adopted on player 00 (oracle E2 0.8065 → 0.8273, interval
+  [+0.0066, +0.0363]). `configs/decoder_clean.yaml` now carries it, at T = 1.2934. **It has
+  not been measured on the test players**; the README's test table is the hand-set
+  default's.
+- **Ege's decision:** a challenger's chord-shape condition on player 00 is *no clear drop* —
+  it fails only if its interval lies wholly below zero — instead of the fixed 0.0005.
+
+`make check` (489 tests) and `make oracle` (12) pass on it. Next: the plan's Task 3
+(regularisation, then position features), C5, and whether C3 has plateaued. Merging and
+pushing wait for Ege's go-ahead.
 
 Deferred small items, not yet fixed: `fit_weights` silently accepts unknown or empty
 `active` names; `paired_bootstrap({}, {})` fails with a raw numpy error; `CostWeights.
@@ -59,7 +69,7 @@ the 2026-10-03 devlog). The decisions waiting for Ege are listed under "Open ite
 
 ```bash
 make install                       # uv sync --all-groups, Python 3.13
-make check                         # lint + pyright --strict + 466 tests. Must be green.
+make check                         # lint + pyright --strict + 489 tests. Must be green.
 make oracle                        # the correctness core. Must be green.
 ```
 
@@ -76,13 +86,14 @@ plan; C1, C2 and C5 are done, C3 is under way) → `docs/devlog/2026-10-04.md` a
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | **None on GitHub.** `v0.0-phase0` and `v0.1-m1`, listed here before, exist nowhere; Phase 0's and M1's commits, `d50f4f0` and `1147495`, survive only locally, under the tag `pre-publication-backup` |
-| Tests | 466, all offline — no test needs the dataset or the transcriber |
+| Tests | 489, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
 | Current phase | Phase 2, **in progress**: C3 under way; choose on player 00, judge on players 01–05 |
 
-**Current results** — GuitarSet's test players 01–05, 300 tracks, `audio_mic`, the default
-decoder `configs/decoder_clean.yaml`: hand-set weights, T = 1.5728, the hand window with the
-stretch. **These 300 tracks were part of every earlier 360-track run (ADR 0037)**, so a
+**Current results** — GuitarSet's test players 01–05, 300 tracks, `audio_mic`, the hand-set
+default: hand-set weights, T = 1.5728, the hand window with the stretch — the last default
+measured there. Today's default adds ADR 0039's open-string cost and has not been measured
+on the test players. **These 300 tracks were part of every earlier 360-track run (ADR 0037)**, so a
 figure on them is a baseline, not an independent confirmation, until decisions are made on
 player 00 alone. Rows before 2026-10-01 have a `commit` column that
 references the pre-publication history, which was squashed into the initial commit; the
@@ -268,13 +279,15 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 
 ## Open items that need Ege, not you
 
-- **What next, in what order**: richer features with regularisation (the `high` / string
-  overlap), a temperature calibrated on player 00 itself, and the 0.0005 chord-shape
-  allowance.
-- **The chord-shape allowance (0.0005)**: it has blocked every fitted distorted model, each
-  7.7 to 10.3 points better at recovering human fingerings.
-- **The clean temperature**: T = 1 has a lower calibration error (0.0559) than the
-  likelihood optimum 1.1975 (0.0757); changing the method needs a new pre-registration.
+- **Merging `c3-guitarset-errors`**: it changes the public default (ADR 0039).
+- **The chord-shape condition** on player 00 is *no clear drop* (Ege, 2026-10-04, ADR
+  0039). Still open: whether the same test should re-judge the fitted distorted models,
+  which the fixed 0.0005 blocked on DadaGP, each 7.7 to 10.3 points better at recovering
+  human fingerings.
+- **The clean temperature**: for the clean-fitted weights T = 1 had a lower calibration
+  error than the likelihood optimum; for today's default the optimum, 1.2934, also has the
+  lower error (0.0707 against 0.0795 at T = 1). A temperature calibrated on player 00
+  itself (task C5) is still to do.
 - **D15 — weight release, the half ADR 0020 left open.** The code is MIT and the repo is
   public. Weights are a **per-corpus** decision, because DadaGP and ProgGP are
   research-use-only: check the terms *before* training anything whose weights might be

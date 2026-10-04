@@ -1,6 +1,7 @@
 # ADR 0039: Open strings played up the neck cost extra
 
-Status: proposed (2026-10-04) — pre-registration; accepted with its result
+Status: accepted (2026-10-04) — **the challenger clearly won on player 00: the default gains
+`open_up_neck` 0.7615**
 
 Continues Phase 2 task C3 (`docs/plans/2026-10-01-phase-2.md`) on GuitarSet's validation
 player (ADR 0037), from the error analysis in `docs/plans/2026-10-04-c3-guitarset-errors.md`.
@@ -76,3 +77,43 @@ recorded, not ruled on.
 
 **Harder.** The scorer's transition cost is no longer movement alone: whoever reads
 `transition_cost_from` must know it carries this term too.
+
+## Result (2026-10-04)
+
+**The fit:** `open_up_neck` = 0.7615 on the clean parts of the 600 training songs, the base
+weights held, converged in 6 iterations. **Positive, as predicted.**
+
+**Player 00**, 60 tracks, 13,223 reference notes; track-level paired bootstrap, exact counts,
+both decoders at T = 1.5728 and committed before the runs (420c088):
+
+| | default | challenger | challenger − default, 95% interval |
+|---|---|---|---|
+| **E2 oracle** | 0.8065 (10,664 notes) | 0.8273 (10,940) | **+0.0209 [+0.0066, +0.0363]** |
+| **E3 chord shapes, oracle** | 6543 / 6607 | 6541 / 6607 | −0.0003 [−0.0011, +0.0003]: **no clear drop** |
+| E2 end to end | 0.4861 | 0.4900 | +0.0039 [−0.0065, +0.0146] |
+| E3 transitions, oracle / e2e | 0.9997 / 0.9952 | 0.9997 / 0.9952 | |
+
+**Both conditions met: the challenger replaces the default.** The gain, +0.0209, is just above
+the +0.005 to +0.02 predicted and inside the +0.033 bound. The fixed allowance this rule
+replaced would have given the same verdict: the drop, 0.0003, is under 0.0005.
+
+`configs/decoder_clean.yaml` now carries `open_up_neck: 0.7615`, at a temperature recalibrated
+for it by ADR 0033's method: **T = 1.2934**, calibration error 0.1056 → 0.0707 on DadaGP's
+clean validation parts, the songs it was fitted on. On player 00 the new default's calibration
+error is 0.0830 in oracle mode (0.1178 before) and 0.2387 end to end (0.2100 before): a sharper
+decoder is surer of notes the transcriber got wrong, as under ADR 0033. ADR 0016's end-to-end
+guardrail, below 0.3851, holds. `configs/decoder_clean_open.yaml` keeps the challenger as it
+was run.
+
+**Recorded, not ruled on.** On DadaGP's clean validation parts recovery rose 0.8257 → 0.8460
+(+0.0203 [+0.0085, +0.0348]); on distorted parts 0.5705 → 0.5768 (+0.0062 [−0.0010, +0.0154]).
+Re-run on player 00, the error analysis
+(`scripts/analyse_errors.py --decoder-config configs/decoder_clean_open.yaml`) shows open
+strings where the player fretted falling from 860 to 663: with the decoder's hand up the neck
+from 430 to 97, while those in open position rose from 430 to 566 — the decoder now sometimes
+moves down the neck to take an open string. Every style, comping and soloing improved; notes at
+fret 12 and above lost ten.
+
+**Not yet measured on the test players.** The default's figures on players 01–05 are still the
+previous default's; the new default's wait for the next pre-registered test evaluation, Phase
+2 task C6.

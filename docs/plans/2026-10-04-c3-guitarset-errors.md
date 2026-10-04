@@ -94,11 +94,13 @@ and their tests.
   interval like the E2 gain (2026-10-04). Per-track chord-shape counts added to the
   per-track files, and their interval to `compare_validation.py`; the rule and
   `configs/m2_validation_open.yaml` committed before any run.
-- [ ] Fit the one weight on DadaGP's clean training parts with the base weights held
+- [x] Fit the one weight on DadaGP's clean training parts with the base weights held
   (`--hold-base --features open --part clean`); write the challenger's config with the
-  fitted value; commit it before the runs.
-- [ ] `eval-m1 --split validation --per-track-out` for the default and the challenger;
+  fitted value; commit it before the runs. *(0.7615; `configs/decoder_clean_open.yaml`.)*
+- [x] `eval-m1 --split validation --per-track-out` for the default and the challenger;
   `scripts/compare_validation.py`; apply the rule; results rows; accept ADR 0039.
+  *(Adopted: oracle E2 0.8065 → 0.8273, interval [+0.0066, +0.0363], no clear chord-shape
+  drop; recalibrated to T = 1.2934.)*
 
 ## Task 3: Regularisation and position features, if Task 2 leaves the gap
 
