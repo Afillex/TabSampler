@@ -46,8 +46,22 @@ them; the second half of 2026-10-04 (`docs/devlog/2026-10-04.md`) did, on branch
   comparison on the test players: decoder 0.6819, learned term alone 0.4514, learned model
   0.6856.
 
-`make check` (510 tests) and `make oracle` (12) pass. **Next: Ege chooses the next phase** —
-the spec's Phase 3 (audio conditioning), or the application track (plan tasks B1–B4).
+**Ege chose Phase 3, audio conditioning.** Branch `phase-3-audio` (not merged or pushed) holds
+its start, plan `docs/plans/2026-10-04-phase-3-audio.md`:
+
+- **ADR 0046 (D13):** the audio evidence is a string probability per note, from a small CNN
+  over a constant-Q window around its onset, given its pitch, entering the decoder only
+  through the existing `acoustic` weight.
+- **SynthTab's development set** is in `data/synthtab/` (gitignored; CC BY-NC 4.0; 0.82 GB):
+  168 usable tracks, 146,877 labelled notes, 8.9 h, of which 20 tracks and 0.93 h acoustic.
+  The full set is 2 TB and one archive needs more disk than the 33 GB free: more SynthTab is
+  Ege's call, if the development set proves too small.
+- `src/tabsampler/data/synthtab.py` reads its labels; `scripts/check_synthtab.py` found its
+  audio **lagging the labels by about 17 ms (electric) and 29 ms (acoustic)** — measured
+  against GuitarSet's player 00 as the control. Task 3 corrects for it.
+
+`make check` (515 tests) and `make oracle` (12) pass. **Next: Phase 3's Task 3** — the note
+windows and the string classifier.
 
 Deferred small items, not yet fixed: `fit_weights` silently accepts unknown or empty
 `active` names; `paired_bootstrap({}, {})` fails with a raw numpy error; `CostWeights.
@@ -72,7 +86,7 @@ the 2026-10-03 devlog). The decisions waiting for Ege are listed under "Open ite
 
 ```bash
 make install                       # uv sync --all-groups, Python 3.13
-make check                         # lint + pyright --strict + 510 tests. Must be green.
+make check                         # lint + pyright --strict + 515 tests. Must be green.
 make oracle                        # the correctness core. Must be green.
 ```
 
@@ -89,9 +103,9 @@ plan; C1, C2 and C5 are done, C3 is under way) → `docs/devlog/2026-10-04.md` a
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | **None on GitHub.** `v0.0-phase0` and `v0.1-m1`, listed here before, exist nowhere; Phase 0's and M1's commits, `d50f4f0` and `1147495`, survive only locally, under the tag `pre-publication-backup` |
-| Tests | 510, all offline — no test needs the dataset or the transcriber |
+| Tests | 515, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
-| Current phase | **Phase 2 closed (2026-10-04, Ege's sign-off), M2 missed by 7.8 points** (ADR 0045); the next phase is Ege's to choose |
+| Current phase | **Phase 3, audio conditioning — started 2026-10-04** (Phase 2 closed by Ege's sign-off, M2 missed by 7.8 points, ADR 0045) |
 
 **Current results** — GuitarSet's test players 01–05, 300 tracks, `audio_mic`, today's
 default `configs/decoder_clean.yaml`: the hand-set weights plus ADR 0039's open-string cost,
