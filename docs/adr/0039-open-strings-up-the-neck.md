@@ -45,9 +45,13 @@ to +0.02.
 
 **Rule.** The challenger replaces the default iff, on player 00's 60 tracks in oracle mode,
 its E2 is higher than the default's with the 95% track-level paired interval wholly above
-zero, **and** its chord-shape rate is not lower than the default's by more than the
-allowance Ege sets before the run. ADR 0038 used 0.0005, which on player 00 is three chord
-shapes of 6,607. Otherwise the default is unchanged and the weight stays at zero. If the
+zero, **and** its chord-shape rate shows no clear drop: it fails this condition only if
+the whole 95% track-level paired interval of its chord-shape rate minus the default's lies
+below zero. That replaces the fixed 0.0005 of ADRs 0032, 0034 and 0038 — three chord
+shapes of player 00's 6,607, below what 60 tracks can tell from noise — by Ege's decision
+of 2026-10-04, for this rule and later ones on player 00; ADR 0016's guardrail still binds
+at the M2 evaluation on the test players. Otherwise the default is unchanged and the
+weight stays at zero. If the
 challenger is adopted, its temperature is recalibrated by ADR 0033's method, as ADR 0038
 did. End-to-end E2 on player 00 and recovery on DadaGP's clean validation parts are
 recorded, not ruled on.

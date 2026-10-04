@@ -367,3 +367,34 @@ def test_question_seven_tables_the_decoders_open_strings_by_both_hands() -> None
     assert row("none yet", (0, 1, 0)) in text
     assert row("1-4", (0, 0, 1)) in text
     assert row("5+", (0, 0, 1)) in text
+
+
+@pytest.mark.parametrize(("passing", "verdict"), [(95, "a clear drop"), (100, "no clear drop")])
+def test_the_comparison_gives_the_chord_shape_change_an_interval(
+    passing: int,
+    verdict: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # ADR 0039's rule, Ege's decision of 2026-10-04: a chord-shape drop refuses a challenger
+    # only when its whole 95% track-level interval is below zero.
+    compare = load("compare_validation")
+    tracks = [f"00_t{i}" for i in range(5)]
+    for name, passed in (("a", 100), ("b", passing)):
+        (tmp_path / f"{name}.json").write_text(
+            json.dumps(
+                {
+                    "per_song": {t: {"oracle": [8, 10]} for t in tracks},
+                    "shapes": {"oracle": [5 * passed, 500]},
+                    "single_candidate": 0,
+                    "per_song_shapes": {t: {"oracle": [passed, 100]} for t in tracks},
+                }
+            )
+        )
+    monkeypatch.setattr(
+        sys, "argv", ["compare", str(tmp_path / "a.json"), str(tmp_path / "b.json")]
+    )
+    compare.main()
+    out = capsys.readouterr().out
+    assert "chord-shape change" in out and out.rstrip().endswith(verdict)

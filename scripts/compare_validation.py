@@ -56,6 +56,15 @@ def main() -> None:
         )
         # Exact, because pre-registered rules put thresholds on this (ADR 0032).
         print(f"           chord shapes {pa}/{na} -> {pb}/{nb}, drop {pa / na - pb / nb:+.6f}")
+        shapes_a, shapes_b = a.song_shape_counts(part), b.song_shape_counts(part)
+        if shapes_a and shapes_b:
+            # ADR 0039: a drop refuses a challenger only when its whole interval is below zero.
+            change = paired_bootstrap(shapes_a, shapes_b)
+            verdict = "a clear drop" if change.high < 0 else "no clear drop"
+            print(
+                f"           chord-shape change {change.delta:+.6f}  95% interval "
+                f"[{change.low:+.6f}, {change.high:+.6f}]: {verdict}"
+            )
 
 
 if __name__ == "__main__":

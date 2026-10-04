@@ -36,13 +36,18 @@ class PartSequence:
 @dataclass(slots=True)
 class RecoveryReport:
     """Per song and part, [notes placed where the human placed them, notes]; per part,
-    [decoded shapes that pass E3's chord rules, decoded shapes]."""
+    [decoded shapes that pass E3's chord rules, decoded shapes]; and, where they were
+    recorded, the same shape counts per song and part, which a paired interval on the
+    chord-shape rate needs (ADR 0039)."""
 
     per_song: dict[str, dict[str, list[int]]] = field(
         default_factory=dict[str, dict[str, list[int]]]
     )
     shapes: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
     single_candidate: int = 0
+    per_song_shapes: dict[str, dict[str, list[int]]] = field(
+        default_factory=dict[str, dict[str, list[int]]]
+    )
 
     def counts(self, part: str | None = None) -> tuple[int, int]:
         pairs = self.song_counts(part).values()
@@ -62,6 +67,16 @@ class RecoveryReport:
                 out[song] = (sum(c[0] for c in chosen), sum(c[1] for c in chosen))
         return out
 
+    def song_shape_counts(self, part: str | None = None) -> dict[str, tuple[int, int]]:
+        """song -> (decoded shapes passing E3's chord rules, decoded shapes), for one part
+        or all pooled; empty for a report that did not record them per song."""
+        out: dict[str, tuple[int, int]] = {}
+        for song, parts in self.per_song_shapes.items():
+            chosen = [c for name, c in parts.items() if part is None or name == part]
+            if chosen:
+                out[song] = (sum(c[0] for c in chosen), sum(c[1] for c in chosen))
+        return out
+
     def chord_shape_rate(self, part: str | None = None) -> float:
         chosen = [c for name, c in self.shapes.items() if part is None or name == part]
         total = sum(c[1] for c in chosen)
@@ -72,12 +87,15 @@ class RecoveryReport:
             "per_song": self.per_song,
             "shapes": self.shapes,
             "single_candidate": self.single_candidate,
+            "per_song_shapes": self.per_song_shapes,
         }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> RecoveryReport:
         per_song: dict[str, dict[str, list[Any]]] = data["per_song"]
         shapes: dict[str, list[Any]] = data["shapes"]
+        # Written only since ADR 0039; older reports load with none.
+        song_shapes: dict[str, dict[str, list[Any]]] = data.get("per_song_shapes", {})
         return cls(
             per_song={
                 song: {part: [int(c[0]), int(c[1])] for part, c in parts.items()}
@@ -85,6 +103,10 @@ class RecoveryReport:
             },
             shapes={part: [int(c[0]), int(c[1])] for part, c in shapes.items()},
             single_candidate=int(data["single_candidate"]),
+            per_song_shapes={
+                song: {part: [int(c[0]), int(c[1])] for part, c in parts.items()}
+                for song, parts in song_shapes.items()
+            },
         )
 
 
@@ -125,3 +147,4 @@ def add_track(
     shapes = report.shapes.setdefault(mode, [0, 0])
     shapes[0] += e3.n_groups_pass
     shapes[1] += e3.n_groups
+    report.per_song_shapes.setdefault(track_id, {})[mode] = [e3.n_groups_pass, e3.n_groups]

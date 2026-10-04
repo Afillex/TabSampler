@@ -90,7 +90,10 @@ and their tests.
 - [x] Implement it in the scorer, the fitter and, from the ADR's text, the oracle. Oracle
   tests with the term switched on; mutations of its threshold and of where it is charged
   are caught.
-- [ ] Ege sets the rule's chord-shape allowance; commit the rule before any run.
+- [x] Ege sets the rule's chord-shape condition: **no clear drop**, judged by a track-level
+  interval like the E2 gain (2026-10-04). Per-track chord-shape counts added to the
+  per-track files, and their interval to `compare_validation.py`; the rule and
+  `configs/m2_validation_open.yaml` committed before any run.
 - [ ] Fit the one weight on DadaGP's clean training parts with the base weights held
   (`--hold-base --features open --part clean`); write the challenger's config with the
   fitted value; commit it before the runs.

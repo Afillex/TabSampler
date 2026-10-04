@@ -52,3 +52,24 @@ def test_per_track_counts_pool_to_the_reported_f1() -> None:
     assert report.share("e2e") == pytest.approx(2 * (80 + 30) / ((100 + 98) + (50 + 50)))
     assert report.chord_shape_rate("e2e") == pytest.approx(18 / 20)
     assert report.song_counts("e2e") == {"t0": (160, 198), "t1": (60, 100)}
+
+
+def test_per_track_counts_keep_each_tracks_chord_shapes() -> None:
+    # A paired interval on the chord-shape rate needs each track's counts, not the pool
+    # (ADR 0039's rule, Ege's decision of 2026-10-04: no clear drop).
+    from tabsampler.eval.metrics import PRF
+    from tabsampler.eval.playability import PlayabilityReport
+    from tabsampler.eval.recovery import add_track
+
+    report = RecoveryReport()
+    prf = PRF(1.0, 1.0, 1.0, n_ref=10, n_est=10, n_match=10)
+    add_track(report, "t0", "oracle", prf, PlayabilityReport(10, 9, 9, 9))
+    add_track(report, "t1", "oracle", prf, PlayabilityReport(5, 5, 4, 4))
+    assert report.song_shape_counts("oracle") == {"t0": (9, 10), "t1": (5, 5)}
+    assert RecoveryReport.from_dict(report.to_dict()) == report
+
+
+def test_a_report_written_before_per_track_shapes_still_loads() -> None:
+    old = {"per_song": {"t0": {"oracle": [8, 10]}}, "shapes": {"oracle": [9, 10]}}
+    report = RecoveryReport.from_dict({**old, "single_candidate": 0})
+    assert report.song_shape_counts("oracle") == {}
