@@ -1,0 +1,32 @@
+# Phase 2's one GuitarSet test evaluation (task C6, docs/plans/2026-10-01-phase-2.md): today's
+# default on the test players 01-05, against ADR 0016's M2 target and every guardrail.
+# Written and committed BEFORE the run; a logged look (ADR 0003, ADR 0037).
+
+hypothesis: >-
+  On GuitarSet's test players 01-05 (300 tracks), today's default decoder -- the hand-set
+  weights plus ADR 0039's cost on open strings played up the neck, T 1.2934 -- measures as
+  follows. It was chosen on player 00 alone, so this figure checks that choice independently,
+  the first such check since ADR 0037. Predicted from the hand-set default's figures on these
+  tracks (oracle E2 0.6559, end to end 0.4277) and ADR 0039's gain on player 00 (+0.0209):
+  oracle E2 between 0.66 and 0.69, so ADR 0016's M2 target (0.760) is MISSED by 7 to 10
+  points; end-to-end E2 between 0.42 and 0.45; E1 as before (raw 0.7493); E4 1.0000; E3
+  chord shapes at or above the guardrails 0.9970 / 0.9896; E3 transitions at or above
+  0.9996 / 0.9969; end-to-end E5 below 0.3851, near the 0.2387 measured on player 00.
+  Metrics: E1-E5. Split: GuitarSet test, players 01-05, oracle and end to end.
+
+dataset:
+  name: guitarset
+  data_home: data/guitarset
+  channel: audio_mic
+
+transcriber:
+  exe: basic-pitch
+  cache_dir: cache/note_events
+  onset_threshold: 0.5
+  frame_threshold: 0.3
+  minimum_note_length_ms: 127.70
+  model_serialization: coreml
+  version_tag: basic-pitch-0.4.0
+
+onset_tolerance: 0.05
+seed: 0
