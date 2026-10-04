@@ -37,14 +37,28 @@ def test_every_command_defaults_to_the_clean_guitar_decoder() -> None:
     assert inspect.signature(cli.diagnose).parameters["decoder"].default == clean
 
 
+def make_recipe(target: str) -> str:
+    makefile = (Path(__file__).resolve().parents[1] / "Makefile").read_text()
+    return makefile.split(f"\n{target}:", 1)[1].split("\n\n", 1)[0]
+
+
 def test_make_eval_m1_names_the_decoder_its_hypothesis_describes() -> None:
     # configs/m1_full_eval.yaml's hypothesis is about a hand-set cost model. Without an
     # explicit --decoder-config the target would run the CLI default -- since ADR 0032 the
     # clean-fitted decoder -- and write a row whose hypothesis describes another model.
-    makefile = (Path(__file__).resolve().parents[1] / "Makefile").read_text()
-    recipe = makefile.split("\neval-m1:", 1)[1].split("\n\n", 1)[0]
+    recipe = make_recipe("eval-m1")
     assert "--config configs/m1_full_eval.yaml" in recipe
     assert "--decoder-config configs/phase1_baseline.yaml" in recipe
+
+
+def test_eval_m1_runs_only_on_a_split_named_on_the_command_line(looks: list[str]) -> None:
+    # Choices are made with eval-m1 --split validation (ADR 0037). Were test the default, one
+    # forgotten flag would read the test players; DadaGP's scripts likewise refuse to run
+    # without --split (ADR 0024).
+    result = CliRunner().invoke(cli.app, ["eval-m1", "--dry-run"])
+    assert result.exit_code == 2 and "--split" in result.output
+    assert looks == []
+    assert "--split test" in make_recipe("eval-m1")
 
 
 def test_a_validation_run_does_not_touch_the_test_set_log(looks: list[str]) -> None:

@@ -189,6 +189,15 @@ def eval_notes(
 
 @app.command("eval-m1")
 def eval_m1(
+    # No default: one forgotten flag must not read the test players (ADR 0037).
+    split: Annotated[
+        str,
+        typer.Option(
+            "--split",
+            help="test: players 01-05, a logged look (ADR 0003); "
+            "validation: player 00, free to choose with (ADR 0037).",
+        ),
+    ],
     config: Annotated[Path, typer.Option("--config", "-c", help="Evaluation config YAML.")] = Path(
         "configs/m1_full_eval.yaml"
     ),
@@ -202,14 +211,6 @@ def eval_m1(
         int | None, typer.Option("--limit", help="First N tracks only (smoke test).")
     ] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Do not append results rows.")] = False,
-    split: Annotated[
-        str,
-        typer.Option(
-            "--split",
-            help="test: players 01-05, a logged look (ADR 0003); "
-            "validation: player 00, free to choose with (ADR 0037).",
-        ),
-    ] = "test",
     per_track_out: Annotated[
         Path | None,
         typer.Option(

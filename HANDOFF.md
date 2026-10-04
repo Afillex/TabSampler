@@ -103,7 +103,7 @@ recorded on 2026-10-02 and 10-03 — in `results.csv`, `experiments/test_set_acc
 ADRs 0026–0028 and that devlog — name commits from before a wording clean-up of the
 history on 2026-10-03. Each has a counterpart with the same message, in the same order,
 with the same code. Reproduce the current ones with
-`uv run tabsampler eval-m1 --config configs/m2_heldout_eval.yaml`. The previous default
+`uv run tabsampler eval-m1 --split test --config configs/m2_heldout_eval.yaml`. The previous default
 (clean-fitted weights, `configs/fitted_clean_dadagp.yaml`) is in brackets:
 
 | | oracle | end-to-end |

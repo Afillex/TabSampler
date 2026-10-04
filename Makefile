@@ -31,6 +31,7 @@ eval-notes:
 check-split:
 	uv run tabsampler check-split
 
-# M1 gate: E1-E5 and E7 on GuitarSet in oracle and end-to-end mode.
+# M1 gate: E1-E5 and E7 on GuitarSet in oracle and end-to-end mode -- since ADR 0037
+# on the test players 01-05, so not on the 360 tracks M1 itself was measured on.
 eval-m1:
-	uv run tabsampler eval-m1 --config configs/m1_full_eval.yaml --decoder-config configs/phase1_baseline.yaml
+	uv run tabsampler eval-m1 --split test --config configs/m1_full_eval.yaml --decoder-config configs/phase1_baseline.yaml
