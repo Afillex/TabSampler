@@ -603,3 +603,47 @@ def test_the_string_training_runs_checkpoints_and_resumes(
     assert [entry["epoch"] for entry in history] == [1, 2]
     assert history[0]["chance"] == pytest.approx(1 / 6)
     assert (run / "best.pt").exists() and (run / "examples.npz").exists()
+
+
+def test_the_string_evaluation_reads_only_the_validation_player(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import numpy as np
+    import torch
+
+    from tabsampler.model.strings import StringClassifier
+
+    evaluate = load("evaluate_strings")
+    validation = ["00_BN1-129-Eb_comp", "00_Jazz1-130-D_solo"]
+    asked: list[str] = []
+
+    class Track:
+        def __init__(self, track_id: str) -> None:
+            self.audio_mic_path = track_id
+
+    class Dataset:
+        def track(self, track_id: str) -> Track:
+            asked.append(track_id)
+            return Track(track_id)
+
+    def reference(track: Track, tuning: Tuning) -> list[tuple[NoteEvent, Position]]:
+        return [
+            (NoteEvent(0.5 * i, 0.5 * i + 0.4, pitch, 1.0), Position(string, fret))
+            for i, (pitch, string, fret) in enumerate([(55, 3, 0), (57, 2, 7), (64, 4, 5)])
+        ]
+
+    monkeypatch.setattr(evaluate, "guitarset_validation_ids", lambda: tuple(validation))
+    monkeypatch.setattr(evaluate, "load_dataset", lambda *_: Dataset())
+    monkeypatch.setattr(evaluate, "reference_tab", reference)
+    monkeypatch.setattr(
+        evaluate, "reference_notes", lambda t: [n for n, _ in reference(t, Tuning())]
+    )
+    monkeypatch.setattr(evaluate, "load_audio", lambda _: np.zeros(44100, dtype=np.float32))
+    torch.manual_seed(0)
+    (tmp_path / "run").mkdir()
+    torch.save(StringClassifier().state_dict(), tmp_path / "run" / "best.pt")
+    monkeypatch.setattr(sys, "argv", ["evaluate_strings.py", "--run", str(tmp_path / "run")])
+    evaluate.main()
+    assert asked == validation
+    out = capsys.readouterr().out
+    assert "the classifier" in out and "the default decoder" in out and "chance" in out
