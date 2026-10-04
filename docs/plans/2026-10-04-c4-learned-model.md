@@ -29,7 +29,7 @@ under `cache/`, unpublished), ADR 0043 (the design).
 
 ## Task 1: The lattice as arrays (`src/tabsampler/model/lattice.py`)
 
-Per sequence: each level's node features Φ (as `fit._node_features`), node descriptors ψ, group
+Per sequence: each level's node features Φ (as `fit.node_features`), node descriptors ψ, group
 inputs, the movement and allowed-transition matrices, and the human path's node at each level.
 Pure numpy.
 
@@ -43,10 +43,11 @@ Pure numpy.
 Padded batches of lattices: path energy, log-partition by the forward algorithm in log space,
 and Viterbi.
 
-- [ ] Tests: with the learned term off and the default's weights, the negative
+- [x] Tests: with the learned term off and the default's weights, the negative
   log-likelihood equals `fit.nll_and_gradient`'s, and Viterbi's cost equals the decoder's on
   random short inputs; padding changes nothing.
-- [ ] Implement; `make check`; commit.
+- [x] Implement; `make check`; commit. *(With `model/batch.py`; a length-masking mutation
+  is caught.)*
 
 ## Task 3: The network (`src/tabsampler/model/net.py`)
 
