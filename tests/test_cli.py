@@ -84,3 +84,13 @@ def test_per_track_counts_are_refused_on_the_test_split(looks: list[str], tmp_pa
     assert not out.exists()
     result = runner.invoke(cli.app, [*args, "--split", "validation"])
     assert isinstance(result.exception, Stopped)  # the validation player is free to use
+
+
+def test_a_test_set_look_names_the_decoder(looks: list[str]) -> None:
+    # The two looks of 2026-10-03 logged the same reason though each ran another decoder.
+    decoder = "configs/phase1_baseline.yaml"
+    result = CliRunner().invoke(
+        cli.app, ["eval-m1", "--split", "test", "--decoder-config", decoder, "--dry-run"]
+    )
+    assert isinstance(result.exception, Stopped)
+    assert len(looks) == 1 and decoder in looks[0]

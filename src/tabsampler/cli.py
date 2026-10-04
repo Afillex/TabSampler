@@ -249,7 +249,8 @@ def eval_m1(
     # Only the test players are a look at the test set; player 00 is validation (ADR 0037).
     if on_test:
         record_test_set_access(
-            f"eval-m1 (oracle + e2e) on {len(track_ids)} GuitarSet test tracks via {config}"
+            f"eval-m1 (oracle + e2e) on {len(track_ids)} GuitarSet test tracks via "
+            f"{config} + {decoder}"
         )
 
     dataset = load_dataset(cfg.dataset.data_home)
