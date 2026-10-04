@@ -170,3 +170,34 @@ def test_the_comparison_refuses_a_report_holding_a_test_track(
     with pytest.raises(SystemExit, match=re.escape(test_track)):
         compare.main()
     assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize(
+    ("part", "label"),
+    [("clean", "1 songs, 10 notes"), ("oracle", "1 tracks, 10 estimated + reference notes")],
+)
+def test_the_comparison_names_what_it_counted(
+    part: str,
+    label: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # A GuitarSet count is E2's 2 x matches over estimated + reference notes (add_track), so
+    # it once printed "26446 notes" for player 00's 13,223.
+    compare = load("compare_validation")
+    for name in ("a", "b"):
+        (tmp_path / f"{name}.json").write_text(
+            json.dumps(
+                {
+                    "per_song": {"00_x": {part: [5, 10]}},
+                    "shapes": {part: [9, 10]},
+                    "single_candidate": 0,
+                }
+            )
+        )
+    monkeypatch.setattr(
+        sys, "argv", ["compare", str(tmp_path / "a.json"), str(tmp_path / "b.json")]
+    )
+    compare.main()
+    assert f"({label})" in capsys.readouterr().out

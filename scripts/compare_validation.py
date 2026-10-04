@@ -37,9 +37,12 @@ def main() -> None:
         except TestSetMisuseError as exc:
             raise SystemExit(f"{path}: {exc}") from exc
     parts = sorted(set(a.shapes) | set(b.shapes))
+    dadagp = set(parts) <= {"clean", "distorted"}
     # DadaGP reports split by style and pool meaningfully; GuitarSet ones split by mode
     # (oracle, end to end), and pooling the two modes would mean nothing.
-    order: list[str | None] = [None, *parts] if set(parts) <= {"clean", "distorted"} else [*parts]
+    order: list[str | None] = [None, *parts] if dadagp else [*parts]
+    # A GuitarSet count is E2's 2 x matches over estimated + reference notes (add_track).
+    unit, counted = ("songs", "notes") if dadagp else ("tracks", "estimated + reference notes")
     for part in order:
         songs = a.song_counts(part)
         if not songs:
@@ -49,7 +52,7 @@ def main() -> None:
         print(
             f"{part or 'all':9s}: {a.share(part):.4f} -> {b.share(part):.4f}   "
             f"delta {diff.delta:+.4f}  95% interval [{diff.low:+.4f}, {diff.high:+.4f}]   "
-            f"({diff.n_songs} songs, {diff.n_notes} notes)"
+            f"({diff.n_songs} {unit}, {diff.n_notes} {counted})"
         )
         # Exact, because pre-registered rules put thresholds on this (ADR 0032).
         print(f"           chord shapes {pa}/{na} -> {pb}/{nb}, drop {pa / na - pb / nb:+.6f}")
