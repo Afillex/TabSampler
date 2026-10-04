@@ -107,6 +107,32 @@ def test_the_fit_script_can_hold_the_base_weights_and_fit_one_group(
         fit.main()
 
 
+def test_the_fit_script_can_start_from_the_default_and_hold_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A group fitted on top of today's default must keep every other weight at the default's
+    # value, including ADR 0039's, which the hand-set config does not have.
+    from tabsampler.config import load_phase1_config
+
+    fit = load("fit_cost_weights")
+
+    def fake_sequences(*_: object) -> list[tuple[str, str, HumanSequence]]:
+        return [(f"song{i}", "clean", sequence([52 + i, 55, 59, 62 - i], i)) for i in range(6)]
+
+    monkeypatch.setattr(fit, "sequences_for", fake_sequences)
+    out, songs = tmp_path / "weights.json", tmp_path / "songs"
+    argv = ["fit_cost_weights.py", "archive.zip", "meta.json", "--split", "artist"]
+    argv += ["--skip-halves", "--hold-base", "--base-config", "configs/decoder_clean.yaml"]
+    argv += ["--features", "region", "--weights-out", str(out), "--per-song-out", str(songs)]
+    monkeypatch.setattr(sys, "argv", argv)
+    fit.main()
+    weights = json.loads(out.read_text())
+    default = load_phase1_config(Path("configs/decoder_clean.yaml")).weights
+    for name in ("move", "span", "high", "open_reward", "open_up_neck", "temperature"):
+        assert weights[name] == getattr(default, name)
+    assert (songs / "base.json").exists() and (songs / "fitted.json").exists()
+
+
 def test_the_comparison_prints_exact_chord_shape_counts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

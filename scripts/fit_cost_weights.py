@@ -105,8 +105,15 @@ def main() -> None:
     parser.add_argument(
         "--hold-base",
         action="store_true",
-        help="Hold the four base weights at their hand-set values and fit only the groups "
-        "named by --features (ADR 0039).",
+        help="Hold the four base weights at their --base-config values and fit only the "
+        "groups named by --features (ADR 0039).",
+    )
+    parser.add_argument(
+        "--base-config",
+        type=Path,
+        default=Path("configs/phase1_baseline.yaml"),
+        help="The decoder every fit starts from, whose values unfitted weights keep and which "
+        "validation compares against; the hand-set weights unless given.",
     )
     parser.add_argument(
         "--weights-out",
@@ -118,12 +125,14 @@ def main() -> None:
         "--per-song-out",
         type=Path,
         default=None,
-        help="Directory for per-song validation counts (hand-set.json, fitted.json); "
+        help="Directory for per-song validation counts (hand-set.json or, with --base-config, "
+        "base.json; and fitted.json); "
         "they name DadaGP songs, so keep them under cache/.",
     )
     args = parser.parse_args()
 
-    hand_set = load_phase1_config("configs/phase1_baseline.yaml").weights
+    hand_set = load_phase1_config(args.base_config).weights
+    base_label = "hand-set" if args.base_config.name == "phase1_baseline.yaml" else "base"
     ctx = Context(tuning=DADAGP_TUNING, max_span=5)
 
     started = time.perf_counter()
@@ -204,7 +213,7 @@ def main() -> None:
         values = {k: list(v) if isinstance(v, tuple) else v for k, v in asdict(fitted).items()}
         args.weights_out.write_text(json.dumps(values, indent=2))
         print(f"    wrote {args.weights_out}")
-    for label, weights in (("hand-set", hand_set), ("fitted", fitted)):
+    for label, weights in ((base_label, hand_set), ("fitted", fitted)):
         nll, _ = nll_and_gradient(weights_to_vector(weights), feats["val"])
         n_groups = sum(f.n_groups for f in feats["val"])
         report = recover(val_parts, HandSetScorer(weights=weights), ctx)
