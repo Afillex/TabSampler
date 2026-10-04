@@ -79,7 +79,7 @@ picking the string the decoder's cost model alone would prefer.
 - [ ] Tests (offline, synthetic audio): the window's shape and centring, the latency shift, the
   mask over possible strings; the classifier's masked softmax.
 - [x] Training script, checkpointing as `scripts/train_model.py` does (`scripts/train_strings.py`).
-- [ ] **The run, pre-registered:** `scripts/train_strings.py data/synthtab/SynthTab_Dev --run
+- [x] **The run, pre-registered:** `scripts/train_strings.py data/synthtab/SynthTab_Dev --run
   cache/acoustic/dev`, the script's settings. Hypotheses: (1) among notes more than one string
   can sound, per-note string accuracy on SynthTab's held-out tracks is well above chance; (2)
   on player 00's notes, heard through `audio_mic`, it is above chance too, though the distance
@@ -87,6 +87,9 @@ picking the string the decoder's cost model alone would prefer.
   to 0.85 against a chance of about 0.3 to 0.4; player 00 0.40 to 0.60 against a similar
   chance. The player-00 figure is measured once, after training, by a script committed
   before it runs.
+  *(SynthTab held out: 0.5946 against chance 0.2884, best epoch 1 of 4 — the range missed by
+  0.005. Player 00: the classifier 0.4736, the default decoder 0.8181, chance 0.2758 — both
+  hypotheses held.)*
 
 ## Task 4: The acoustic term in the decoder (ADR)
 
