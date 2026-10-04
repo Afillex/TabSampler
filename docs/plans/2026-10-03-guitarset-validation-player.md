@@ -5,7 +5,7 @@
 > noise estimate stated in advance.
 
 **Status:** executed 2026-10-03; results and slips in `docs/devlog/2026-10-03.md`
-(second part).
+(second part). Reviewed, fixed, merged and pushed 2026-10-04 (`docs/devlog/2026-10-04.md`).
 
 **Goal:** give the project validation data that resembles its test set — GuitarSet's player
 00 — re-decide the default decoder on it, and re-base the test set on the other five
@@ -117,4 +117,5 @@ reference notes]`, whose pooled ratio is the micro-averaged E2 F1, and chord-sha
 - [x] Devlog, HANDOFF, plan boxes; check that no local tooling files are tracked.
 - [x] `make check`, `make oracle`; independent review; one fix pass (2026-10-04: seven
   findings fixed, `docs/devlog/2026-10-04.md`).
-- [ ] Merge into `main` and push both this branch and the one held back on 2026-10-03.
+- [x] Merge into `main` and push both this branch and the one held back on 2026-10-03
+  (2026-10-04).

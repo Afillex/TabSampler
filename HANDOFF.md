@@ -25,19 +25,16 @@ enough for M2, audio conditioning, and an app a guitarist can use.
 
 ## Where the last session stopped (2026-10-04) — read before anything else
 
-Work is complete, reviewed and fixed, but **not merged and not public**:
+**Everything is merged and public.** `main` and `origin/main` are the same commit. The
+timing / stretch / style-decoder work (ADRs 0029–0036) and the held-out-player work (ADRs
+0037–0038), with its review's fix pass (`docs/devlog/2026-10-04.md`), were pushed together
+on 2026-10-04, so the public default changed once: to the hand-set weights at T = 1.5728,
+re-chosen on player 00. `eval-m1` now needs `--split`, and per-track counts can be neither
+written for nor compared on the test players. `make check` (466 tests) and `make oracle`
+(10) pass. CI failed once, on the first push (two new tests matched coloured error text),
+and passed after the fix, `084d704`. The branch `guitarset-validation-player` is merged.
 
-1. **Local `main` is 33 commits ahead of `origin/main` and has not been pushed.** It holds
-   the timing / stretch / style-decoder work (ADRs 0029–0036), which was reviewed and
-   fixed. The push was held on purpose so the public default changes only once, to the
-   decoder re-decided on player 00.
-2. **Branch `guitarset-validation-player` (17 commits on top of `main`) is reviewed and
-   fixed, and not merged.** It holds ADRs 0037–0038 — player 00 as validation, the default
-   back to hand-set weights (T = 1.5728), the two 300-track test runs — and the review's
-   fix pass of 2026-10-04 (`docs/devlog/2026-10-04.md`): `eval-m1` needs `--split`, and
-   per-track counts can be neither written for nor compared on the test players.
-   `make check` (466 tests) and `make oracle` (10) pass on it.
-3. **Next:** merge the branch into `main` (fast-forward) and push `main`, once Ege confirms.
+What comes next is Ege's to order; see "Open items that need Ege, not you" below.
 
 Deferred small items, not yet fixed: `fit_weights` silently accepts unknown or empty
 `active` names; `paired_bootstrap({}, {})` fails with a raw numpy error; `CostWeights.
@@ -161,7 +158,13 @@ because they keep disagreeing.
    boundary and never in the logic. Examples in `eval/metrics.py` and
    `decode/forward_backward.py`.
 
-Also: **ruff 0.16 formats Python code blocks inside Markdown** and will rewrite
+Also: **Typer colours the CLI's error messages in GitHub Actions** (it forces a terminal
+when `GITHUB_ACTIONS`, `FORCE_COLOR` or `PY_COLORS` is set), so a test that looks for
+text in CLI output must strip colour codes first, as `plain()` in `tests/test_cli.py`
+does; locally the same test passes without it. Reproduce with
+`GITHUB_ACTIONS=true uv run pytest`.
+
+And **ruff 0.16 formats Python code blocks inside Markdown** and will rewrite
 `docs/spec.md` if you let it. `docs/**` is excluded for that reason — leave it excluded.
 
 ## Known defects
