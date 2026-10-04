@@ -14,7 +14,6 @@ every epoch and resumes when started again; its weights stay unpublished (ADR 00
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import time
 from pathlib import Path
@@ -25,17 +24,12 @@ import torch
 from numpy.typing import NDArray
 
 from tabsampler.audio.windows import note_window, possible_strings, track_cqt
-from tabsampler.data.synthtab import RENDER_LATENCY, load_tracks
+from tabsampler.data.synthtab import RENDER_LATENCY, is_held_out, load_tracks
 from tabsampler.model.strings import StringClassifier
 
 MAX_FRET = 24
-HELD_OUT_PERCENT = 15
 
 Examples = dict[str, NDArray[np.generic]]
-
-
-def held_out(name: str) -> bool:
-    return hashlib.sha1(name.encode()).digest()[0] % 100 < HELD_OUT_PERCENT
 
 
 def examples_for(root: Path) -> tuple[Examples, Examples]:
@@ -49,7 +43,7 @@ def examples_for(root: Path) -> tuple[Examples, Examples]:
     for track in tracks:
         signal, _ = sf.read(track.audio, dtype="float32")
         cqt = track_cqt(signal)
-        side = sides[held_out(track.name)]
+        side = sides[is_held_out(track.name)]
         for note, position in track.notes:
             possible = possible_strings(note.pitch, track.open_pitches, MAX_FRET)
             if sum(possible) < 2:

@@ -13,6 +13,7 @@ plus about four seconds of ring-out. ``scripts/check_synthtab.py`` checks that o
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from collections.abc import Sequence
@@ -112,3 +113,12 @@ def load_tracks(root: Path) -> tuple[list[SynthTabTrack], list[tuple[str, str]]]
             continue
         tracks.append(SynthTabTrack(name, family, tone, audio, notes, open_pitches))
     return tracks, skipped
+
+
+#: The share of tracks held out from training the string classifier, to stop on and calibrate on.
+HELD_OUT_PERCENT = 15
+
+
+def is_held_out(name: str) -> bool:
+    """Whether a track is held out: by a hash of its name, so the split never depends on order."""
+    return hashlib.sha1(name.encode()).digest()[0] % 100 < HELD_OUT_PERCENT
