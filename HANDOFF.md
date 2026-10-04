@@ -23,6 +23,39 @@ validation data and players 01–05 the test set (ADR 0037)**, because DadaGP's 
 mispredicted GuitarSet three times. What remains beyond that is a fingering model good
 enough for M2, audio conditioning, and an app a guitarist can use.
 
+## Where the last session stopped (2026-10-04) — read before anything else
+
+Work is complete on disk, but **not reviewed in full and not public**:
+
+1. **Local `main` is 33 commits ahead of `origin/main` and has not been pushed.** It holds
+   the timing / stretch / style-decoder work (ADRs 0029–0036), which *was* reviewed and
+   fixed. The push was held on purpose so the public default changes only once, to the
+   decoder re-decided on player 00.
+2. **Branch `guitarset-validation-player` (8 commits on top of `main`) is not merged.** It
+   holds ADRs 0037–0038: player 00 as validation, the default back to hand-set weights
+   (T = 1.5728), and the two 300-track test runs. `make check` (456 tests) and
+   `make oracle` (10) pass on it. **Its independent review was started and cancelled
+   before it reported.** Review it next — the split in `data/splits.py` is the most
+   sensitive change in the project — with particular attention to:
+   - every path by which test-player (01–05) data could reach a choice: callers of
+     `guitarset_test_ids` vs `guitarset_validation_ids`, and that every test read logs
+     to `experiments/test_set_access.log`;
+   - that ADR 0038's rule was applied exactly (`scripts/compare_validation.py` on
+     `cache/validation/p00-hand-set.json` and `p00-clean-fit.json`; exact chord-shape
+     counts);
+   - that README, devlog and ADRs 0037/0038 never present the 300-track figures as
+     independent confirmation (they were part of earlier 360-track runs);
+   - two rows in `results.csv` stamped `14a316d` for `configs/decoder_clean.yaml` with
+     temperature 1.5728: they ran on an uncommitted config and carry a note saying so.
+3. **Then:** one fix pass, merge the branch into `main` (fast-forward), and push `main`.
+   Ege approved the push for after the review.
+
+Deferred small items, not yet fixed: `fit_weights` silently accepts unknown or empty
+`active` names; `paired_bootstrap({}, {})` fails with a raw numpy error; `CostWeights.
+string_bias` lacks ADR 0007's tuple guard; the fret-region boundaries (4/5, 11/12) are
+untested; ADR 0035's Context was corrected at acceptance without saying so (recorded in
+the 2026-10-03 devlog). The decisions waiting for Ege are listed under "Open items" below.
+
 ## Rules that are not negotiable
 
 1. **GuitarSet and EGDB are test-only** (ADR 0003). No tuning, selection, or threshold
