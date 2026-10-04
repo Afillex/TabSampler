@@ -122,9 +122,10 @@ the pitch we claimed. **Every ADR 0016 value holds on the 300** for the default;
 target of 0.760 is 10.4 points away. Player 00, the validation player, is much easier
 (oracle E2 0.81), so its absolute figures do not carry over to the test players.
 
-**E1 is two numbers now.** Raw = the transcriber's score, and it reproduces Phase 0's 0.7437
-exactly. Placed = the pipeline's, after placement drops notes the guitar cannot sound. M1
-reported only the second and compared it with Phase 0's first.
+**E1 is two numbers now.** Raw = the transcriber's score; on the same 360 tracks it
+reproduces Phase 0's 0.7437 exactly (0.7493 on the 300 test tracks). Placed = the
+pipeline's, after placement drops notes the guitar cannot sound. M1 reported only the
+second and compared it with Phase 0's first.
 
 ## Training data: DadaGP, and how it may be used
 

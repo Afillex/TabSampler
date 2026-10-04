@@ -1,5 +1,8 @@
 # Phase 0 gate: Basic Pitch note F1 on GuitarSet.
 #
+# Since ADR 0037, eval-notes reads the 300 test tracks (players 01-05), not the 360
+# Phase 0 was measured on, so a rerun does not reproduce Phase 0's figure.
+#
 # The hypothesis goes here, before the run -- not after.
 hypothesis: >-
   Basic Pitch, unmodified, achieves a plausible onset-only note F1 on GuitarSet's

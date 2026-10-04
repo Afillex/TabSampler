@@ -67,7 +67,9 @@ a clear win is what kept the default from moving on noise.
 ### Before the split: all 360 tracks
 
 The clean-fitted default (ADR 0032) against the hand-set default before it, on all 360
-tracks, before player 00 became validation data:
+tracks, before player 00 became validation data. These and the other 360-track figures
+below were measured with the code of their day; since ADR 0037, `make eval-notes` and
+`make eval-m1` read only the 300 test tracks, so rerunning them does not reproduce these.
 
 | | metric | oracle | end-to-end | previous default (oracle / e2e) |
 |---|---|---|---|---|
@@ -212,9 +214,10 @@ point-model ones; GuitarSet was not run again for them.
 fingering stage; *pipeline (placed)* scores the notes that came out. They differ because
 placement drops notes the guitar cannot sound, which raises precision without touching
 recall. M1 reported only the second (0.7452) and set it beside Phase 0's first (0.7437),
-which was comparing two different measurements; raw E1 now reproduces Phase 0's figure
-exactly. In oracle mode both are 1.0000, which is a plumbing check, not a result:
-reference notes in, the same notes out.
+which was comparing two different measurements; on the same 360 tracks, raw E1
+reproduces Phase 0's figure exactly (on the 300 test tracks it is 0.7493). In oracle
+mode both are 1.0000, which is a plumbing check, not a result: reference notes in, the
+same notes out.
 
 E4 = 1.0000 is the correctness invariant — every (string, fret) sounds the pitch claimed.
 Anything below 1.0 there is a bug, not a score.
@@ -229,8 +232,9 @@ this project's own baseline (ADR 0016), not from anyone else's figure.
 - Given perfect notes, the default places about **66%** of notes on the string a human
   actually used, on the test players — 81% on the easier validation player. ADR 0016's M2
   target is 76%.
-- End to end, E2 is bounded by note F1: you cannot finger a note you did not hear. The
-  transcriber's own F1 is 0.7437, which is the ceiling to argue about, not 0.7452.
+- End to end, E2 is bounded by note F1: you cannot finger a note you did not hear. On the
+  test players the transcriber's own F1 is 0.7493, which is the ceiling to argue about,
+  not the pipeline's 0.7507.
 - **Calibration.** Given perfect notes the default's posteriors are fairly honest (E5
   0.08); end to end less so (0.22), because the decoder cannot see the transcriber's
   mistakes. ADR 0016's E5 guardrail (< 0.3851) holds.
@@ -347,7 +351,7 @@ make oracle      # brute-force equivalence tests for the decoder
 make lint        # ruff check + format --check
 make typecheck   # pyright --strict on src/
 make check       # lint + typecheck + test
-make eval-notes  # Phase 0 gate: Basic Pitch note F1 on GuitarSet
+make eval-notes  # Phase 0's measure: Basic Pitch note F1 on the 300 test tracks
 ```
 
 ## License

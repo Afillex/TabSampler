@@ -1,5 +1,8 @@
 # M1: the full results table (spec 6, Phase 1 "done when").
 #
+# Since ADR 0037, `make eval-m1` runs it on the 300 test tracks (players 01-05), not
+# on the 360 M1 was measured on.
+#
 # Run in BOTH modes (spec 3.2):
 #   oracle -- reference notes fed to the fingering stage. Measures fingering alone.
 #   e2e    -- transcriber notes. What a user actually gets.
