@@ -17,7 +17,7 @@ import pytest
 
 from tabsampler.fingering.fit import HumanSequence
 from tabsampler.fingering.states import enumerate_states
-from tabsampler.types import NoteEvent, NoteGroup, Tuning
+from tabsampler.types import NoteEvent, NoteGroup, Position, TabNote, Tuning
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 
@@ -218,3 +218,84 @@ def test_the_lattice_measure_refuses_more_tracks_than_the_validation_player_has(
         lattice.main()
     assert stopped.value.code == 2
     assert "60" in capsys.readouterr().err
+
+
+# ------------------------------------------- scripts/analyse_errors.py (C3, 2026-10-04 Task 1)
+
+
+def placed(onset: float, pitch: int, string: int, fret: int) -> tuple[NoteEvent, Position]:
+    note = NoteEvent(onset=onset, offset=onset + 0.4, pitch=pitch, confidence=1.0)
+    return note, Position(string=string, fret=fret)
+
+
+def tab(onset: float, pitch: int, string: int, fret: int) -> TabNote:
+    note, position = placed(onset, pitch, string, fret)
+    return TabNote(note=note, position=position, posterior=1.0)
+
+
+def test_the_error_analysis_reads_style_and_mode_from_the_track_id() -> None:
+    errors = load("analyse_errors")
+    assert errors.track_style_and_mode("00_BN1-129-Eb_comp") == ("BN", "comp")
+    assert errors.track_style_and_mode("00_Funk2-108-Eb_solo") == ("Funk", "solo")
+    assert errors.track_style_and_mode("00_SS3-84-Bb_comp") == ("SS", "comp")
+    with pytest.raises(ValueError, match="not a GuitarSet track id"):
+        errors.track_style_and_mode("Some Artist - Some Song")
+
+
+def test_the_error_analysis_pairs_notes_by_pitch_and_onset_not_by_order() -> None:
+    errors = load("analyse_errors")
+    reference = [placed(0.0, 59, 4, 0), placed(0.0, 64, 5, 0), placed(1.0, 69, 5, 5)]
+    reference.append(placed(2.0, 71, 5, 7))  # the decoder dropped this one
+    decoded = [tab(0.0, 64, 4, 5), tab(0.0, 59, 3, 4), tab(1.03, 69, 4, 10)]
+    assert errors.pair(reference, decoded) == [
+        Position(3, 4),
+        Position(4, 5),
+        Position(4, 10),
+        None,
+    ]
+
+
+def test_the_error_analysis_prefers_the_players_string_among_equal_notes() -> None:
+    # A unison on two strings: each reference note must find the decoded copy on its own
+    # string, as E2's matching would, rather than the first copy in the list.
+    errors = load("analyse_errors")
+    reference = [placed(0.0, 64, 5, 0), placed(0.0, 64, 4, 5)]
+    decoded = [tab(0.0, 64, 4, 5), tab(0.0, 64, 5, 0)]
+    assert errors.pair(reference, decoded) == [Position(5, 0), Position(4, 5)]
+
+
+def test_the_error_analysis_marks_notes_that_sound_together() -> None:
+    errors = load("analyse_errors")
+    reference = [placed(0.0, 59, 4, 0), placed(0.01, 64, 5, 0), placed(1.0, 69, 5, 5)]
+    assert errors.chord_flags(reference, window_s=0.03) == [True, True, False]
+
+
+def test_errors_count_as_a_run_only_from_four_in_a_row() -> None:
+    errors = load("analyse_errors")
+    assert errors.errors_in_long_runs([False, True, True, True, True, False, True]) == 4
+    assert errors.errors_in_long_runs([True] * 4) == 4  # a run at the end still counts
+    assert errors.errors_in_long_runs([True, True, True, False, True]) == 0
+
+
+def test_the_error_report_answers_each_question_from_the_outcomes() -> None:
+    errors = load("analyse_errors")
+
+    def outcome(onset: float, human: Position, decoded: Position | None) -> object:
+        return errors.Outcome("00_BN1-129-Eb_comp", "BN", "comp", onset, False, human, decoded)
+
+    outcomes = [
+        outcome(0.0, Position(5, 0), Position(5, 0)),  # right
+        outcome(0.5, Position(2, 2), Position(1, 7)),  # a string lower, up the neck
+        outcome(1.0, Position(3, 0), Position(2, 5)),  # the player's open string, fretted
+        outcome(1.5, Position(1, 5), Position(2, 0)),  # fretted by the player, open here
+        outcome(2.0, Position(0, 3), None),  # dropped
+    ]
+    lines = errors.report(outcomes)
+    assert lines[0] == "notes 5, right 1, misplaced 3, dropped 1"
+    text = "\n".join(lines)
+    assert f"  {'1 string':20s} {errors.share(3, 3)}" in text
+    assert f"  {'higher on the neck':20s} {errors.share(2, 3)}" in text
+    assert f"misplaced and in another region: {errors.share(3, 3)}" in text
+    assert f"player open, decoder fretted: {errors.share(1, 3)}" in text
+    assert f"decoder open, player fretted: {errors.share(1, 3)}" in text
+    assert f"errors in runs of 4 or more: {errors.share(4, 4)}" in text
