@@ -100,7 +100,7 @@ Measured the same way. **Hypothesis 3:** on player 3 it beats both earlier class
 0.3628); prediction 0.38–0.50. On player 00, prediction 0.40–0.48. Its weights stay unpublished
 (ADR 0046).
 
-- [ ] Run 2: train; measure; record.
+- [x] Run 2: train; measure; record. *(Player 3 0.3739 — H3 failed; player 00 0.4009.)*
 
 ## Task 6: Calibrate on player 3
 
