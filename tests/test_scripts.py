@@ -761,3 +761,28 @@ def test_the_acoustic_ablation_on_the_test_players_logs_the_look_and_writes_no_c
     with pytest.raises(SystemExit):
         ablation.main()
     assert not (tmp_path / "x").exists()
+
+
+def test_the_guitartechs_check_counts_notes_starting_before_their_string_is_free() -> None:
+    check = load("check_guitartechs")
+    notes = (
+        placed(0.0, 40, 0, 0),
+        placed(0.5, 45, 1, 0),  # another string: no overlap
+        placed(0.35, 41, 0, 1),  # string 0 rings until 0.4 (placed() gives 0.4 s): overlap
+        placed(0.75, 42, 0, 2),  # 0.35 + 0.4 = 0.75: exactly free
+    )
+    assert check.overlaps(tuple(sorted(notes, key=lambda n: n[0].onset))) == 1
+
+
+def test_the_guitartechs_check_confirms_a_pitch_louder_than_its_neighbours() -> None:
+    import numpy as np
+
+    from tabsampler.audio.windows import BINS_PER_SEMITONE, LOWEST_MIDI
+
+    check = load("check_guitartechs")
+    cqt = np.zeros((200, 100))
+    row = (50 - LOWEST_MIDI) * BINS_PER_SEMITONE
+    cqt[row, :] = 1.0
+    heard = NoteEvent(onset=0.1, offset=0.5, pitch=50, confidence=1.0)
+    missing = NoteEvent(onset=0.1, offset=0.5, pitch=52, confidence=1.0)
+    assert check.confirmed(cqt, [heard, missing], 0) == (1, 2)
