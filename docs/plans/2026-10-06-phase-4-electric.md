@@ -91,7 +91,16 @@ not set per player; nothing else changes.*
 
 Together they put numbers on the two halves of Phase 3's confound: rendered against real
 (hypothesis 1) and electric against acoustic (hypothesis 2).
-- [ ] Train; measure; record.
+- [x] Train; measure; record. *(Run 1: player 3 0.3739 against SynthTab's 0.3628 — H1 not
+      supported, prediction failed; player 00 0.4365 against 0.4736 — H2 held. Best epoch 1 of 4.)*
+
+**Pre-registered (run 2, the variable: initialisation):** as run 1, but `--init
+cache/acoustic/dev/best.pt --run cache/acoustic/gt-ft` — fine-tuned from SynthTab's classifier.
+Measured the same way. **Hypothesis 3:** on player 3 it beats both earlier classifiers (0.3739,
+0.3628); prediction 0.38–0.50. On player 00, prediction 0.40–0.48. Its weights stay unpublished
+(ADR 0046).
+
+- [ ] Run 2: train; measure; record.
 
 ## Task 6: Calibrate on player 3
 
