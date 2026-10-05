@@ -34,11 +34,13 @@ def load_audio(path: Path | str) -> np.ndarray:
     return np.asarray(signal, dtype=np.float32)
 
 
-def best_lag(signal: np.ndarray, onsets: list[float]) -> int:
-    """The frame lag at which the onset strength is highest on average at ``onsets``."""
-    envelope = librosa.onset.onset_strength(y=signal, sr=RATE, hop_length=HOP)
-    frames = np.round(np.asarray(onsets) / FRAME).astype(int)
-    reach = round(MAX_LAG_SECONDS / FRAME)
+def best_lag(signal: np.ndarray, onsets: list[float], hop: int = HOP) -> int:
+    """The lag, in frames of ``hop`` samples, at which the onset strength is highest on average
+    at ``onsets``."""
+    envelope = librosa.onset.onset_strength(y=signal, sr=RATE, hop_length=hop)
+    frame = hop / RATE
+    frames = np.round(np.asarray(onsets) / frame).astype(int)
+    reach = round(MAX_LAG_SECONDS / frame)
     scores: dict[int, float] = {}
     for lag in range(-reach, reach + 1):
         shifted = frames + lag
@@ -74,7 +76,7 @@ def overlaps(placed: tuple[Any, ...]) -> int:
     return count
 
 
-def control() -> None:
+def control(hop: int) -> None:
     from tabsampler.data.guitarset import load_dataset, reference_notes
     from tabsampler.data.splits import guitarset_validation_ids
 
@@ -85,11 +87,12 @@ def control() -> None:
         track = dataset.track(track_id)
         notes = reference_notes(track)
         signal = load_audio(track.audio_mic_path)
-        lags.append(best_lag(signal, sorted({n.onset for n in notes})))
+        lags.append(best_lag(signal, sorted({n.onset for n in notes}), hop))
         h, c = confirmed(track_cqt(signal), notes, 0)
         hits, checked = hits + h, checked + c
+    lag_ms = float(np.median(lags)) * hop / RATE * 1000
     print(
-        f"control, GuitarSet player 00: median best lag {np.median(lags) * FRAME * 1000:+.1f} ms;"
+        f"control, GuitarSet player 00: median best lag {lag_ms:+.1f} ms;"
         f" pitches confirmed {hits}/{checked} ({hits / checked:.3f})"
     )
 
@@ -98,22 +101,24 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", type=Path)
     parser.add_argument("--no-control", action="store_true", help="Skip GuitarSet's player 00.")
+    parser.add_argument("--hop", type=int, default=HOP, help="Samples per frame, for the lag.")
     args = parser.parse_args()
     if not args.no_control:
-        control()
+        control(args.hop)
     takes, skipped = load_takes(args.root)
     print(f"{len(takes)} takes; skipped: {skipped or 'none'}")
     for take in takes:
         midi = take.direct_input.parent.parent.parent / "midi" / f"midi_{take.name}.mid"
         _, dropped = parse_midi(midi)
         signal = load_audio(take.direct_input)
-        lag = best_lag(signal, sorted({n.onset for n, _ in take.notes}))
+        fine = best_lag(signal, sorted({n.onset for n, _ in take.notes}), args.hop)
+        lag = round(fine * args.hop / HOP)
         hits, checked = confirmed(track_cqt(signal), [n for n, _ in take.notes], lag)
         reasons = Counter(reason.split(": ")[1].split(" ")[0] for reason in dropped)
         print(
             f"  P{take.player} {take.category:11s} {take.name:24s} {len(take.notes):5d} notes,"
             f" {len(signal) / RATE / 60:5.1f} min; dropped {len(dropped)} {dict(reasons)};"
-            f" overlapping {overlaps(take.notes)}; lag {lag * FRAME * 1000:+6.1f} ms;"
+            f" overlapping {overlaps(take.notes)}; lag {fine * args.hop / RATE * 1000:+6.1f} ms;"
             f" confirmed {hits}/{checked} ({hits / max(checked, 1):.3f})"
         )
 
