@@ -108,7 +108,16 @@ Phase 3's rule (35a14b2), on player 3 instead of SynthTab's held-out tracks: the
 NLL on player 3's notes, the acoustic weight by the decoder's recovery of the labelled string,
 smaller on a tie.
 
-- [ ] Pre-register; run; record.
+**Pre-registered:** Ege chose to finish the plan as it stands after Task 5 (2026-10-06). The
+classifier, by rule: the lower held-out NLL on player 3 of runs 1 and 2 — run 2, fine-tuned from
+SynthTab (1.2039 against 1.2187; their accuracies are equal). `scripts/calibrate_acoustic.py
+data/guitar-techs --corpus guitartechs --run cache/acoustic/gt-ft`: the temperature by NLL on
+player 3's 1,527 cached notes, then the weight among 0, 0.1, 0.25, 0.5 and 1.0 by the default
+decoder's recovery of the labelled string on player 3's 12 takes, the smaller on a tie.
+**Predictions:** the temperature between 1.0 and 3.0; the weight 0.25 or below, zero included —
+a classifier at 0.37 should earn little weight.
+
+- [ ] Run; record.
 
 ## Task 7: The ablation on GuitarSet's player 00
 

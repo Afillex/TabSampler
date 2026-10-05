@@ -845,3 +845,32 @@ def test_the_string_evaluation_scores_a_runs_held_out_examples(tmp_path: Path) -
     right, count, chance = evaluate.held_out_accuracy(model, path)
     assert count == 3 and chance == pytest.approx(0.5)
     assert right in (1, 2)  # identical windows: one string for all three
+
+
+def test_the_calibration_on_guitartechs_reads_only_player_3_cleaned(tmp_path: Path) -> None:
+    import numpy as np
+    import pretty_midi
+    import soundfile as sf
+
+    calibrate = load("calibrate_acoustic")
+    root = tmp_path / "guitar-techs"
+
+    def take(player: int, category: str, name: str, notes: list[tuple[float, float, int]]) -> None:
+        folder = root / f"P{player}_{category}"
+        midi = pretty_midi.PrettyMIDI(initial_tempo=60.0)
+        track = pretty_midi.Instrument(program=0, name="G")
+        for start, end, pitch in notes:
+            track.notes.append(pretty_midi.Note(velocity=90, pitch=pitch, start=start, end=end))
+        midi.instruments.append(track)
+        (folder / "midi").mkdir(parents=True)
+        midi.write(str(folder / "midi" / f"midi_{name}.mid"))
+        (folder / "audio" / "directinput").mkdir(parents=True)
+        tone = np.sin(2 * np.pi * 220 * np.arange(44100 * 3) / 44100).astype(np.float32)
+        sf.write(folder / "audio" / "directinput" / f"directinput_{name}.wav", tone, 44100)
+
+    take(1, "scales", "A", [(0.5, 1.0, 57)])
+    take(3, "music", "01", [(0.5, 1.0, 57), (1.2, 1.22, 59), (1.5, 2.0, 60)])  # one glitch
+    pieces = list(calibrate.guitartechs_pieces(root))
+    assert len(pieces) == 1
+    assert [note.pitch for note, _ in pieces[0].notes] == [57, 60]
+    assert pieces[0].open_pitches == (40, 45, 50, 55, 59, 64)
