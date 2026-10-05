@@ -56,11 +56,11 @@ of the old record to point at its replacement.
 | [0046](0046-audio-evidence.md) | **The audio evidence**: a string probability per note, from a small CNN over a constant-Q window, through the acoustic term; pretrained on SynthTab | D13 | accepted |
 | [0047](0047-acoustic-term.md) | **The acoustic term**: `HandSetScorer` carries per-note string log-probabilities; a note on string s adds `acoustic × −log P(s)`; zero weight is Phase 2's decoder | D13 | accepted |
 | [0048](0048-phase-3-result.md) | **Phase 3's result**: the SynthTab-trained audio evidence costs the decoder on GuitarSet — test oracle E2 0.6819 → 0.6073 (−0.075), player 00 −0.041 calibrated — and helps on SynthTab's held-out tracks, where it was calibrated; the weight stays zero | D13 | accepted |
+| [0049](0049-primary-guitar-sound.md) | **The primary guitar sound is clean electric** (D2): Phase 4 trains on real electric audio, Guitar-TECHS first; GuitarSet (acoustic) stays the test set, reported separately with EGDB | D2 | accepted |
 
-Decisions still open, each due at the phase that needs it: D2 (primary guitar sound,
-Phase 4), D14 (app surface — **now due, M1 is met**), and D15 for corpora other than DadaGP
+Decisions still open, each due at the phase that needs it: D14 (app surface — **now due, M1 is met**), and D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).
-D11, D12 and D13 are decided by ADRs 0041, 0043 and 0046.
+D2, D11, D12 and D13 are decided by ADRs 0049, 0041, 0043 and 0046.
 
 **D10 is settled** by ADR 0016: oracle E2 must reach baseline + 10 points (0.760) at M2.
 
