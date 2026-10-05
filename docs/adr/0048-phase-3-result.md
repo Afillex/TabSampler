@@ -1,6 +1,6 @@
 # ADR 0048: Phase 3's result — the audio evidence costs the decoder on GuitarSet
 
-Status: proposed — Phase 3 closes on this record if Ege signs off
+Status: accepted (2026-10-06) — **Phase 3 closed on this record by Ege's sign-off**
 
 Reports Phase 3 (`docs/plans/2026-10-04-phase-3-audio.md`). The spec's "done when" is a measured
 change in oracle-mode Exact Tab F1 against Phase 2, with an ablation that removes the audio input;
@@ -40,7 +40,7 @@ classifier on its own and about its calibration held, though one predicted range
 - **The default decoder keeps the acoustic weight at zero.** The term stays in the code (ADR
   0047), off, and the classifier's weights stay unpublished (ADR 0046).
 - **The spec's Phase 3 deliverable exists, as a negative result**: the change with the audio
-  ablated, measured on validation and once on test. Closing the phase on it is Ege's decision.
+  ablated, measured on validation and once on test. Ege signed off on closing the phase on it.
 
 ## What it does not settle
 

@@ -9,9 +9,9 @@ audio -> note events -> string/fret candidates -> fingering scorer -> decoder ->
 ```
 
 Status: **Milestone M1 reached. Phase 2 (learned fingering) closed on 2026-10-04 with M2
-missed: oracle E2 0.6819 against 0.760** (ADR 0045). **Phase 3 (audio conditioning) is
-measured, as a negative result: audio evidence trained on SynthTab lowers oracle E2 to 0.6073**
-(ADR 0048); closing it awaits sign-off.
+missed: oracle E2 0.6819 against 0.760** (ADR 0045). **Phase 3 (audio conditioning) closed
+on 2026-10-06 with a negative result: audio evidence trained on SynthTab lowers oracle E2 to
+0.6073** (ADR 0048). The next phase is to be chosen.
 
 ## Results
 

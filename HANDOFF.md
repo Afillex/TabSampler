@@ -1,8 +1,8 @@
 # HANDOFF — read this first
 
 You are picking up Tab Sampler with no prior context. This file is the shortest path to
-being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-05, after
-Phase 3's measurement.
+being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-06, after
+Phase 3 closed.
 
 ## In one paragraph
 
@@ -25,13 +25,14 @@ measured audio evidence trained on SynthTab: it costs the decoder on GuitarSet**
 What remains is real training audio (Phase 4), a better transcriber, and an app a guitarist
 can use.
 
-## Where the last session stopped (2026-10-05) — read before anything else
+## Where the last session stopped (2026-10-06) — read before anything else
 
-**Phase 3, audio conditioning, is measured and waits for Ege's sign-off (ADR 0048, proposed).**
-Phase 2 is closed (ADR 0045) and public on `main`: ADR 0039's open-string cost is in the default;
+**Phase 3, audio conditioning, is closed (Ege's sign-off, ADR 0048) as a negative result, and
+merged into `main` and public.**
+Phase 2 closed before it (ADR 0045): ADR 0039's open-string cost is in the default;
 Ege's chord-shape rule for a challenger on player 00 is *no clear drop*; a learned model was not
 preferred (ADRs 0041–0044); weights trained on DadaGP or SynthTab stay unpublished (ADRs 0042,
-0046). Phase 3 lives on branch `phase-3-audio`, **not merged or pushed**; every task of its plan,
+0046). Every task of Phase 3's plan,
 `docs/plans/2026-10-04-phase-3-audio.md`, is done:
 
 - **The evidence (ADRs 0046, 0047):** a small CNN (`src/tabsampler/model/strings.py`) gives each
@@ -51,8 +52,7 @@ preferred (ADRs 0041–0044); weights trained on DadaGP or SynthTab stay unpubli
   `calibrate_acoustic.py` → `evaluate_acoustic.py --split validation` (each docstring has its
   command); the run lives in `cache/acoustic/dev` (`best.pt`, `examples.npz`, `calibration.json`).
 
-`make check` (536 tests) and `make oracle` (13) pass. **Next: Ege's sign-off on Phase 3, then the
-merge and push** (Ege confirms the push). After that the spec's order is Phase 4, real-data
+`make check` (536 tests) and `make oracle` (13) pass. **Next: Ege chooses the next phase.** The spec's order is Phase 4, real-data
 fine-tuning, which first needs D2 (which guitar sound comes first) and its data; the app track
 (B1–B4) has been open since M1.
 
@@ -97,7 +97,7 @@ Phase 3) → `docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`
 | Tags | **None on GitHub.** `v0.0-phase0` and `v0.1-m1`, listed here before, exist nowhere; Phase 0's and M1's commits, `d50f4f0` and `1147495`, survive only locally, under the tag `pre-publication-backup` |
 | Tests | 536, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
-| Current phase | **Phase 3, audio conditioning — measured 2026-10-04, awaiting Ege's sign-off** (ADR 0048); Phase 2 closed with M2 missed by 7.8 points (ADR 0045) |
+| Current phase | **Phase 3, audio conditioning — closed 2026-10-06 by Ege's sign-off, a negative result** (ADR 0048); Phase 2 closed with M2 missed by 7.8 points (ADR 0045) |
 
 **Current results** — GuitarSet's test players 01–05, 300 tracks, `audio_mic`, today's
 default `configs/decoder_clean.yaml`: the hand-set weights plus ADR 0039's open-string cost,
@@ -292,8 +292,7 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 
 ## Open items that need Ege, not you
 
-- **Signing off Phase 3** on ADR 0048, then merging `phase-3-audio` and pushing it (Ege
-  confirms each push).
+- **The next phase**: Phase 4 (real-data fine-tuning) or the app track (B1–B4).
 - **D2, the primary guitar sound**, due at Phase 4: Phase 3's evidence was trained mostly on
   electric tones and lost on an acoustic guitar. More of SynthTab (2 TB) is also Ege's call.
 - **The chord-shape condition** on player 00 is *no clear drop* (Ege, 2026-10-04, ADR
