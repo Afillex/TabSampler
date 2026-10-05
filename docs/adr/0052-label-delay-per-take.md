@@ -6,8 +6,8 @@ Status: accepted (2026-10-06) — supersedes ADR 0051's label-delay bullet
 
 ADR 0051 corrected Guitar-TECHS's late labels with one delay per player (23, 16, 15 ms), measured
 before player 2's chords had downloaded. Those chords, checked with `scripts/check_guitartechs.py
---hop 64` on 2026-10-06, split into two groups: 14 of the 28 takes lag like the rest of player 2,
-and 14 — with player 2's pinch harmonics — read 55–76 ms the other way, their labels **early**.
+--hop 64` on 2026-10-06, split into two groups: 15 of the 28 takes lag like the rest of player 2,
+and 13 — with player 2's pinch harmonics — read 55–76 ms the other way, their labels **early**.
 Their pitches are 93–100% confirmed once each take's own lag is applied, so the labels are good
 and only their timing differs, take by take. Player 1's takes spread too, from 6 to 52 ms. A
 65 ms error would move a note's window, which starts 35 ms before its onset, off its attack.
