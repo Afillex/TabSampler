@@ -9,7 +9,9 @@ audio -> note events -> string/fret candidates -> fingering scorer -> decoder ->
 ```
 
 Status: **Milestone M1 reached. Phase 2 (learned fingering) closed on 2026-10-04 with M2
-missed: oracle E2 0.6819 against 0.760** (ADR 0045). The next phase is to be chosen.
+missed: oracle E2 0.6819 against 0.760** (ADR 0045). **Phase 3 (audio conditioning) is
+measured, as a negative result: audio evidence trained on SynthTab lowers oracle E2 to 0.6073**
+(ADR 0048); closing it awaits sign-off.
 
 ## Results
 
@@ -66,6 +68,18 @@ The learned model fitted DadaGP better and GuitarSet's validation player worse, 
 preferred (ADR 0044); on the test players it came out 0.0037 ahead. No interval is computed
 there and nothing is chosen from it — one held-out player is a noisy guide, in both directions.
 Its weights are not published (ADR 0042).
+
+### Phase 3: audio evidence (ADRs 0046–0048)
+
+A string classifier — a small CNN trained on SynthTab's rendered guitar, mostly electric — hears
+each note of a GuitarSet recording and adds a cost per string to the decoder (ADR 0047). On its own
+it picks the right string for 47% of player 00's notes that more than one string can sound, against
+28% by chance and 82% for the decoder. In the decoder, calibrated on SynthTab first, it **lowered
+oracle E2 on the test players from 0.6819 to 0.6073 (−0.075)**, after −0.041 [−0.072, −0.014] on
+player 00. On SynthTab's own held-out tracks it raised the share of notes placed on their labelled
+string by 3 points — on the tracks its weight was chosen on, so an optimistic figure. The default
+keeps the audio term off. Whether the gap is rendered guitar against real or electric against
+acoustic, Phase 3 cannot say; training on real recordings is the spec's Phase 4.
 
 ### Validation on GuitarSet's own playing (ADRs 0037–0039)
 

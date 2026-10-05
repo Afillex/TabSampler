@@ -150,4 +150,5 @@ evidence and with it as Task 6 calibrated it; one logged look, nothing chosen. *
 player 00, a loss with the evidence, between −0.06 and −0.02 in oracle E2. The figure is Phase 3's
 measured change on the test players; Phase 3 then goes to Ege for sign-off.
 
-- [ ] Run once; record; write Phase 3's result (ADR); README, HANDOFF, devlog.
+- [x] Run once; record; write Phase 3's result (ADR); README, HANDOFF, devlog.
+  *(Test players: 0.6819 → 0.6073, −0.0746; the prediction failed — a larger loss. ADR 0048.)*
