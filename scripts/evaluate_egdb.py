@@ -26,7 +26,7 @@ import torch
 from tabsampler.audio.windows import RATE, note_window, possible_strings, track_cqt
 from tabsampler.config import load_eval_config, load_phase1_config
 from tabsampler.data.egdb import load_clips
-from tabsampler.data.splits import egdb_test_ids, record_test_set_access
+from tabsampler.data.splits import egdb_clip_id, egdb_test_ids, record_test_set_access
 from tabsampler.decode.robust import decode_best_effort
 from tabsampler.eval.metrics import exact_tab_f1, note_f1, tab_notes_to_placed
 from tabsampler.eval.playability import playability_rate
@@ -75,18 +75,23 @@ def main() -> None:
     cfg = load_eval_config(args.config)
     dec = load_phase1_config(args.decoder_config)
 
-    clips, skipped = load_clips(args.root)
-    if [c.clip_id for c in clips] != list(egdb_test_ids()) or skipped:
+    present = sorted(
+        egdb_clip_id(int(label.stem))
+        for label in (args.root / "audio_label").glob("*.midi")
+        if (args.root / "audio_DI" / f"{label.stem}.wav").exists()
+    )
+    if present != list(egdb_test_ids()):
         raise SystemExit(
-            f"EGDB is incomplete ({len(clips)} clips, {len(skipped)} skipped): finish "
+            f"EGDB is incomplete ({len(present)} clips with labels and audio): finish "
             f"scripts/download_egdb.py first -- a subset is never quoted"
         )
     record_test_set_access(
         f"evaluate_egdb.py, oracle with acoustic 0 and {args.weight:g} at temperature "
-        f"{args.temperature:g}, and end to end, on {len(clips)} EGDB clips: classifier "
+        f"{args.temperature:g}, and end to end, on {len(present)} EGDB clips: classifier "
         f"{args.run}, decoder {args.decoder_config}, config {args.config}; Phase 4's look"
     )
 
+    clips, _ = load_clips(args.root)  # complete: checked above by name
     model = StringClassifier()
     model.load_state_dict(torch.load(args.run / "best.pt", weights_only=True))
     model.eval()

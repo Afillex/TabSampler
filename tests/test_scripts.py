@@ -881,10 +881,15 @@ def test_the_egdb_look_refuses_a_partial_download_before_logging_anything(
 ) -> None:
     evaluate = load("evaluate_egdb")
     logged: list[str] = []
-    monkeypatch.setattr(evaluate, "load_clips", lambda *_: ([], [("egdb_001", "no audio")]))
+    read: list[Path] = []
+    monkeypatch.setattr(evaluate, "load_clips", lambda root: read.append(root) or ([], []))
     monkeypatch.setattr(evaluate, "record_test_set_access", logged.append)
+    root = tmp_path / "egdb"
+    (root / "audio_label").mkdir(parents=True)
+    (root / "audio_label" / "1.midi").write_bytes(b"")
     argv = ["evaluate_egdb.py", "--run", "x", "--weight", "0.25", "--temperature", "1.0"]
-    monkeypatch.setattr(sys, "argv", [*argv, "--config", "configs/m2_c6_eval.yaml"])
+    argv += ["--root", str(root), "--config", "configs/m2_c6_eval.yaml"]
+    monkeypatch.setattr(sys, "argv", argv)
     with pytest.raises(SystemExit, match="incomplete"):
         evaluate.main()
-    assert logged == []
+    assert logged == [] and read == []  # no label read, no look logged
