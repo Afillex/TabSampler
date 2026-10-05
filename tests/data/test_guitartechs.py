@@ -9,8 +9,16 @@ import pretty_midi
 import pytest
 import soundfile as sf
 
-from tabsampler.data.guitartechs import STANDARD, load_takes, parse_midi
-from tabsampler.types import Position
+from tabsampler.data.guitartechs import (
+    LABEL_DELAY,
+    STANDARD,
+    GuitarTechsTake,
+    clean,
+    load_takes,
+    parse_midi,
+    usable,
+)
+from tabsampler.types import NoteEvent, Position
 
 
 def write_midi(path: Path, strings: dict[str, list[tuple[float, float, int]]]) -> None:
@@ -74,3 +82,47 @@ def test_takes_are_found_by_player_category_and_name(tmp_path: Path) -> None:
     assert takes[0].direct_input.name == "directinput_allsinglenotes.wav"
     assert takes[0].mic_amp is not None and takes[0].mic_amp.name == "micamp_allsinglenotes.wav"
     assert skipped == [("P3_music/unpaired", "no direct-input audio")]
+
+
+def placed(onset: float, offset: float, pitch: int, string: int) -> tuple[NoteEvent, Position]:
+    note = NoteEvent(onset=onset, offset=offset, pitch=pitch, confidence=1.0)
+    return note, Position(string=string, fret=pitch - STANDARD[string])
+
+
+def test_cleaning_drops_glitch_notes_then_ends_each_note_at_the_next_on_its_string() -> None:
+    notes = (
+        placed(0.0, 0.503, 45, 1),  # rings 3 ms into the next note on its string
+        placed(0.2, 0.25, 52, 2),  # 50 ms: a pickup glitch
+        placed(0.5, 0.9, 47, 1),
+        placed(0.5, 0.56, 57, 3),  # exactly 60 ms: kept
+    )
+    kept, dropped = clean(notes)
+    assert dropped == 1
+    assert [(n.onset, n.offset, n.pitch) for n, _ in kept] == [
+        (0.0, 0.5, 45),
+        (0.5, 0.9, 47),
+        (0.5, 0.56, 57),
+    ]
+
+
+def test_a_note_cut_short_by_the_next_is_kept() -> None:
+    # The floor reads the pickup's own duration, so fast playing is not mistaken for a glitch.
+    kept, dropped = clean((placed(0.0, 0.2, 45, 1), placed(0.05, 0.3, 47, 1)))
+    assert dropped == 0
+    assert [(n.onset, n.offset) for n, _ in kept] == [(0.0, 0.05), (0.05, 0.3)]
+
+
+def test_bends_and_harmonics_are_not_training_material() -> None:
+    def take(category: str, name: str) -> GuitarTechsTake:
+        return GuitarTechsTake(1, category, name, Path("x.wav"), None, ())
+
+    assert usable(take("techniques", "PalmMute"))
+    assert usable(take("scales", "Bb"))
+    assert not usable(take("techniques", "Bendings"))
+    assert not usable(take("techniques", "Harmonics"))
+    assert not usable(take("techniques", "PinchHarmonics"))
+
+
+def test_every_player_has_a_measured_label_delay() -> None:
+    assert set(LABEL_DELAY) == {1, 2, 3}
+    assert all(0.0 < delay < 0.05 for delay in LABEL_DELAY.values())

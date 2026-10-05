@@ -786,3 +786,36 @@ def test_the_guitartechs_check_confirms_a_pitch_louder_than_its_neighbours() -> 
     heard = NoteEvent(onset=0.1, offset=0.5, pitch=50, confidence=1.0)
     missing = NoteEvent(onset=0.1, offset=0.5, pitch=52, confidence=1.0)
     assert check.confirmed(cqt, [heard, missing], 0) == (1, 2)
+
+
+def test_guitartechs_examples_split_by_player_and_leave_out_bends_and_glitches(
+    tmp_path: Path,
+) -> None:
+    import numpy as np
+    import pretty_midi
+    import soundfile as sf
+
+    train = load("train_strings")
+    root = tmp_path / "guitar-techs"
+
+    def take(player: int, category: str, name: str, notes: list[tuple[float, float, int]]) -> None:
+        folder = root / f"P{player}_{category}"
+        midi = pretty_midi.PrettyMIDI(initial_tempo=60.0)
+        track = pretty_midi.Instrument(program=0, name="G")  # string 3, open 55
+        for start, end, pitch in notes:
+            track.notes.append(pretty_midi.Note(velocity=90, pitch=pitch, start=start, end=end))
+        midi.instruments.append(track)
+        (folder / "midi").mkdir(parents=True)
+        midi.write(str(folder / "midi" / f"midi_{name}.mid"))
+        (folder / "audio" / "directinput").mkdir(parents=True)
+        tone = np.sin(2 * np.pi * 220 * np.arange(44100 * 3) / 44100).astype(np.float32)
+        sf.write(folder / "audio" / "directinput" / f"directinput_{name}.wav", tone, 44100)
+
+    take(1, "scales", "A", [(0.5, 1.0, 57), (1.5, 1.52, 59), (2.0, 2.5, 60)])  # one glitch
+    take(1, "techniques", "Bendings", [(0.5, 1.0, 57)])
+    take(3, "music", "01", [(0.5, 1.0, 57)])
+    training, held = train.examples_for(root, "guitartechs")
+    assert training["strings"].tolist() == [3, 3]
+    assert training["pitches"].tolist() == [57, 60]
+    assert held["strings"].tolist() == [3]
+    assert training["possible"].shape == (2, 6)

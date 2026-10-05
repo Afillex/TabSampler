@@ -11,7 +11,7 @@ checks the labels against the audio before anything trains on them.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from tabsampler.types import NoteEvent, Position
@@ -23,6 +23,21 @@ STANDARD = (40, 45, 50, 55, 59, 64)
 TRACK_STRINGS = {"E": 0, "A": 1, "D": 2, "G": 3, "B": 4, "e": 5}
 
 MAX_FRET = 24
+
+#: How much later than its sound a note's pickup MIDI arrives, per player: measured with
+#: ``scripts/check_guitartechs.py --hop 64`` (2.9 ms frames) against GuitarSet's player 00 as the
+#: control, the median over each player's takes (2026-10-06). Subtracted from the onset where
+#: note windows are cut, never from the labels themselves.
+LABEL_DELAY = {1: 0.023, 2: 0.016, 3: 0.015}
+
+#: A note the pickup reports as shorter than this is a tracking glitch, not a note: on player 1's
+#: scales, 250 of the 354 such notes were not confirmed by the audio, against 12 of 3,272 longer
+#: ones (``scripts/check_guitartechs.py``, 2026-10-06).
+MIN_DURATION = 0.06
+
+#: Takes whose sounding pitch is not the fretted note's -- bent, or a harmonic -- so a string
+#: classifier would be taught the wrong window for them.
+NOT_FRETTED = frozenset({"Bendings", "Harmonics", "PinchHarmonics"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,3 +125,25 @@ def load_takes(root: Path) -> tuple[list[GuitarTechsTake], list[tuple[str, str]]
             )
         )
     return takes, skipped
+
+
+def clean(
+    notes: tuple[tuple[NoteEvent, Position], ...],
+) -> tuple[tuple[tuple[NoteEvent, Position], ...], int]:
+    """``notes`` without the pickup's glitches, each ending no later than the next note on its
+    string, and how many were dropped. The duration floor reads the pickup's own durations, before
+    any note is cut short, so fast playing is not mistaken for a glitch."""
+    kept = [(n, p) for n, p in notes if n.offset - n.onset >= MIN_DURATION - 1e-9]
+    following: dict[int, float] = {}
+    trimmed: list[tuple[NoteEvent, Position]] = []
+    for note, position in reversed(kept):
+        end = min(note.offset, following.get(position.string, note.offset))
+        trimmed.append((replace(note, offset=end), position))
+        following[position.string] = note.onset
+    trimmed.reverse()
+    return tuple(trimmed), len(notes) - len(kept)
+
+
+def usable(take: GuitarTechsTake) -> bool:
+    """Whether a take's labelled pitches are what its strings sound: not bent, not harmonics."""
+    return take.name not in NOT_FRETTED
