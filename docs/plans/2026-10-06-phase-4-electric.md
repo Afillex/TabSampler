@@ -132,7 +132,7 @@ not help on GuitarSet's acoustic player 00 either. **Prediction:** a loss, −0.
 oracle E2 — its classifier is less accurate there (0.4009) than SynthTab's (0.4736), whose
 calibrated evidence lost 0.0408. ADR 0039's rule decides it.
 
-- [ ] Run; record.
+- [x] Run; record. *(0.8273 → 0.8044, −0.0230 [−0.0468, −0.0035]: a clear loss; held.)*
 
 ## Task 8: One look at both test sets
 
