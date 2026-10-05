@@ -70,8 +70,24 @@ Same architecture and windows as Phase 3. **One variable: the training data** �
 players 1–2 (DI) instead of SynthTab — trained from scratch. A second run, pre-registered on its
 own, starts from SynthTab's weights instead (the variable: initialisation).
 
-- [ ] Pre-register: per-note string accuracy on player 3 and on GuitarSet's player 00, against
+- [x] Pre-register: per-note string accuracy on player 3 and on GuitarSet's player 00, against
       SynthTab's classifier on the same notes.
+
+**Pre-registered (run 1, from scratch):** `scripts/train_strings.py data/guitar-techs --corpus
+guitartechs --run cache/acoustic/gt`, everything else as Phase 3's run (Adam 1e-3, batch 256,
+patience 3, seed 0); best epoch by NLL on player 3. Measured on notes more than one string can
+sound: on player 3, the new classifier and SynthTab's (`cache/acoustic/dev`) through
+`scripts/evaluate_strings.py --examples cache/acoustic/gt/examples.npz`; on GuitarSet's player 00
+(`audio_mic`), the new one through `scripts/evaluate_strings.py`, beside SynthTab's 0.4736.
+
+- **Hypothesis 1:** on player 3, the classifier trained on real electric audio beats SynthTab's.
+  Prediction: new 0.55–0.75, SynthTab's 0.35–0.55. Player 3 also chooses the epoch, so the new
+  figure is slightly optimistic; SynthTab's is not.
+- **Hypothesis 2:** on GuitarSet's acoustic microphone recordings, it does worse than SynthTab's
+  classifier, which saw some acoustic tones: prediction 0.30–0.47, against 0.4736.
+
+Together they put numbers on the two halves of Phase 3's confound: rendered against real
+(hypothesis 1) and electric against acoustic (hypothesis 2).
 - [ ] Train; measure; record.
 
 ## Task 6: Calibrate on player 3

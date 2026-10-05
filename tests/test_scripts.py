@@ -819,3 +819,29 @@ def test_guitartechs_examples_split_by_player_and_leave_out_bends_and_glitches(
     assert training["pitches"].tolist() == [57, 60]
     assert held["strings"].tolist() == [3]
     assert training["possible"].shape == (2, 6)
+
+
+def test_the_string_evaluation_scores_a_runs_held_out_examples(tmp_path: Path) -> None:
+    import numpy as np
+    import torch
+
+    from tabsampler.audio.windows import WINDOW_BINS, WINDOW_FRAMES
+    from tabsampler.model.strings import StringClassifier
+
+    evaluate = load("evaluate_strings")
+    possible = np.zeros((3, 6), dtype=bool)
+    possible[:, [2, 3]] = True
+    path = tmp_path / "examples.npz"
+    np.savez(
+        path,
+        held_windows=np.zeros((3, WINDOW_BINS, WINDOW_FRAMES), dtype=np.float16),
+        held_pitches=np.array([57, 57, 57], dtype=np.int16),
+        held_possible=possible,
+        held_strings=np.array([2, 3, 3], dtype=np.int8),
+    )
+    torch.manual_seed(0)
+    model = StringClassifier()
+    model.eval()
+    right, count, chance = evaluate.held_out_accuracy(model, path)
+    assert count == 3 and chance == pytest.approx(0.5)
+    assert right in (1, 2)  # identical windows: one string for all three
