@@ -60,6 +60,7 @@ of the old record to point at its replacement.
 | [0050](0050-egdb-second-test-set.md) | **EGDB is the second test set**: all 240 clips, direct input, in a committed snapshot under the same guard as GuitarSet; no validation part | §3.3 | accepted |
 | [0051](0051-guitar-techs-split-and-labels.md) | **Guitar-TECHS**: players 1–2 train, player 3 validates; direct input; pickup glitches under 60 ms dropped, overlaps trimmed, bends and harmonics left out; per-player label delay corrected at the window | D13 | accepted |
 | [0052](0052-label-delay-per-take.md) | **Guitar-TECHS's label delay is measured per take**, from its own audio: player 2's chords split into takes 55–76 ms early and takes late; supersedes ADR 0051's per-player delay | D13 | accepted |
+| [0053](0053-egdb-labels-by-channel.md) | **EGDB's string is the MIDI channel** (0 high e … 5 low E), not the track name — most tracks are unnamed; 85 of 35,704 notes unplayable and dropped; supersedes ADR 0050's label bullet | §3.3 | accepted |
 
 Decisions still open, each due at the phase that needs it: D14 (app surface — **now due, M1 is met**), and D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).

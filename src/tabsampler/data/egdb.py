@@ -3,9 +3,9 @@
 Every clip is test data (ADR 0050): :func:`tabsampler.data.splits.egdb_test_ids` lists them, and
 nothing may be tuned, selected or calibrated on them. Reads the dataset as its Google Drive folder
 downloads: ``audio_label/<n>.midi`` and ``audio_DI/<n>.wav`` for clips 1-240 (44.1 kHz, mono). A
-label file has one MIDI track per string, named ``1`` (the high e) to ``6`` (the low E), in
-standard tuning. The amplifier renderings beside them are not read: the target is clean electric
-(ADR 0049).
+label file's notes sit on MIDI channels 0 (the high e) to 5 (the low E), in standard tuning;
+the track names are mostly empty and not used (ADR 0053). The amplifier renderings beside them
+are not read: the target is clean electric (ADR 0049).
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from tabsampler.data.guitartechs import MAX_FRET, STANDARD, read_tracks
+from tabsampler.data.guitartechs import MAX_FRET, STANDARD
 from tabsampler.data.splits import egdb_clip_id
 from tabsampler.types import NoteEvent, Position
 
@@ -29,29 +29,44 @@ class EgdbClip:
     notes: tuple[tuple[NoteEvent, Position], ...]  # by onset, then string
 
 
-def parse_labels(path: Path) -> tuple[tuple[tuple[NoteEvent, Position], ...], list[str]]:
-    """The notes of one label file, placed, and each note dropped with its reason.
+def read_notes(path: Path) -> list[tuple[float, float, int, int]]:
+    """Every note of a MIDI file as (start s, end s, pitch, channel), under its tempo map."""
+    import mido
 
-    Raises:
-        ValueError: if a track with notes names no string 1-6.
-    """
+    notes: list[tuple[float, float, int, int]] = []
+    sounding: dict[tuple[int, int], list[float]] = {}
+    now = 0.0
+    for message in mido.MidiFile(str(path)):  # pyright: ignore[reportUnknownVariableType]
+        now += float(message.time)  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+        kind = str(message.type)  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+        if kind not in ("note_on", "note_off"):
+            continue
+        key = (int(message.channel), int(message.note))  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+        if kind == "note_on" and int(message.velocity) > 0:  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+            sounding.setdefault(key, []).append(now)
+        elif sounding.get(key):
+            notes.append((sounding[key].pop(0), now, key[1], key[0]))
+    return notes
+
+
+def parse_labels(path: Path) -> tuple[tuple[tuple[NoteEvent, Position], ...], list[str]]:
+    """The notes of one label file, placed by their MIDI channel -- 0 the high e, 5 the low E
+    (ADR 0053) -- and each note dropped with its reason."""
     notes: list[tuple[NoteEvent, Position]] = []
     dropped: list[str] = []
-    for name, track in read_tracks(path):
-        if not track:
+    for start, end, pitch, channel in sorted(read_notes(path)):
+        if not 0 <= channel < STRINGS:
+            dropped.append(f"channel {channel}: no string")
             continue
-        if name not in {str(n) for n in range(1, STRINGS + 1)}:
-            raise ValueError(f"track {name!r} names no string")
-        string = STRINGS - int(name)
-        for start, end, pitch in track:
-            fret = pitch - STANDARD[string]
-            if fret < 0:
-                dropped.append(f"{name}: pitch {pitch} below the open string")
-            elif fret > MAX_FRET:
-                dropped.append(f"{name}: fret {fret} above {MAX_FRET}")
-            else:
-                note = NoteEvent(onset=start, offset=end, pitch=pitch, confidence=1.0)
-                notes.append((note, Position(string=string, fret=fret)))
+        string = STRINGS - 1 - channel
+        fret = pitch - STANDARD[string]
+        if fret < 0:
+            dropped.append(f"channel {channel}: pitch {pitch} below the open string")
+        elif fret > MAX_FRET:
+            dropped.append(f"channel {channel}: fret {fret} above {MAX_FRET}")
+        else:
+            note = NoteEvent(onset=start, offset=end, pitch=pitch, confidence=1.0)
+            notes.append((note, Position(string=string, fret=fret)))
     notes.sort(key=lambda placed: (placed[0].onset, placed[1].string))
     return tuple(notes), dropped
 

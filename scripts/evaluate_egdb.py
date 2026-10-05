@@ -71,6 +71,7 @@ def main() -> None:
     parser.add_argument("--config", type=Path, required=True, help="Evaluation config YAML.")
     parser.add_argument("--decoder-config", type=Path, default=Path("configs/decoder_clean.yaml"))
     parser.add_argument("--root", type=Path, default=Path("data/egdb"))
+    parser.add_argument("--note", default="", help="Added to the access log's reason.")
     args = parser.parse_args()
     cfg = load_eval_config(args.config)
     dec = load_phase1_config(args.decoder_config)
@@ -89,6 +90,7 @@ def main() -> None:
         f"evaluate_egdb.py, oracle with acoustic 0 and {args.weight:g} at temperature "
         f"{args.temperature:g}, and end to end, on {len(present)} EGDB clips: classifier "
         f"{args.run}, decoder {args.decoder_config}, config {args.config}; Phase 4's look"
+        + (f"; {args.note}" if args.note else "")
     )
 
     clips, _ = load_clips(args.root)  # complete: checked above by name

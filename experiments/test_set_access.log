@@ -28,3 +28,4 @@
 2026-10-04T18:55:01+00:00 | 65fa8ae | evaluate_model.py, decodings (a) (b) (c) in oracle mode, on 300 GuitarSet test tracks: model cache/model/c4, decoder configs/decoder_clean.yaml; task C6
 2026-10-04T20:54:09+00:00 | 29cf3a7 | evaluate_acoustic.py, oracle, acoustic 0 and 0.25 at temperature 1.8985, on 300 GuitarSet test tracks: classifier cache/acoustic/dev, decoder configs/decoder_clean.yaml; Phase 3's one test look
 2026-10-05T23:47:03+00:00 | 86fa056 | evaluate_acoustic.py, oracle, acoustic 0 and 0.25 at temperature 0.6957, on 300 GuitarSet test tracks: classifier cache/acoustic/gt-ft, decoder configs/decoder_clean.yaml; a pre-registered test look
+2026-10-05T23:54:36+00:00 | 489be2d | evaluate_egdb.py, oracle with acoustic 0 and 0.25 at temperature 0.6957, and end to end, on 240 EGDB clips: classifier cache/acoustic/gt-ft, decoder configs/decoder_clean.yaml, config configs/p4_test_eval.yaml; Phase 4's look

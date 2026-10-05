@@ -1,6 +1,6 @@
 # ADR 0050: EGDB is the second test set — all of it, clean direct input
 
-Status: accepted (2026-10-06)
+Status: accepted (2026-10-06) — its "Labels" bullet superseded by ADR 0053
 
 Carries out Phase 4's Task 4 (`docs/plans/2026-10-06-phase-4-electric.md`) and the rest-of-project
 plan's Chunk E: "add EGDB to `data/splits.py` with the same snapshot-and-guard mechanism GuitarSet
