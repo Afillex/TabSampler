@@ -42,11 +42,13 @@ acoustic guitar.
 Each string's MIDI track → notes with onset (seconds, under the file's tempo map), pitch, string
 and fret = pitch − the string's open pitch in standard tuning.
 
-- [ ] Tests on a synthetic MIDI fixture; commit.
-- [ ] A check script on the real files: pitch ranges per string; overlapping notes on one string;
+- [x] Tests on a synthetic MIDI fixture; commit.
+- [x] A check script on the real files: pitch ranges per string; overlapping notes on one string;
       the onset lag against the DI audio, measured as Phase 3 measured SynthTab's, with GuitarSet's
       player 00 as the control; and the share of labelled pitches the audio confirms. Report;
       correct for a constant lag, drop what fails the check, and say how much.
+      *(Labels 23/16/15 ms late for players 1/2/3; overlaps a 3–4 ms note-off artefact; most
+      unconfirmed notes are glitches under 60 ms. Rule and figures: ADR 0051.)*
 
 ## Task 3: The split (ADR)
 
@@ -54,7 +56,7 @@ Players 1 and 2 train; **player 3 is validation** — player-disjoint, as ADR 00
 players apart, and its musical excerpts are the closest thing here to what a user plays. The DI
 signal is the clean-electric input; the amp microphone is kept for a later robustness check.
 
-- [ ] Write the ADR; index it.
+- [x] Write the ADR; index it. *(ADR 0051.)*
 
 ## Task 4: EGDB as the second test set
 

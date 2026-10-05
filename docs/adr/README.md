@@ -58,6 +58,7 @@ of the old record to point at its replacement.
 | [0048](0048-phase-3-result.md) | **Phase 3's result**: the SynthTab-trained audio evidence costs the decoder on GuitarSet — test oracle E2 0.6819 → 0.6073 (−0.075), player 00 −0.041 calibrated — and helps on SynthTab's held-out tracks, where it was calibrated; the weight stays zero | D13 | accepted |
 | [0049](0049-primary-guitar-sound.md) | **The primary guitar sound is clean electric** (D2): Phase 4 trains on real electric audio, Guitar-TECHS first; GuitarSet (acoustic) stays the test set, reported separately with EGDB | D2 | accepted |
 | [0050](0050-egdb-second-test-set.md) | **EGDB is the second test set**: all 240 clips, direct input, in a committed snapshot under the same guard as GuitarSet; no validation part | §3.3 | accepted |
+| [0051](0051-guitar-techs-split-and-labels.md) | **Guitar-TECHS**: players 1–2 train, player 3 validates; direct input; pickup glitches under 60 ms dropped, overlaps trimmed, bends and harmonics left out; per-player label delay corrected at the window | D13 | accepted |
 
 Decisions still open, each due at the phase that needs it: D14 (app surface — **now due, M1 is met**), and D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).
