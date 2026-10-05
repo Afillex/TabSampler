@@ -117,14 +117,22 @@ decoder's recovery of the labelled string on player 3's 12 takes, the smaller on
 **Predictions:** the temperature between 1.0 and 3.0; the weight 0.25 or below, zero included —
 a classifier at 0.37 should earn little weight.
 
-- [ ] Run; record.
+- [x] Run; record. *(T 0.6957 — prediction failed, below 1; weight 0.25 — held. Recovery on
+      player 3: 0.5795 → 0.6231, on the takes the weight was chosen on.)*
 
 ## Task 7: The ablation on GuitarSet's player 00
 
 The decoder with and without the calibrated evidence, oracle E2, ADR 0039's rule. Set beside
 Phase 3's −0.0408, it measures electric-to-acoustic transfer with rendered-against-real removed.
 
-- [ ] Pre-register; run; record.
+**Pre-registered:** `scripts/evaluate_acoustic.py --split validation --run cache/acoustic/gt-ft
+--weight 0.25 --temperature 0.6957 --out cache/validation/p4-gt-ft`, then
+`scripts/compare_validation.py` on (a) against (c). **Hypothesis 4:** the electric evidence does
+not help on GuitarSet's acoustic player 00 either. **Prediction:** a loss, −0.08 to −0.02 in
+oracle E2 — its classifier is less accurate there (0.4009) than SynthTab's (0.4736), whose
+calibrated evidence lost 0.0408. ADR 0039's rule decides it.
+
+- [ ] Run; record.
 
 ## Task 8: One look at both test sets
 
