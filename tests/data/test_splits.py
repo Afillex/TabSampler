@@ -13,11 +13,14 @@ from pathlib import Path
 import pytest
 
 from tabsampler.data.splits import (
+    EXPECTED_EGDB_CLIPS,
     EXPECTED_GUITARSET_TRACKS,
     VALIDATION_PLAYER,
     Split,
     assert_no_test_tracks,
     assert_tuning_allowed,
+    egdb_clip_id,
+    egdb_test_ids,
     guitarset_test_ids,
     guitarset_track_ids,
     guitarset_validation_ids,
@@ -156,6 +159,32 @@ def test_a_set_holding_a_test_track_is_refused() -> None:
 def test_validation_tracks_and_dadagp_songs_pass_the_test_track_check() -> None:
     assert_no_test_tracks(guitarset_validation_ids())
     assert_no_test_tracks(["Some Artist - Some Song"])
+
+
+def test_egdb_is_240_clips_all_of_them_test() -> None:
+    # ADR 0050: EGDB is the second test set, with no validation part.
+    ids = egdb_test_ids()
+    assert EXPECTED_EGDB_CLIPS == 240
+    assert ids[0] == egdb_clip_id(1) == "egdb_001"
+    assert ids[-1] == egdb_clip_id(240) == "egdb_240"
+    assert len(ids) == 240
+
+
+def test_a_truncated_egdb_snapshot_is_rejected(tmp_path: Path) -> None:
+    p = snapshot(tmp_path, [egdb_clip_id(n) for n in range(1, 240)])
+    with pytest.raises(ValueError, match="expected 240"):
+        egdb_test_ids(p)
+
+
+def test_a_set_holding_an_egdb_clip_is_refused() -> None:
+    # Nothing may be chosen with EGDB's clips either (ADR 0050).
+    with pytest.raises(TestSetMisuseError, match="egdb_017"):
+        assert_no_test_tracks([*guitarset_validation_ids(), egdb_clip_id(17)])
+
+
+def test_tuning_refusal_names_both_test_sets() -> None:
+    with pytest.raises(TestSetMisuseError, match="EGDB"):
+        assert_tuning_allowed(Split.TEST)
 
 
 def test_split_has_exactly_the_three_expected_members() -> None:

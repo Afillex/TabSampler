@@ -1,4 +1,4 @@
-"""How data is split into train, validation and test (spec 3.3, ADR 0003, ADR 0037).
+"""How data is split into train, validation and test (spec 3.3, ADRs 0003, 0037, 0050).
 
 GUARDED AREA -- this is the data split.
 
@@ -6,16 +6,18 @@ GUARDED AREA -- this is the data split.
 threshold sweep, no model selection and no architecture choice may consult a number
 measured on them. **Player 00 is validation data** (ADR 0037, amending ADR 0003): it is
 there to choose with, so that choices are made on playing like the test set's.
+**EGDB is the second test set, all 240 of its clips** (ADR 0050): electric guitar, with no
+validation part.
 
 This module exists to make that mechanical rather than remembered:
 
-- :func:`guitarset_track_ids` reads a committed snapshot, never a glob over whatever
-  happens to be on disk, so the corpus cannot drift with a partial download, and
+- :func:`guitarset_track_ids` and :func:`egdb_test_ids` read committed snapshots, never a
+  glob over whatever happens to be on disk, so the corpus cannot drift with a partial download, and
   :func:`split_by_player` derives the two lists from it.
 - :func:`assert_tuning_allowed` raises for :attr:`Split.TEST`. Every tuning entry point
   calls it first.
 - :func:`assert_no_test_tracks` raises for a set of tracks holding a test track, so
-  per-track counts that a decoder is chosen with cannot come from the test players.
+  per-track counts that a decoder is chosen with cannot come from either test set.
 - :func:`record_test_set_access` appends to an audit log, so looking at test numbers is
   a deliberate act with a written reason.
 """
@@ -47,6 +49,13 @@ VALIDATION_PLAYER = "00"
 #: scripts/download_guitarset.py and reviewed in its diff. It defines the corpus for the
 #: life of the project; ADR 0037 splits it by player.
 DEFAULT_SNAPSHOT = Path(__file__).parent / "guitarset_test_ids.txt"
+
+#: EGDB holds 240 clips, numbered 1-240, each with a direct-input recording and per-string
+#: MIDI labels (ADR 0050). Another count means a partial download.
+EXPECTED_EGDB_CLIPS = 240
+
+#: The committed snapshot of every EGDB clip id, all of them test (ADR 0050).
+EGDB_SNAPSHOT = Path(__file__).parent / "egdb_test_ids.txt"
 
 DEFAULT_ACCESS_LOG = Path("experiments/test_set_access.log")
 
@@ -82,11 +91,30 @@ def guitarset_track_ids(
             unexpected number of entries.
     """
     path = DEFAULT_SNAPSHOT if snapshot is None else snapshot
+    return _read_snapshot(path, expected_count, "scripts/download_guitarset.py")
+
+
+def egdb_clip_id(number: int) -> str:
+    """EGDB's clip ``number`` (1-240) as a track id: ``egdb_017``, zero-padded so ids sort."""
+    return f"egdb_{number:03d}"
+
+
+def egdb_test_ids(snapshot: Path | None = None) -> tuple[str, ...]:
+    """Every EGDB clip id: the second test set, test-only, no validation part (ADR 0050).
+
+    Raises:
+        FileNotFoundError, ValueError: as :func:`guitarset_track_ids`, against 240 clips.
+    """
+    path = EGDB_SNAPSHOT if snapshot is None else snapshot
+    return _read_snapshot(path, EXPECTED_EGDB_CLIPS, "scripts/download_egdb.py")
+
+
+def _read_snapshot(path: Path, expected_count: int | None, generator: str) -> tuple[str, ...]:
+    """The ids in a committed snapshot, checked: present, non-empty, unique, sorted, counted."""
     if not path.is_file():
         raise FileNotFoundError(
-            f"no GuitarSet split snapshot at {path}. Generate it with "
-            f"`uv run python scripts/download_guitarset.py`, then review the diff -- "
-            f"this file defines the test set for the life of the project."
+            f"no split snapshot at {path}. Generate it with `uv run python {generator}`, "
+            f"then review the diff -- this file defines a test set for the life of the project."
         )
 
     ids = [
@@ -160,14 +188,16 @@ def assert_tuning_allowed(split: Split) -> None:
     """
     if split is Split.TEST:
         raise TestSetMisuseError(
-            "refusing to tune against the test split: GuitarSet's players 01-05 are "
-            "test-only (ADR 0003, ADR 0037). Tune on a validation split: GuitarSet's "
-            "player 00, or DadaGP's validation side."
+            "refusing to tune against the test split: GuitarSet's players 01-05 and EGDB "
+            "are test-only (ADR 0003, ADR 0037, ADR 0050). Tune on a validation split: "
+            "GuitarSet's player 00, or DadaGP's validation side."
         )
 
 
-def assert_no_test_tracks(track_ids: Iterable[str], snapshot: Path | None = None) -> None:
-    """Refuse a set of tracks that holds any of GuitarSet's test tracks.
+def assert_no_test_tracks(
+    track_ids: Iterable[str], snapshot: Path | None = None, egdb_snapshot: Path | None = None
+) -> None:
+    """Refuse a set of tracks that holds any of GuitarSet's test tracks or EGDB's clips.
 
     For whatever chooses with per-track counts, such as ``scripts/compare_validation.py``:
     a test-player track among them would make the choice on the test set. Ids that are not
@@ -176,12 +206,13 @@ def assert_no_test_tracks(track_ids: Iterable[str], snapshot: Path | None = None
     Raises:
         TestSetMisuseError: naming the test tracks found.
     """
-    found = sorted(set(track_ids) & set(guitarset_test_ids(snapshot)))
+    test = set(guitarset_test_ids(snapshot)) | set(egdb_test_ids(egdb_snapshot))
+    found = sorted(set(track_ids) & test)
     if found:
         shown = ", ".join(found[:3]) + (" ..." if len(found) > 3 else "")
         raise TestSetMisuseError(
-            f"{len(found)} GuitarSet test tracks (players 01-05), which nothing may be chosen "
-            f"with (ADR 0003, ADR 0037): {shown}"
+            f"{len(found)} test tracks (GuitarSet's players 01-05 or EGDB), which nothing may "
+            f"be chosen with (ADR 0003, ADR 0037, ADR 0050): {shown}"
         )
 
 
