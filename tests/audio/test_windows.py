@@ -13,6 +13,7 @@ from tabsampler.audio.windows import (
     WINDOW_BINS,
     WINDOW_FRAMES,
     note_window,
+    onset_lag,
     possible_strings,
     track_cqt,
 )
@@ -64,3 +65,15 @@ def test_a_pitch_can_be_sounded_only_on_strings_that_reach_it() -> None:
 
 def test_frames_are_the_documented_length() -> None:
     assert HOP / RATE == 256 / 22050
+
+
+def test_the_onset_lag_finds_labels_that_run_early_or_late() -> None:
+    onsets = [0.5 + 0.7 * i for i in range(8)]
+    signal = sum(plucked(45 + 3 * i, t, seconds=6.5) for i, t in enumerate(onsets))
+    signal = np.asarray(signal, dtype=np.float32)
+    truth = onset_lag(signal, onsets)
+    early = onset_lag(signal, [t - 0.06 for t in onsets])
+    late = onset_lag(signal, [t + 0.04 for t in onsets])
+    frame = 64 / RATE
+    assert abs((early - truth) - 0.06) <= frame
+    assert abs((late - truth) + 0.04) <= frame

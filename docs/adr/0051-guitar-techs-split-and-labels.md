@@ -1,6 +1,6 @@
 # ADR 0051: Guitar-TECHS — split by player, labels cleaned before training
 
-Status: accepted (2026-10-06)
+Status: accepted (2026-10-06) — its label-delay bullet superseded by ADR 0052
 
 Carries out Phase 4's Tasks 2 and 3 (`docs/plans/2026-10-06-phase-4-electric.md`): how
 Guitar-TECHS's takes become training and validation examples for the string classifier (ADR 0046)

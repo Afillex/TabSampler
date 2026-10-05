@@ -24,12 +24,6 @@ TRACK_STRINGS = {"E": 0, "A": 1, "D": 2, "G": 3, "B": 4, "e": 5}
 
 MAX_FRET = 24
 
-#: How much later than its sound a note's pickup MIDI arrives, per player: measured with
-#: ``scripts/check_guitartechs.py --hop 64`` (2.9 ms frames) against GuitarSet's player 00 as the
-#: control, the median over each player's takes (2026-10-06). Subtracted from the onset where
-#: note windows are cut, never from the labels themselves.
-LABEL_DELAY = {1: 0.023, 2: 0.016, 3: 0.015}
-
 #: A note the pickup reports as shorter than this is a tracking glitch, not a note: on player 1's
 #: scales, 250 of the 354 such notes were not confirmed by the audio, against 12 of 3,272 longer
 #: ones (``scripts/check_guitartechs.py``, 2026-10-06).

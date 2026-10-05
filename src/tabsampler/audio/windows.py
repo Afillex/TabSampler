@@ -53,6 +53,34 @@ def track_cqt(signal: NDArray[np.float32]) -> Matrix:
     return np.log1p(100.0 * magnitude).astype(np.float32)
 
 
+#: Samples per frame when measuring an onset lag: 2.9 ms at ``RATE``.
+LAG_HOP = 64
+
+#: How late the onset-strength measure reads on onsets known to be right: GuitarSet's player 00,
+#: whose onsets are trusted, at ``LAG_HOP`` (``scripts/check_guitartechs.py``, 2026-10-06).
+MEASURE_LAG = 0.0087
+
+
+def onset_lag(signal: NDArray[np.float32], onsets: Sequence[float], reach: float = 0.3) -> float:
+    """Seconds, within +-``reach``, by which the audio's onset strength best lines up after
+    ``onsets``: positive when the sound comes later than the labels. On right labels it reads
+    :data:`MEASURE_LAG`, so a take's labels are late by ``MEASURE_LAG - onset_lag(...)``."""
+    envelope: NDArray[np.float32] = librosa.onset.onset_strength(  # pyright: ignore[reportUnknownMemberType]
+        y=signal, sr=RATE, hop_length=LAG_HOP
+    )
+    frame = LAG_HOP / RATE
+    frames = np.round(np.asarray(onsets) / frame).astype(int)
+    steps = round(reach / frame)
+    best, score = 0, -np.inf
+    for lag in range(-steps, steps + 1):
+        shifted = frames + lag
+        shifted = shifted[(shifted >= 0) & (shifted < len(envelope))]
+        value = float(envelope[shifted].mean()) if len(shifted) else -np.inf
+        if value > score:
+            best, score = lag, value
+    return best * frame
+
+
 def note_window(cqt: Matrix, onset: float, pitch: int) -> Matrix:
     """The window of one note, ``(WINDOW_BINS, WINDOW_FRAMES)``: zero-padded where it runs past
     the transform's edges, then normalised to zero mean and unit variance."""

@@ -10,7 +10,6 @@ import pytest
 import soundfile as sf
 
 from tabsampler.data.guitartechs import (
-    LABEL_DELAY,
     STANDARD,
     GuitarTechsTake,
     clean,
@@ -121,8 +120,3 @@ def test_bends_and_harmonics_are_not_training_material() -> None:
     assert not usable(take("techniques", "Bendings"))
     assert not usable(take("techniques", "Harmonics"))
     assert not usable(take("techniques", "PinchHarmonics"))
-
-
-def test_every_player_has_a_measured_label_delay() -> None:
-    assert set(LABEL_DELAY) == {1, 2, 3}
-    assert all(0.0 < delay < 0.05 for delay in LABEL_DELAY.values())

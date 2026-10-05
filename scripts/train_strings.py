@@ -9,11 +9,11 @@ Every note that more than one string can sound gives one example: its pitch-cent
 with SynthTab's rendering latency corrected (``RENDER_LATENCY``), its pitch, the strings that can
 sound it in its track's tuning (24 frets), and the string it was written on. Tracks are split by
 a hash of their name: about 15% to stop on, the rest to train. ``--corpus guitartechs`` reads
-Guitar-TECHS's direct-input takes instead, as ADR 0051 has them: players 1 and 2 train and player
-3 is held out; bent and harmonic takes are left out, the pickup's glitches dropped, and each
-player's label delay subtracted where windows are cut. ``--init`` starts from another run's
-weights. Adam 1e-3, batch 256, stopping
-when the held-out NLL has not fallen for three epochs, at most 30; seed 0. A run checkpoints after
+Guitar-TECHS's direct-input takes instead, as ADR 0051 has them: players 1 and 2 train and
+player 3 is held out; bent and harmonic takes are left out, the pickup's glitches dropped, and
+each take's label delay, measured from its own audio (ADR 0052), corrected where windows are cut.
+``--init`` starts from another run's weights. Adam 1e-3, batch 256, stopping when the held-out
+NLL has not fallen for three epochs, at most 30; seed 0. A run checkpoints after
 every epoch and resumes when started again; weights trained on SynthTab, or started from them,
 stay unpublished (ADR 0046).
 """
@@ -31,8 +31,15 @@ import soundfile as sf
 import torch
 from numpy.typing import NDArray
 
-from tabsampler.audio.windows import RATE, note_window, possible_strings, track_cqt
-from tabsampler.data.guitartechs import LABEL_DELAY, STANDARD, clean, load_takes, usable
+from tabsampler.audio.windows import (
+    MEASURE_LAG,
+    RATE,
+    note_window,
+    onset_lag,
+    possible_strings,
+    track_cqt,
+)
+from tabsampler.data.guitartechs import STANDARD, clean, load_takes, usable
 from tabsampler.data.synthtab import RENDER_LATENCY, is_held_out, load_tracks
 from tabsampler.model.strings import StringClassifier
 
@@ -84,15 +91,20 @@ def guitartechs_examples(root: Path) -> tuple[Examples, Examples]:
     glitches = 0
     for take in takes:
         signal, _ = librosa.load(take.direct_input, sr=RATE, mono=True)
-        cqt = track_cqt(np.asarray(signal, dtype=np.float32))
+        signal = np.asarray(signal, dtype=np.float32)
+        cqt = track_cqt(signal)
         notes, dropped = clean(take.notes)
         glitches += dropped
+        if not notes:
+            continue
+        delay = MEASURE_LAG - onset_lag(signal, sorted({n.onset for n, _ in notes}))
+        print(f"  P{take.player} {take.name}: labels {1000 * delay:+.1f} ms late", flush=True)
         side = sides[take.player == HELD_OUT_PLAYER]
         for note, position in notes:
             possible = possible_strings(note.pitch, STANDARD, MAX_FRET)
             if sum(possible) < 2:
                 continue
-            onset = note.onset - LABEL_DELAY[take.player]
+            onset = note.onset - delay
             side["windows"].append(note_window(cqt, onset, note.pitch).astype(np.float16))
             side["pitches"].append(np.int16(note.pitch))
             side["possible"].append(np.array(possible))

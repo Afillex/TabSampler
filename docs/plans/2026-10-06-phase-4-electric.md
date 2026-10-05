@@ -86,6 +86,9 @@ sound: on player 3, the new classifier and SynthTab's (`cache/acoustic/dev`) thr
 - **Hypothesis 2:** on GuitarSet's acoustic microphone recordings, it does worse than SynthTab's
   classifier, which saw some acoustic tones: prediction 0.30–0.47, against 0.4736.
 
+*Amended before any run (ADR 0052): each take's label delay is measured from its own audio,
+not set per player; nothing else changes.*
+
 Together they put numbers on the two halves of Phase 3's confound: rendered against real
 (hypothesis 1) and electric against acoustic (hypothesis 2).
 - [ ] Train; measure; record.
