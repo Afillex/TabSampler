@@ -60,9 +60,11 @@ signal is the clean-electric input; the amp microphone is kept for a later robus
 
 ## Task 4: EGDB as the second test set
 
-- [ ] Obtain EGDB; a loader; add it to `data/splits.py` with the snapshot-and-guard mechanism
+- [x] Obtain EGDB; a loader; add it to `data/splits.py` with the snapshot-and-guard mechanism
       GuitarSet has — every EGDB track is test, refused by `assert_tuning_allowed`, every look
       logged. The guard is not weakened to fit a second test set.
+      *(ADR 0050; loader, guard and snapshot done. The download stalls on Google Drive's limit:
+      82 of 240 clips so far, retried every 15 minutes.)*
 
 ## Task 5: The string classifier on real electric audio
 
@@ -136,6 +138,14 @@ calibrated evidence lost 0.0408. ADR 0039's rule decides it.
 
 ## Task 8: One look at both test sets
 
-- [ ] Pre-register: GuitarSet players 01–05 and EGDB, oracle E2 with and without the evidence;
-      end to end beside it. Run once; write Phase 4's result (ADR) with the electric-to-acoustic
+**Pre-registered** in `configs/p4_test_eval.yaml` (hypothesis and predictions there), two logged
+looks: `scripts/evaluate_acoustic.py --split test --run cache/acoustic/gt-ft --weight 0.25
+--temperature 0.6957` on GuitarSet's players 01–05, and `scripts/evaluate_egdb.py --run
+cache/acoustic/gt-ft --weight 0.25 --temperature 0.6957 --config configs/p4_test_eval.yaml` on all
+of EGDB once it has downloaded. GuitarSet's end-to-end figure stands from ADR 0045: the default
+decoder has not changed.
+
+- [x] Pre-register: GuitarSet players 01–05 and EGDB, oracle E2 with and without the evidence;
+      end to end beside it.
+- [ ] Run once; write Phase 4's result (ADR) with the electric-to-acoustic
       gap; README, HANDOFF, devlog. Phase 4 then goes to Ege for sign-off.

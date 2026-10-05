@@ -874,3 +874,17 @@ def test_the_calibration_on_guitartechs_reads_only_player_3_cleaned(tmp_path: Pa
     assert len(pieces) == 1
     assert [note.pitch for note, _ in pieces[0].notes] == [57, 60]
     assert pieces[0].open_pitches == (40, 45, 50, 55, 59, 64)
+
+
+def test_the_egdb_look_refuses_a_partial_download_before_logging_anything(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    evaluate = load("evaluate_egdb")
+    logged: list[str] = []
+    monkeypatch.setattr(evaluate, "load_clips", lambda *_: ([], [("egdb_001", "no audio")]))
+    monkeypatch.setattr(evaluate, "record_test_set_access", logged.append)
+    argv = ["evaluate_egdb.py", "--run", "x", "--weight", "0.25", "--temperature", "1.0"]
+    monkeypatch.setattr(sys, "argv", [*argv, "--config", "configs/m2_c6_eval.yaml"])
+    with pytest.raises(SystemExit, match="incomplete"):
+        evaluate.main()
+    assert logged == []

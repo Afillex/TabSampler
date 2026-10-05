@@ -7,7 +7,7 @@ Oracle mode on GuitarSet: every track decoded from its reference notes twice by 
 default decoder -- (a) with the acoustic weight at zero, which is Phase 2's decoder exactly, and
 (c) with ``--weight`` and, for every note, the string classifier's log-probabilities heard
 through ``audio_mic``. Per-track counts for ``scripts/compare_validation.py``. Reads player 00
-only on ``--split validation`` (ADR 0037); ``--split test`` is Phase 3's one look at players
+only on ``--split validation`` (ADR 0037); ``--split test`` is a pre-registered look at players
 01-05, logged before anything is read, with no per-track counts written.
 """
 
@@ -102,7 +102,7 @@ def main() -> None:
         record_test_set_access(
             f"evaluate_acoustic.py, oracle, acoustic 0 and {args.weight:g} at temperature "
             f"{args.temperature:g}, on {len(track_ids)} GuitarSet test tracks: classifier "
-            f"{args.run}, decoder {args.decoder_config}; Phase 3's one test look"
+            f"{args.run}, decoder {args.decoder_config}; a pre-registered test look"
         )
     dataset: Any = load_dataset(Path("data/guitarset"))
     variants = {

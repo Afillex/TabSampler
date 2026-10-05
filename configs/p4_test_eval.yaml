@@ -1,0 +1,29 @@
+# Phase 4's look at the test sets (Task 8, docs/plans/2026-10-06-phase-4-electric.md): EGDB through
+# scripts/evaluate_egdb.py, which reads data/egdb itself -- this file gives it the hypothesis, the
+# transcriber and the onset tolerance; no dataset section, the defaults being GuitarSet's.
+# Written and committed BEFORE the run; logged looks (ADR 0003, ADR 0037, ADR 0050).
+
+hypothesis: >-
+  Phase 4's evaluation on both test sets, clean electric guitar first (ADR 0049). The evidence is
+  the classifier fine-tuned on Guitar-TECHS from SynthTab (cache/acoustic/gt-ft), calibrated on
+  Guitar-TECHS's player 3 (temperature 0.6957, weight 0.25). (1) GuitarSet's test players 01-05,
+  oracle: the default decoder 0.6819 as in ADR 0045, and with the evidence a loss of 0.01 to 0.06
+  -- as on player 00 (-0.0230), an electric classifier on acoustic guitar. (2) EGDB's 240 clips,
+  direct input, oracle: the default decoder between 0.55 and 0.80, its first electric figure;
+  with the evidence, which was trained and calibrated on electric direct input, a change of -0.02
+  to +0.04 -- H5: on electric guitar the evidence helps. (3) EGDB end to end: transcriber E1
+  (raw) between 0.60 and 0.85 and E2 between 0.35 and 0.60. The electric-to-acoustic gap is
+  EGDB's oracle figure against GuitarSet's. Metrics: E1, E2, E3 chord shapes. Splits: GuitarSet
+  test and EGDB, both test-only; no interval on either, nothing chosen.
+
+transcriber:
+  exe: basic-pitch
+  cache_dir: cache/note_events
+  onset_threshold: 0.5
+  frame_threshold: 0.3
+  minimum_note_length_ms: 127.70
+  model_serialization: coreml
+  version_tag: basic-pitch-0.4.0
+
+onset_tolerance: 0.05
+seed: 0
