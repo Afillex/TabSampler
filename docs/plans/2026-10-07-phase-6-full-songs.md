@@ -58,8 +58,16 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       declares its platforms (Apple-silicon Macs, Linux). First real run, an isolated EGSet12 piece:
       8 s in 4.1 s, but the guitar stem kept only 0.381 of the input's RMS — on clean electric
       guitar htdemucs_6s puts much of the guitar elsewhere. Measured in this task, not assumed.*
-- [ ] Pre-registered on validation: end-to-end E2, the mix straight into Basic Pitch against the
-      guitar stem. Isolated E2 beside it as the ceiling.
+- [ ] **Pre-registered on validation** (this commit): `scripts/evaluate_mixes.py --add-mix 0` on the
+      414 validation mixes. *Single variable:* Basic Pitch's input — the mix, or its htdemucs_6s
+      guitar stem. Beside them: the isolated take (ceiling) and the isolated take through the
+      separator (separation's own cost). Default decoder, `CHOSEN_PARAMS`. *Metric:* end-to-end E2
+      pooled over takes, per level (0 and −6 dB) and per set (EGSet12, IDMT, GuitarSet player 00),
+      stem against mix with a bootstrap interval over takes. *Predictions:* (1) the mix at 0 dB falls
+      to at most 0.6 of the isolated E2, lower at −6 dB; (2) the stem beats the mix at both levels,
+      pooled, with intervals above zero; (3) the stem stays below the isolated take; (4) separating
+      the isolated take costs 0.02 to 0.10 (its first stem kept 0.38 of the RMS). *Rule:* Task 3
+      starts from the stem if it beats the mix pooled at both levels; otherwise reported to Ege.
 
 ## Task 3: Stem plus mix
 
