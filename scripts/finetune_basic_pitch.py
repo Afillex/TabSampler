@@ -12,12 +12,12 @@ Runs in the training environment (``scripts/setup_transcriber_training.sh``), no
 ``grids`` writes Basic Pitch's own time and frequency grids for ``prepare_transcriber_data.py``.
 ``train`` starts from the released weights and trains on ``<data>/train`` -- batches of 16 random
 two-second windows, cut as Basic Pitch cuts them -- with its loss (label smoothing 0.2, the onset
-loss class-weighted at 0.95) and Adam at 1e-4; after every epoch of ``--steps`` batches it scores
-``<data>/validation`` in fixed consecutive windows, keeps the best weights and stops after three
-epochs without improvement. Epoch 0 is the released model's score. ``export`` converts the best
-weights -- or, with ``--released``, the released ones, the round-trip check -- to CoreML with the
-released model's input and output names, checks it against TensorFlow on a probe, and writes
-``<run>/model.mlpackage`` for the CLI's ``--model-path``.
+loss class-weighted at 0.95, or unweighted with ``--unweighted-onsets``) and Adam at 1e-4; after
+every epoch of ``--steps`` batches it scores ``<data>/validation`` in fixed consecutive windows,
+keeps the best weights and stops after three epochs without improvement. Epoch 0 is the released
+model's score. ``export`` converts the best weights -- or, with ``--released``, the released ones,
+the round-trip check -- to CoreML with the released model's input and output names, checks it
+against TensorFlow on a probe, and writes ``<run>/model.mlpackage`` for the CLI's ``--model-path``.
 """
 
 from __future__ import annotations
@@ -121,7 +121,9 @@ def fixed_windows(takes: list[dict[str, np.ndarray]]):  # type: ignore[no-untype
             yield window(take, float(k * AUDIO_WINDOW_LENGTH))
 
 
-def train(data: Path, run: Path, steps: int, max_epochs: int, seed: int) -> None:
+def train(
+    data: Path, run: Path, steps: int, max_epochs: int, seed: int, weighted_onsets: bool = True
+) -> None:
     run.mkdir(parents=True, exist_ok=True)
     tf.keras.utils.set_random_seed(seed)
     rng = np.random.default_rng(seed)
@@ -136,7 +138,9 @@ def train(data: Path, run: Path, steps: int, max_epochs: int, seed: int) -> None
     model = released_model()
     model.compile(
         loss=models.loss(
-            label_smoothing=LABEL_SMOOTHING, weighted=True, positive_weight=ONSET_POSITIVE_WEIGHT
+            label_smoothing=LABEL_SMOOTHING,
+            weighted=weighted_onsets,
+            positive_weight=ONSET_POSITIVE_WEIGHT,
         ),
         optimizer=tf.keras.optimizers.Adam(LEARNING_RATE),
     )
@@ -214,6 +218,11 @@ def main() -> None:
     t.add_argument("--steps", type=int, default=100, help="Batches per epoch.")
     t.add_argument("--max-epochs", type=int, default=50)
     t.add_argument("--seed", type=int, default=0)
+    t.add_argument(
+        "--unweighted-onsets",
+        action="store_true",
+        help="The onset loss unweighted, as Basic Pitch's train.py defaults (Task 4c).",
+    )
     e = commands.add_parser("export")
     e.add_argument("--run", type=Path, required=True)
     e.add_argument("--released", action="store_true", help="Export the released weights.")
@@ -221,7 +230,9 @@ def main() -> None:
     if args.command == "grids":
         grids(args.out)
     elif args.command == "train":
-        train(args.data, args.run, args.steps, args.max_epochs, args.seed)
+        train(
+            args.data, args.run, args.steps, args.max_epochs, args.seed, not args.unweighted_onsets
+        )
     else:
         export(args.run, args.released)
 

@@ -136,6 +136,27 @@ lies within 0.03 of 0.4185; the interval does not clear zero.
 - [x] Run; record. *(Best 0.97 / 0.6 / 58 ms: E2 0.3079, −0.1106 [−0.1805, −0.0403] against the
       released model — a clear loss, not adopted. H3 failed.)*
 
+### Task 4c: one retry, the onset loss unweighted
+
+Ege's call after Task 4b: one retry, one change. ADR 0056 took the onset loss's 0.95 weight on
+positives from Basic Pitch's paper, but its `train.py` defaults to an unweighted onset loss, and a
+weighting 19 times in favour of onsets inflates onset posteriors — the likeliest cause of the
+fine-tuned model's flood of notes.
+
+**Pre-registered:** `finetune_basic_pitch.py train --data cache/transcriber/data --run
+cache/transcriber/ft-u --unweighted-onsets`, all else as run 1; `export --run cache/transcriber/ft-u`;
+`tune_transcriber.py --out cache/validation/p5-ft-u --model-path
+cache/transcriber/ft-u/model.mlpackage --onsets 0.5 0.6 0.7 0.8 0.9 --frames 0.3 0.4 0.5 0.6
+--lengths-ms 58`. **The rule:** its best setting against the released model's adopted one (0.4185),
+adopted only if the take-level interval clears zero with no clear chord-shape drop. If it is not
+adopted, fine-tuning closes as a negative result and Task 6 takes the released model at Task 3's
+thresholds. **Hypothesis 4:** with the onset loss Basic Pitch was trained with, fine-tuning on
+Guitar-TECHS helps. **Predictions:** its best onset threshold lies between 0.5 and 0.8 — the
+posteriors back near the released model's scale; its E2 within 0.03 of 0.4185; the interval does
+not clear zero.
+
+- [ ] Train; export; run; record.
+
 ## Task 5: Heavier models
 
 Only candidates with released weights, a licence that allows use, and stated training data that
