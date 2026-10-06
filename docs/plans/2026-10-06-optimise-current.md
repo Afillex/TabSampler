@@ -100,9 +100,22 @@ its own predictions, logged to `experiments/test_set_access.log`.
       1,951 transcribed, 1,629 played; **566 extra** (109 an octave from a played note, 238 near
       another, 16 a semitone off, 203 with nothing near), 244 missed. Oracle E2 0.5795,
       end-to-end 0.4185.
-- [ ] 3a: measure, record, apply the rule.
-- [ ] 3b: measure, record, apply the rule.
-- [ ] If adopted: wire into the pipeline; pre-register and run the test look; ADR.
+- [x] 3a: measure, record, apply the rule. *Not adopted:* best floor 0.40 gives +0.0025
+      [−0.0044, +0.0116]. The grid was inert — Basic Pitch's amplitudes on player 3 never fall
+      below 0.244 at its chosen thresholds, so floors up to 0.30 drop at most 2 of 1,951 notes.
+- [x] 3b: measure, record, apply the rule. **Adopted by the rule:** E2 0.4185 → 0.4434
+      (+0.0249, interval [−0.0253, +0.0993]); E1 0.7737 → 0.7675; 101 notes dropped, **51 extra
+      and 50 played** — the gain comes from the decoder's context, not from cleaner notes. The
+      prediction (< +0.01) failed.
+- [x] **The test look, pre-registered here** (`configs/opt_test_eval.yaml`): EGDB via
+      `scripts/evaluate_egdb.py --config configs/opt_test_eval.yaml --drop-octave-ghosts` (both
+      arms in one run; the plain arm must reproduce 0.4547); GuitarSet's test players via
+      `tabsampler eval-m1 --split test --config configs/opt_test_eval.yaml --drop-octave-ghosts`,
+      against Phase 5's 0.4553. *Predictions:* EGDB E2 change −0.01 to +0.03, E1 falls 0 to 0.01;
+      GuitarSet −0.02 to +0.01. *Adoption rule:* the app's pipeline drops octave ghosts if EGDB's
+      E2 change is above 0 and GuitarSet's above −0.01; otherwise not, and the result is recorded
+      either way.
+- [ ] Run the look; record; apply the rule; ADR.
 
 ## Not in this plan (one line each)
 
