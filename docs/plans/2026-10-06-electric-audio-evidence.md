@@ -44,7 +44,11 @@ egfxset.github.io and Zenodo 7044411; Zenodo 11406378; idmt.fraunhofer.de/en/pub
 Zenodo 7544110 and github.com/bakerbass/HarmonicsClassifier (`idmt_parser_prompt.md`).
 Ruled out: hegelespaul/Electric-Guitar-Dataset (no licence, no download); EGDB and GuitarSet (our
 test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
-- [ ] Ege picks; an ADR for each dataset adopted, with its split (validation must contain music).
+- [x] **Ege picked open data only (2026-10-06):** train on Guitar-TECHS players 1–2 + EGFxSet
+      (CC BY 4.0, so the weights may be published with attribution); validate on EGSet12 +
+      IDMT-SMT-Guitar. GOAT not requested.
+- [ ] Download; check each dataset's labels against its audio (as `check_guitartechs.py` did);
+      confirm IDMT's string and fret fields; an ADR for the datasets, their roles and splits.
 
 ## Task 2: Retrain and calibrate the classifier on publishable data only
 
