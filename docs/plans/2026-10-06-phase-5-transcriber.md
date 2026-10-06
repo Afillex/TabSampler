@@ -96,7 +96,24 @@ beyond clears the interval: onset 0.7 / frame 0.4 / min 58 ms stays.
 Its training code is in the package; players 1–2 train, player 3 validates (ADR 0051). Designed
 after Tasks 2 and 3.
 
-- [ ] Design (ADR); pre-register; train; measure on player 3; record.
+- [x] Design (ADR). *(ADR 0056, Ege's route: a separate TensorFlow environment, the result run by
+      the unchanged CLI through `--model-path`. Checked before training: the released weights,
+      exported this way, give identical notes on all 12 of player 3's takes.)*
+
+**Pre-registered:** `finetune_basic_pitch.py train --data cache/transcriber/data --run
+cache/transcriber/ft` (86 training takes, 4.48 hours; 12 validation takes) as ADR 0056 fixes it,
+then `export --run cache/transcriber/ft`, then `tune_transcriber.py --out cache/validation/p5-ft
+--model-path cache/transcriber/ft/model.mlpackage --onsets 0.7 --frames 0.4 --lengths-ms 58`,
+compared by `compare_validation.py` against the released model at the same thresholds
+(`cache/validation/p5-grid/onset0.7_frame0.4_min58.json`). **One variable: the weights.** **The
+rule:** the fine-tuned model is adopted if its take-level interval clears zero with no clear
+chord-shape drop. Player 3 both stops the training and judges it, so the figure is slightly
+flattered. **Hypothesis 2:** fine-tuning on real electric direct input raises end-to-end E2 on
+player 3. **Predictions:** player 3's loss falls at least 5% below epoch 0's; E2 changes by 0.00 to
++0.04 — drills (scales, chords, single notes) teach less about music than their hours suggest — and
+the interval does not clear zero.
+
+- [ ] Train; export; measure on player 3; record.
 
 ## Task 5: Heavier models
 
