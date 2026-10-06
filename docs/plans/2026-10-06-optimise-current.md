@@ -68,8 +68,10 @@ which the posterior does not see, so the lift may be lower than in oracle mode.)
       At 0.6: marks 0.485, lift 1.12. Player 00 (11,100 notes, 0.437 wrong): lift 1.33–1.55
       across t. Prediction: >40% marked at 0.6 held (0.485); lift ≥ 1.5 there failed (1.12); t in
       0.40–0.50 held (0.50) but did not qualify. (t = 0.30 reaches 1.51 on player 3; not chosen,
-      by the rule.) **Why:** the posterior measures doubt about the string, and most end-to-end
-      errors on electric guitar are extra notes it cannot see. Reported to Ege.
+      by the rule.) **Why, corrected after Task 3's split:** of player 3's 1,194 wrong tab notes, 566
+      are extra notes (which the posterior cannot see) and 639 are heard notes on the wrong string
+      (508 wrong in oracle mode too) — so the posterior separates even its own string errors
+      poorly. A first reading said most errors were extra notes; the split showed it was wrong.
 - [ ] ~~If adopted: …~~ not adopted.
 
 ## Task 3: Fewer extra notes from Basic Pitch
@@ -94,7 +96,10 @@ and is not adopted.
 end, on EGDB (and GuitarSet's test players, labelled), once, pre-registered in its own commit with
 its own predictions, logged to `experiments/test_set_access.log`.
 
-- [ ] Extra-note split at today's thresholds.
+- [x] Extra-note split at today's thresholds (`analyse_e2e.py --chosen-params`, new flag):
+      1,951 transcribed, 1,629 played; **566 extra** (109 an octave from a played note, 238 near
+      another, 16 a semitone off, 203 with nothing near), 244 missed. Oracle E2 0.5795,
+      end-to-end 0.4185.
 - [ ] 3a: measure, record, apply the rule.
 - [ ] 3b: measure, record, apply the rule.
 - [ ] If adopted: wire into the pipeline; pre-register and run the test look; ADR.

@@ -35,7 +35,7 @@ from tabsampler.decode.robust import decode_best_effort
 from tabsampler.eval.metrics import exact_tab_f1, tab_notes_to_placed
 from tabsampler.fingering.candidates import group_notes
 from tabsampler.fingering.costs import HandSetScorer
-from tabsampler.transcribe.basic_pitch_cli import BasicPitchCLITranscriber
+from tabsampler.transcribe.basic_pitch_cli import CHOSEN_PARAMS, BasicPitchCLITranscriber
 from tabsampler.types import NoteEvent, Position, TabNote
 
 TOLERANCE = 0.05  # E1's and E2's onset tolerance
@@ -151,12 +151,17 @@ def main() -> None:
     parser.add_argument("--root", type=Path, default=Path("data/guitar-techs"))
     parser.add_argument("--config", type=Path, default=Path("configs/m1_full_eval.yaml"))
     parser.add_argument("--decoder-config", type=Path, default=Path("configs/decoder_clean.yaml"))
+    parser.add_argument(
+        "--chosen-params",
+        action="store_true",
+        help="Basic Pitch at CHOSEN_PARAMS (ADR 0057) instead of the config's thresholds.",
+    )
     args = parser.parse_args()
     cfg = load_eval_config(args.config)
     dec = load_phase1_config(args.decoder_config)
     transcriber = BasicPitchCLITranscriber(
         exe=cfg.transcriber.exe,
-        params=cfg.transcriber.params,
+        params=CHOSEN_PARAMS if args.chosen_params else cfg.transcriber.params,
         cache_dir=cfg.transcriber.cache_dir,
         model=cfg.transcriber.model_path,
     )
