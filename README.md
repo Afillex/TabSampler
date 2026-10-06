@@ -25,6 +25,10 @@ make serve                                   # a local page at http://127.0.0.1:
 uv run tabsampler transcribe take.wav        # or tab in the terminal; -o tab.musicxml / tab.gp5
 ```
 
+![The tab view: notes on six strings, uncertain ones in dashed boxes, a tooltip listing the other ways to play a note](docs/images/app-tab-view.png)
+
+*A take from Guitar-TECHS's player 3 (validation data, CC BY 4.0).*
+
 Drop a recording of one guitar on the page and it draws the tab, with the notes the decoder is
 least sure of in parentheses and the other ways to play each note on hover. Rhythm is not
 transcribed, and the confidences are a ranking, not probabilities. What it can and cannot do,
