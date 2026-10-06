@@ -1,8 +1,8 @@
 # HANDOFF — read this first
 
 You are picking up Tab Sampler with no prior context. This file is the shortest path to
-being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-06, after
-Phase 5 closed.
+being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-06, when
+the app track was coded.
 
 ## In one paragraph
 
@@ -27,7 +27,24 @@ audio evidence helps on EGDB (ADR 0054). **Phase 5** found Basic Pitch trained o
 0055) and improved end to end with stricter transcriber thresholds (ADR 0057). What remains:
 full songs (Phase 6), techniques (Phase 7), and an app a guitarist can use (the B track).
 
-## Where the last session stopped (2026-10-06) — read before anything else
+## Where the last session stopped (2026-10-06, app track) — read before anything else
+
+**The app track is coded and waiting for Ege's gate**, on branch `app-track-v1` (not merged, not
+pushed). Plan `docs/plans/2026-10-06-app-track.md`; the entry is the end of `docs/devlog/2026-10-06.md`.
+
+- **D14 decided** (ADR 0058): `tabsampler serve` / `make serve`, a local page at
+  `http://127.0.0.1:8000`, FastAPI in a `web` group. `tabsampler.pipeline.transcribe_path` is the
+  one pipeline both the CLI and the server call. Confidences are a ranking, never a percentage.
+- **Exports** (ADRs 0017, 0059): `-o tab.musicxml`, `-o tab.gp5`, and the page's buttons. A
+  1/128-note grid, one voice, the disclaimer inside the file. `render/grid.py` holds the shared
+  arithmetic.
+- **Open steps**: the page has not been driven in a browser (the headless browser's VM could not
+  start: its data is on an external drive that was not mounted), and no export has been opened in
+  MuseScore, TuxGuitar or Guitar Pro (none installed). The README screenshot waits for the first.
+- **The gate is Ege's**: one of Ege's recordings in the page, and the page agreeing with
+  `tabsampler transcribe`. Then merge, push, and a tag if wanted.
+
+## Before that: Phase 5 (2026-10-06)
 
 **Phase 5, a better transcriber, is closed (Ege's sign-off, ADR 0057), merged into `main` and
 public.** Plan
@@ -320,8 +337,8 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 
 ## Open items that need Ege, not you
 
-- **The next phase**: Phase 6 (full songs), the app track (B1–B4; D14, the app surface, is long
-  due), or more of Phase 5 (heavier transcribers; fine-tuning with an intermediate onset weight).
+- **The app track's gate** (above), then the next phase: Phase 6 (full songs) or more of Phase 5
+  (heavier transcribers; fine-tuning with an intermediate onset weight).
 - **An electric decoder config with the audio term** (Phase 4 loose end).
 - **Disk**: Guitar-TECHS's zips (4.1 GB) and `cache/transcriber/data` (1.3 GB) can go when no
   longer needed; about 20 GB is free.
