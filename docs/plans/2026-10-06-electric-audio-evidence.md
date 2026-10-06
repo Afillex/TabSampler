@@ -59,13 +59,19 @@ test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
       Guitar-TECHS players 1–2 (`cache/acoustic/gt`), per-note string accuracy on notes with more
       than one possible string — EGSet12 0.4665 (1,419 notes; decoder alone 0.6963, chance 0.2809),
       IDMT licks 0.4201 (2,730; decoder alone 0.4234, chance 0.2961).
-- [ ] **Pre-registered training run** (this commit, before it starts): the same network and
+- [x] **Pre-registered training run** (4239c9c, before it started): the same network and
       settings as Phase 4 (Adam 1e-3, batch 256, patience 3, at most 30 epochs, seed 0), trained from
       scratch on ADR 0062's data — Guitar-TECHS players 1–3 and EGFxSet's clean notes, stopping on a
       hashed 15% — into `cache/acoustic/electric`. *Single variable:* the training data.
       *Metric:* the per-note accuracy above, per set and pooled. *Prediction:* above the baseline
       by at least 0.03 on each set; pooled between 0.47 and 0.55. *Rule:* Task 3 uses the new
       classifier if its pooled accuracy beats the baseline's, else Phase 4's (also publishable).
+      *Result:* 14,214 training notes, 2,751 to stop on; best epoch 10 of 13 (stop-set accuracy
+      0.7754 — same guitars as training, so not a measure of anything else). **EGSet12 0.5159**
+      (+0.0494, held), **IDMT licks 0.4242** (+0.0041, the +0.03 prediction failed); pooled
+      **0.4555** against 0.4360 (1,890 against 1,809 of 4,149), below the predicted 0.47–0.55.
+      **By the rule, Task 3 uses `cache/acoustic/electric`.** On IDMT neither classifier beats the
+      decoder alone (0.4234); on EGSet12 the decoder alone (0.6963) is far ahead of both.
 - [ ] Calibrate temperature and acoustic weight on the new validation set (not player 3).
 
 ## Task 3: The audio term end to end
