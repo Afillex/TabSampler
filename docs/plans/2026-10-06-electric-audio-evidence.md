@@ -47,8 +47,9 @@ test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
 - [x] **Ege picked open data only (2026-10-06):** train on Guitar-TECHS players 1–2 + EGFxSet
       (CC BY 4.0, so the weights may be published with attribution); validate on EGSet12 +
       IDMT-SMT-Guitar. GOAT not requested.
-- [ ] Download; check each dataset's labels against its audio (as `check_guitartechs.py` did);
+- [x] Download; check each dataset's labels against its audio (as `check_guitartechs.py` did);
       confirm IDMT's string and fret fields; an ADR for the datasets, their roles and splits.
+      *ADR 0062, proposed: loaders in `data/electric.py`, `scripts/check_electric.py`.*
 
 ## Task 2: Retrain and calibrate the classifier on publishable data only
 

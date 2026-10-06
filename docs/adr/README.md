@@ -69,6 +69,7 @@ of the old record to point at its replacement.
 | [0059](0059-export-grid.md) | Exports use a **1/128-note grid** (15.6 ms at 120 BPM) and **one voice**, durations as tied plain note values; supersedes ADR 0017's point 2 (480 divisions) | D5 (gap) | accepted |
 | [0060](0060-tuning-correction-not-adopted.md) | **Automatic tuning correction is not adopted**: on player 3 it costs −0.013 E2 in tune and −0.015 at +0.25, helps +0.056 at +0.45 (interval includes zero), and past ±0.5 corrects the wrong way | — | accepted |
 | [0061](0061-octave-ghosts-not-adopted.md) | **Octave ghosts, a loudness floor and a new uncertainty threshold: none adopted** — dropping octave ghosts gained +0.025 on player 3 but −0.001 on EGDB (E1 −0.028); the threshold's lift was 1.42, short of 1.5 | — | accepted |
+| [0062](0062-electric-string-data.md) | **Electric string data**: EGFxSet (CC BY) trains with Guitar-TECHS; EGSet12 and IDMT-SMT-Guitar's licks validate; each take's label delay measured from its audio; player 3 to training (proposed) | D13 | proposed |
 
 Decisions still open, each due at the phase that needs it: D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).
