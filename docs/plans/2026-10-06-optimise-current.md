@@ -38,8 +38,12 @@ player 3's 12 takes, the same takes shifted +0.45 (Task 6 of the app plan), the 
 Ege's two files; and that takes at most 1.0 s on the 3-minute file. If none qualifies, keep (a)
 and report it.
 
-- [ ] Measure the four candidates; record times and the largest difference; apply the rule.
-- [ ] Implement the winner in `audio/tuning.py`, with a test; `make check`; commit.
+- [x] Measure the four candidates; record times and the largest difference; apply the rule.
+      *Result (26 files — Ege's first recording was no longer on disk): (a) 4.98 s; (b) 1.63 s,
+      worst difference 0.070; (c) 0.14 s, 0.160; (d) 0.05 s, 0.160. **None qualifies: (a) stays.***
+- [x] *Instead, outside the rule because it changes no estimate:* the check runs in a thread while
+      Basic Pitch transcribes in its own process. 3-minute file, cold cache: 9.05 s → 5.17 s, same
+      notes and offset. Test: the transcriber waits for the check to have started.
 
 ## Task 2: Uncertainty marks that point at errors
 

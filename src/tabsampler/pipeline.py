@@ -9,6 +9,7 @@ estimate the recording's offset from A440, which is reported and never corrected
 from __future__ import annotations
 
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -64,7 +65,12 @@ def transcribe_path(
     estimate: Callable[[Path], float | None] = offset_from_file,
 ) -> PipelineResult:
     """Transcribe ``path`` and decode it with the decoder ``cfg`` describes."""
-    notes = transcriber.transcribe_file(path)
+    # The tuning check takes about as long as Basic Pitch on a long file, which runs in its own
+    # process, so the two overlap: 9.05 s -> 5.17 s on a 3-minute file, same output.
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        offset = pool.submit(estimate, path)
+        notes = transcriber.transcribe_file(path)
+        tuning_offset = offset.result()
     groups = group_notes(notes, window_s=cfg.group_window_s)
     tab, degradation = decode_best_effort(groups, HandSetScorer(weights=cfg.weights), cfg.context)
     play = playability_rate(tab, cfg.rules, window_s=cfg.group_window_s)
@@ -75,5 +81,5 @@ def transcribe_path(
         transition_rate=play.transition_rate,
         pitch_validity=pitch_validity_rate(tab_notes_to_placed(tab), cfg.tuning),
         n_notes_detected=len(notes),
-        tuning_offset=estimate(path),
+        tuning_offset=tuning_offset,
     )

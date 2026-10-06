@@ -86,3 +86,23 @@ def test_the_offset_is_estimated_from_the_file() -> None:
 
     take = Path("tests/fixtures/sharp_take.wav")
     assert offset_from_file(take) == pytest.approx(0.4, abs=0.05)
+
+
+def test_the_tuning_check_runs_while_the_transcriber_works() -> None:
+    # The check takes about as long as Basic Pitch on a long file; run one after the other
+    # they doubled the wait (plan 2026-10-06-optimise-current, Task 1).
+    import threading
+
+    started = threading.Event()
+
+    def estimate(_: Path) -> float:
+        started.set()
+        return 0.0
+
+    class WaitsForTheCheck(Fake):
+        def transcribe_file(self, path: Path, /) -> list[NoteEvent]:
+            assert started.wait(timeout=5), "the tuning check did not start alongside"
+            return super().transcribe_file(path)
+
+    result = transcribe_path(Path("x.wav"), CFG, WaitsForTheCheck(NOTES), estimate=estimate)
+    assert result.tuning_offset == 0.0 and len(result.tab) == 3
