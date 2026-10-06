@@ -92,6 +92,14 @@ class BasicPitchParams:
     version_tag: str = "basic-pitch-0.4.0"
 
 
+#: The note thresholds chosen on Guitar-TECHS's validation player and adopted by Phase 5 (ADR
+#: 0057): what ``tabsampler transcribe`` uses. The dataclass's defaults stay Basic Pitch's own, so
+#: the configs that recorded earlier figures still reproduce them.
+CHOSEN_PARAMS = BasicPitchParams(
+    onset_threshold=0.7, frame_threshold=0.4, minimum_note_length_ms=58.0
+)
+
+
 def parse_note_events_csv(path: Path | str) -> list[NoteEvent]:
     """Parse a basic-pitch note-event CSV into sorted :class:`NoteEvent` objects.
 

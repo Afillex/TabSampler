@@ -14,7 +14,7 @@ on 2026-10-06 with a negative result: audio evidence trained on SynthTab lowers 
 0.6073** (ADR 0048). **Phase 4 (real electric audio) is measured: on EGDB's electric guitar the
 audio evidence raises oracle E2 from 0.6762 to 0.7200** (ADR 0054); closed on 2026-10-06. **Phase 5 (a
 better transcriber) is measured: stricter Basic Pitch thresholds raise EGDB's end-to-end E2 from
-0.4251 to 0.4547** (ADR 0057); closing it awaits sign-off.
+0.4251 to 0.4547** (ADR 0057); closed on 2026-10-06. The next phase is to be chosen.
 
 ## Results
 
@@ -23,31 +23,32 @@ better transcriber) is measured: stricter Basic Pitch thresholds raise EGDB's en
 weights re-chosen on player 00 (ADR 0038) plus a cost on open strings played with the hand up
 the neck (ADR 0039), at T = 1.2934, the hand modelled as a 4-fret window that a wide chord can
 stretch (ADRs 0025, 0030). It was measured on the test players once, as Phase 2's one test
-evaluation (ADR 0045). Distorted guitar has its own decoder, `configs/decoder_distorted.yaml`.
-Both modes per spec 3.2: *oracle* feeds reference notes to the fingering stage and so measures
+evaluation (ADR 0045). The transcriber is Basic Pitch at the note thresholds chosen in Phase 5 —
+onset 0.7, frame 0.4, minimum note length 58 ms (ADR 0057) — measured on the test players once.
+Distorted guitar has its own decoder, `configs/decoder_distorted.yaml`. Both modes per spec 3.2: *oracle* feeds reference notes to the fingering stage and so measures
 fingering alone; *end-to-end* feeds Basic Pitch's notes and is what a user gets.
 
-| | metric | oracle | end-to-end | the hand-set default (oracle / e2e) |
+| | metric | oracle | end-to-end | end to end, Basic Pitch's defaults (ADR 0045) |
 |---|---|---|---|---|
-| E1 | note F1, transcriber (raw) | 1.0000 | 0.7493 | 1.0000 / 0.7493 |
-| E1 | note F1, pipeline (placed) | 1.0000 | 0.7507 | 1.0000 / 0.7507 |
-| **E2** | **exact tab F1 (headline)** | **0.6819** | **0.4418** | 0.6559 / 0.4277 |
-| E3 | playable groups | 0.9978 | 0.9906 | 0.9980 / 0.9912 |
-| E3 | playable transitions | 0.9996 | 0.9981 | 0.9997 / 0.9984 |
-| E4 | pitch validity | 1.0000 | 1.0000 | 1.0000 / 1.0000 |
-| E5 | calibration error (ECE) | **0.0792** | 0.2439 | 0.0794 / 0.2189 |
+| E1 | note F1, transcriber (raw) | 1.0000 | 0.7812 | 0.7493 |
+| E1 | note F1, pipeline (placed) | 1.0000 | 0.7818 | 0.7507 |
+| **E2** | **exact tab F1 (headline)** | **0.6819** | **0.4553** | 0.4418 |
+| E3 | playable groups | 0.9978 | 0.9956 | 0.9906 |
+| E3 | playable transitions | 0.9996 | 0.9979 | 0.9981 |
+| E4 | pitch validity | 1.0000 | 1.0000 | 1.0000 |
+| E5 | calibration error (ECE) | **0.0792** | 0.1841 | 0.2439 |
 
-*The hand-set default*: T = 1.5728 (ADR 0038), measured on 2026-10-03; the clean-fitted
-default before it scored 0.6258 / 0.4337 in E2 on the same tracks. 49 253 reference notes;
-49 253 placed in oracle mode, 50 167 end to end. End to end, 105 notes lay outside the
-guitar's range, 100 more were dropped as unfingerable, and 39 groups (1 in oracle mode) were
-decoded with the span bound relaxed. **The transcriber costs 0.2402 of E2** (0.6819 → 0.4418).
+49 253 reference notes; 49 253 placed in oracle mode, 46 021 end to end. End to end, 46 notes lay
+outside the guitar's range, 23 more were dropped as unfingerable, and 14 groups (1 in oracle mode)
+were decoded with the span bound relaxed. **The transcriber costs 0.2267 of E2** (0.6819 →
+0.4553). Before Phase 2's open-string cost the hand-set default scored 0.6559 / 0.4277 in E2 on the
+same tracks (ADR 0038), and the clean-fitted default before that 0.6258 / 0.4337.
 
 **The transcriber has heard most of these recordings.** Basic Pitch's released model was trained
 on 90% of GuitarSet's audio files, chosen at random (its paper's Table 1; ADR 0055), so the
 end-to-end column and E1 here are partly in-sample for it, and transcription likely costs more
-than 0.2402 on acoustic recordings it has not heard. Oracle mode never calls the transcriber. The
-clean end-to-end figure is EGDB's, which it never saw: E1 0.7230, E2 0.4251, on electric guitar.
+than 0.2267 on acoustic recordings it has not heard. Oracle mode never calls the transcriber. The
+clean end-to-end figure is EGDB's, which it never saw: E1 0.7416, E2 0.4547, on electric guitar.
 
 **An independent check, the first since the split.** The 300 tracks were part of every earlier
 360-track run, so figures for decoders chosen before ADR 0037 confirm nothing about those
@@ -57,9 +58,9 @@ and 0.0260 here.
 | ADR 0016's values, judged on the 300 (ADR 0037) | required | today's default | |
 |---|---|---|---|
 | E4 | 1.0000 | 1.0000 / 1.0000 | held |
-| E3 groups, oracle / end to end | ≥ 0.9970 / 0.9896 | 0.9978 / 0.9906 | held |
-| E3 transitions (ADR 0035) | ≥ 0.9996 / 0.9969 | 0.9996 / 0.9981 | held — oracle on the boundary at four decimals |
-| E5 end to end | < 0.3851 | 0.2439 | held |
+| E3 groups, oracle / end to end | ≥ 0.9970 / 0.9896 | 0.9978 / 0.9956 | held |
+| E3 transitions (ADR 0035) | ≥ 0.9996 / 0.9969 | 0.9996 / 0.9979 | held — oracle on the boundary at four decimals |
+| E5 end to end | < 0.3851 | 0.1841 | held |
 | **M2 target**, E2 oracle | ≥ 0.760 | 0.6819 | **missed, by 7.8 points** |
 
 ### The spec's Phase 2 comparison (ADRs 0043–0045)

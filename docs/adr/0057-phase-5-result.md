@@ -1,6 +1,6 @@
 # ADR 0057: Phase 5's result — stricter Basic Pitch thresholds improve end to end; fine-tuning did not
 
-Status: proposed — Phase 5 closes on this record if Ege signs off
+Status: accepted (2026-10-06) — **Phase 5 closed on this record by Ege's sign-off**
 
 Reports Phase 5 (`docs/plans/2026-10-06-phase-5-transcriber.md`). The spec's "done when":
 end-to-end Tab F1 improves — note F1 alone is not enough. Basic Pitch trained on most of GuitarSet
@@ -44,7 +44,7 @@ hypothesis, and GuitarSet's test players, which gained where no gain was predict
 - **The `transcribe` command uses onset 0.7 / frame 0.4 / min 58 ms** once Phase 5 closes; the
   eval configs that recorded earlier figures keep their settings, so those figures stay
   reproducible.
-- **The spec's Phase 5 deliverable exists**; closing the phase on it is Ege's decision.
+- **The spec's Phase 5 deliverable exists**; Ege signed off on closing the phase on it.
 
 ## What it does not settle
 

@@ -59,7 +59,7 @@ from tabsampler.fingering.costs import HandSetScorer
 from tabsampler.render.ascii import render_ascii_with_legend
 from tabsampler.render.json_out import render_json
 from tabsampler.results import append_row, describe_weights, m1_row_notes, results_row
-from tabsampler.transcribe.basic_pitch_cli import BasicPitchCLITranscriber
+from tabsampler.transcribe.basic_pitch_cli import CHOSEN_PARAMS, BasicPitchCLITranscriber
 from tabsampler.types import CostWeights, NoteEvent, TabNote
 
 app = typer.Typer(
@@ -461,7 +461,7 @@ def transcribe(
 ) -> None:
     """audio -> tab. The end-to-end pipeline (spec 2)."""
     cfg = load_phase1_config(config)
-    transcriber = BasicPitchCLITranscriber(exe=exe)
+    transcriber = BasicPitchCLITranscriber(exe=exe, params=CHOSEN_PARAMS)  # ADR 0057
 
     notes = transcriber.transcribe_file(audio)
     groups = group_notes(notes, window_s=cfg.group_window_s)

@@ -132,3 +132,28 @@ def test_per_track_counts_record_the_split_and_the_weights() -> None:
     assert "temperature 1.5728" in payload["weights"]
     # Still what scripts/compare_validation.py reads.
     assert RecoveryReport.from_dict(payload).song_counts("oracle") == {"00_a": (16, 20)}
+
+
+def test_transcribe_uses_the_thresholds_phase_5_adopted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # ADR 0057: a user's tab comes from Basic Pitch at onset 0.7 / frame 0.4 / min 58 ms.
+    from tabsampler.transcribe.basic_pitch_cli import CHOSEN_PARAMS
+
+    built: list[object] = []
+
+    class Fake:
+        def __init__(self, exe: str, params: object = None) -> None:
+            built.append(params)
+
+        def transcribe_file(self, path: Path) -> list[object]:
+            return []
+
+    monkeypatch.setattr(cli, "BasicPitchCLITranscriber", Fake)
+    audio = tmp_path / "a.wav"
+    audio.write_bytes(b"")
+    result = CliRunner().invoke(cli.app, ["transcribe", str(audio)])
+    assert result.exit_code == 0, result.output
+    assert built == [CHOSEN_PARAMS]
+    assert (CHOSEN_PARAMS.onset_threshold, CHOSEN_PARAMS.frame_threshold) == (0.7, 0.4)
+    assert CHOSEN_PARAMS.minimum_note_length_ms == 58.0
