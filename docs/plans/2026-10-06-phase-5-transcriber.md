@@ -121,6 +121,20 @@ the interval does not clear zero.
       notes where the released model writes 1,951 — fine-tuning moved the posteriors' scale. H2
       and its prediction failed.)*
 
+### Task 4b: the fine-tuned model at its own thresholds
+
+**Pre-registered:** the released model's thresholds were chosen for it on player 3 (Task 3); the
+fine-tuned model gets the same chance. `tune_transcriber.py --out cache/validation/p5-ft
+--model-path cache/transcriber/ft/model.mlpackage --onsets 0.8 0.85 0.9 0.93 0.95 0.97 0.99
+--frames 0.4 0.5 0.6 0.7 0.8 --lengths-ms 58` — 35 settings, higher than Task 3's because its
+posteriors run hotter. **The rule:** its best setting by end-to-end E2 on player 3 is compared
+with the released model's adopted one (0.4185); the fine-tuned model is adopted only if the
+take-level interval clears zero with no clear chord-shape drop. **Hypothesis 3:** at its own best
+thresholds, fine-tuning helps. **Predictions:** its best onset threshold is 0.9 or above; its E2
+lies within 0.03 of 0.4185; the interval does not clear zero.
+
+- [ ] Run; record.
+
 ## Task 5: Heavier models
 
 Only candidates with released weights, a licence that allows use, and stated training data that
