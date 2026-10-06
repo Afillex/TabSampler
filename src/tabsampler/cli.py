@@ -62,6 +62,7 @@ from tabsampler.render.json_out import render_json
 from tabsampler.render.musicxml import render_musicxml
 from tabsampler.results import append_row, describe_weights, m1_row_notes, results_row
 from tabsampler.transcribe.basic_pitch_cli import CHOSEN_PARAMS, BasicPitchCLITranscriber
+from tabsampler.transcribe.cleanup import drop_octave_ghosts as drop_ghosts
 from tabsampler.types import CostWeights, NoteEvent, TabNote, Tuning
 
 app = typer.Typer(
@@ -227,6 +228,13 @@ def eval_m1(
             help="Write per-track E2 and E3 counts as JSON. Validation split only.",
         ),
     ] = None,
+    drop_octave_ghosts: Annotated[
+        bool,
+        typer.Option(
+            "--drop-octave-ghosts",
+            help="End to end, drop notes an octave above a louder note starting with them.",
+        ),
+    ] = False,
 ) -> None:
     """E1-E5 and E7 on GuitarSet, in oracle and end-to-end mode. The M1 gate."""
     if split not in ("test", "validation"):
@@ -260,6 +268,7 @@ def eval_m1(
         record_test_set_access(
             f"eval-m1 (oracle + e2e) on {len(track_ids)} GuitarSet test tracks via "
             f"{config} + {decoder}"
+            + ("; end to end with octave ghosts dropped" if drop_octave_ghosts else "")
         )
 
     dataset = load_dataset(cfg.dataset.data_home)
@@ -291,7 +300,8 @@ def eval_m1(
 
     def e2e_notes(track_id: str) -> list[NoteEvent]:
         """Transcriber notes: what a user actually gets."""
-        return transcriber.transcribe_file(audio_path(track_id))
+        notes = transcriber.transcribe_file(audio_path(track_id))
+        return drop_ghosts(notes) if drop_octave_ghosts else notes
 
     modes: tuple[tuple[str, Callable[[str], list[NoteEvent]]], ...] = (
         ("oracle", oracle_notes),

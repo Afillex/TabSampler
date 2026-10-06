@@ -231,3 +231,16 @@ def test_transcribe_warns_when_the_recording_is_off_pitch(
     assert result.exit_code == 0, result.output
     text = " ".join(result.output.split())
     assert "sharp of standard pitch" in text and "A440" in text
+
+
+def test_a_look_with_octave_ghosts_dropped_says_so_in_the_log(looks: list[str]) -> None:
+    # The access log must name what was run; the filter changes the end-to-end notes.
+    result = CliRunner().invoke(
+        cli.app, ["eval-m1", "--split", "test", "--drop-octave-ghosts", "--dry-run"]
+    )
+    assert isinstance(result.exception, Stopped)
+    assert len(looks) == 1 and "octave ghosts dropped" in looks[0]
+
+
+def test_eval_m1_keeps_every_transcribed_note_by_default() -> None:
+    assert inspect.signature(cli.eval_m1).parameters["drop_octave_ghosts"].default is False

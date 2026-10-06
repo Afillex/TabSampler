@@ -37,6 +37,7 @@ from tabsampler.fingering.candidates import group_notes
 from tabsampler.fingering.costs import HandSetScorer
 from tabsampler.model.strings import StringClassifier, tempered
 from tabsampler.transcribe.basic_pitch_cli import BasicPitchCLITranscriber
+from tabsampler.transcribe.cleanup import drop_octave_ghosts
 from tabsampler.types import NoteEvent
 
 
@@ -74,6 +75,11 @@ def main() -> None:
     parser.add_argument("--decoder-config", type=Path, default=Path("configs/decoder_clean.yaml"))
     parser.add_argument("--root", type=Path, default=Path("data/egdb"))
     parser.add_argument("--note", default="", help="Added to the access log's reason.")
+    parser.add_argument(
+        "--drop-octave-ghosts",
+        action="store_true",
+        help="Also end to end with octave ghosts dropped (transcribe/cleanup.py), same notes.",
+    )
     args = parser.parse_args()
     cfg = load_eval_config(args.config)
     dec = load_phase1_config(args.decoder_config)
@@ -93,7 +99,7 @@ def main() -> None:
         f"(classifier {args.run}), and end to end"
         if args.run is not None
         else "oracle and end to end"
-    )
+    ) + (", and end to end with octave ghosts dropped" if args.drop_octave_ghosts else "")
     record_test_set_access(
         f"evaluate_egdb.py, {evidence_part}, on {len(present)} EGDB clips: decoder "
         f"{args.decoder_config}, config {args.config}; a pre-registered look"
@@ -115,8 +121,9 @@ def main() -> None:
     plain = HandSetScorer(weights=replace(dec.weights, acoustic=0.0))
     report = RecoveryReport()
     e1 = [0, 0, 0]  # matches, estimated, reference
-    placed = dict.fromkeys(("oracle", "audio", "e2e"), 0)
-    given = dict.fromkeys(("oracle", "audio", "e2e"), 0)
+    e1_ghosts = [0, 0, 0]  # the same, after octave ghosts are dropped
+    placed = dict.fromkeys(("oracle", "audio", "e2e", "e2e-ghosts"), 0)
+    given = dict.fromkeys(("oracle", "audio", "e2e", "e2e-ghosts"), 0)
     for clip in clips:
         reference = list(clip.notes)
         notes = [note for note, _ in reference]
@@ -133,7 +140,13 @@ def main() -> None:
         estimated = transcriber.transcribe_file(clip.direct_input)
         heard_notes = note_f1(notes, estimated, cfg.onset_tolerance)
         e1 = [e1[0] + heard_notes.n_match, e1[1] + heard_notes.n_est, e1[2] + heard_notes.n_ref]
-        for mode, scorer, given_notes in [*modes, ("e2e", plain, estimated)]:
+        ends = [("e2e", plain, estimated)]
+        if args.drop_octave_ghosts:
+            kept = drop_octave_ghosts(estimated)
+            ends.append(("e2e-ghosts", plain, kept))
+            g = note_f1(notes, kept, cfg.onset_tolerance)
+            e1_ghosts = [e1_ghosts[0] + g.n_match, e1_ghosts[1] + g.n_est, e1_ghosts[2] + g.n_ref]
+        for mode, scorer, given_notes in [*modes, *ends]:
             groups = group_notes(given_notes, window_s=dec.group_window_s)
             tab = decode_best_effort(groups, scorer, dec.context)[0] if groups else []
             placed[mode] += len(tab)
@@ -148,7 +161,15 @@ def main() -> None:
         f" frame {params.frame_threshold:g}, min {params.minimum_note_length_ms:g} ms"
     )
     print(f"  E1 transcriber (raw): {2 * e1[0] / (e1[1] + e1[2]):.4f}")
-    names = {"oracle": "(a) oracle", "audio": f"(c) oracle, acoustic {args.weight:g}", "e2e": "e2e"}
+    if args.drop_octave_ghosts:
+        m, est, ref = e1_ghosts
+        print(f"  E1 octave ghosts dropped: {2 * m / (est + ref):.4f}")
+    names = {
+        "oracle": "(a) oracle",
+        "audio": f"(c) oracle, acoustic {args.weight:g}",
+        "e2e": "e2e",
+        "e2e-ghosts": "e2e, octave ghosts dropped",
+    }
     for mode, name in names.items():
         if mode not in report.shapes:
             continue
