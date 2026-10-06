@@ -14,7 +14,21 @@ on 2026-10-06 with a negative result: audio evidence trained on SynthTab lowers 
 0.6073** (ADR 0048). **Phase 4 (real electric audio) is measured: on EGDB's electric guitar the
 audio evidence raises oracle E2 from 0.6762 to 0.7200** (ADR 0054); closed on 2026-10-06. **Phase 5 (a
 better transcriber) is measured: stricter Basic Pitch thresholds raise EGDB's end-to-end E2 from
-0.4251 to 0.4547** (ADR 0057); closed on 2026-10-06. The next phase is to be chosen.
+0.4251 to 0.4547** (ADR 0057); closed on 2026-10-06. **The app track is under way**: a local web
+page and MusicXML and Guitar Pro export (ADRs 0058, 0059).
+
+## Use it
+
+```bash
+uv sync --all-groups && bash scripts/setup_transcriber.sh
+make serve                                   # a local page at http://127.0.0.1:8000
+uv run tabsampler transcribe take.wav        # or tab in the terminal; -o tab.musicxml / tab.gp5
+```
+
+Drop a recording of one guitar on the page and it draws the tab, with the notes the decoder is
+least sure of in parentheses and the other ways to play each note on hover. Rhythm is not
+transcribed, and the confidences are a ranking, not probabilities. What it can and cannot do,
+and what to expect from measured numbers, is in [docs/using-the-app.md](docs/using-the-app.md).
 
 ## Results
 
@@ -392,6 +406,7 @@ same day, and the stretch (ADR 0030) to 34.3 ms and 120.1 ms.
 
 | Document | What it covers |
 |---|---|
+| `docs/using-the-app.md` | The web page and the exports: running them, their limits, what to expect |
 | `docs/spec.md` | Architecture, data contracts, metrics, phases, decisions D1-D16 |
 | `docs/plans/` | Executable implementation plans |
 | `docs/adr/` | One Architecture Decision Record per decision |
@@ -434,6 +449,7 @@ make lint        # ruff check + format --check
 make typecheck   # pyright --strict on src/
 make check       # lint + typecheck + test
 make eval-notes  # Phase 0's measure: Basic Pitch note F1 on the 300 test tracks
+make serve       # the local web page (ADR 0058)
 ```
 
 ## License

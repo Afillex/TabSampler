@@ -1,4 +1,4 @@
-.PHONY: install test oracle lint format typecheck check eval-notes eval-m1 check-split
+.PHONY: install test oracle lint format typecheck check eval-notes eval-m1 check-split serve
 
 install:
 	uv sync --all-groups
@@ -35,3 +35,10 @@ check-split:
 # on the test players 01-05, so not on the 360 tracks M1 itself was measured on.
 eval-m1:
 	uv run tabsampler eval-m1 --split test --config configs/m1_full_eval.yaml --decoder-config configs/phase1_baseline.yaml
+
+# The local web page (ADR 0058) at http://127.0.0.1:8000. Needs the `web` group and the
+# transcriber (scripts/setup_transcriber.sh); `tabsampler serve` says so if it is missing.
+serve:
+	@uv run python -c "import fastapi, uvicorn" 2>/dev/null || { \
+		echo "the web page needs the web dependency group: run uv sync --all-groups"; exit 1; }
+	uv run tabsampler serve
