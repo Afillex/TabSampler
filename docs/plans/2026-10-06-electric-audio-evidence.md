@@ -104,13 +104,15 @@ test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
       *Result:* **EGSet12 0.4150 → 0.4693, +0.0543 [−0.0132, +0.1286]** — the interval includes
       zero; the prediction failed narrowly (above). IDMT, optimistic: 0.3166 → 0.3426, +0.0260
       [−0.0084, +0.0601]. The rule's condition held: the EGDB look goes ahead.
-- [ ] **The EGDB look, pre-registered here** (`configs/electric_test_eval.yaml`):
+- [x] **The EGDB look, pre-registered** (5d13720) (`configs/electric_test_eval.yaml`):
       `scripts/evaluate_egdb.py --config configs/electric_test_eval.yaml --run cache/acoustic/electric
       --weight 0.5 --temperature 6.7977 --e2e-audio` — oracle and end to end, each without and with
       the evidence, in one run. *Predictions:* oracle +0.02 to +0.07 from 0.6762; end to end +0.01 to
       +0.05 from 0.4547. *Adoption rule:* if the end-to-end change is above 0, `decoder_electric`
       becomes the app's electric-guitar option (the default stays acoustic-safe); otherwise it is
       not offered. GuitarSet is not read. An ADR either way.
+      *Result (log line 36):* **oracle 0.6762 → 0.7229 (+0.0467); end to end 0.4547 → 0.4992
+      (+0.0445)** — both predictions held; adopted as the electric option (ADR 0063).
 
 ## Task 4: The app
 
