@@ -1,15 +1,17 @@
-"""Phase 4's one look at EGDB, the second test set: clean electric guitar (ADRs 0049, 0050).
+"""A pre-registered look at EGDB, the second test set: clean electric guitar (ADRs 0049, 0050).
 
     uv run python -u scripts/evaluate_egdb.py --run cache/acoustic/gt-ft --weight 0.25 \\
         --temperature 0.6957 --config configs/p4_test_eval.yaml
+    uv run python -u scripts/evaluate_egdb.py --config configs/p5_test_eval.yaml
 
 Every one of EGDB's 240 clips, direct input, against its own labels: (a) the default decoder in
 oracle mode, Phase 2's exactly; (c) the same with the string classifier's evidence at ``--weight``
 and ``--temperature``, heard from the direct input at the labelled onsets -- EGDB's annotations
-were aligned to the audio by onset detection, so, like GuitarSet's, they are taken as they are;
-and the default decoder end to end, on Basic Pitch's notes from the same audio, with the
-transcriber's E1. The look is logged before anything is read; a partial download is refused,
-since a subset is never quoted; nothing is written per clip.
+were aligned to the audio by onset detection, so, like GuitarSet's, they are taken as they are; and
+the default decoder end to end, on Basic Pitch's notes from the same audio -- with the config's
+transcriber settings -- and the transcriber's E1. Without ``--run``, (c) is left out. The look is
+logged before anything is read; a partial download is refused, since a subset is never quoted;
+nothing is written per clip.
 """
 
 from __future__ import annotations
@@ -65,9 +67,9 @@ def heard(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--run", type=Path, required=True, help="The classifier's run (best.pt).")
-    parser.add_argument("--weight", type=float, required=True)
-    parser.add_argument("--temperature", type=float, required=True)
+    parser.add_argument("--run", type=Path, help="The classifier's run (best.pt); none: no (c).")
+    parser.add_argument("--weight", type=float, default=0.0)
+    parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--config", type=Path, required=True, help="Evaluation config YAML.")
     parser.add_argument("--decoder-config", type=Path, default=Path("configs/decoder_clean.yaml"))
     parser.add_argument("--root", type=Path, default=Path("data/egdb"))
@@ -86,17 +88,24 @@ def main() -> None:
             f"EGDB is incomplete ({len(present)} clips with labels and audio): finish "
             f"scripts/download_egdb.py first -- a subset is never quoted"
         )
+    evidence_part = (
+        f"oracle with acoustic 0 and {args.weight:g} at temperature {args.temperature:g} "
+        f"(classifier {args.run}), and end to end"
+        if args.run is not None
+        else "oracle and end to end"
+    )
     record_test_set_access(
-        f"evaluate_egdb.py, oracle with acoustic 0 and {args.weight:g} at temperature "
-        f"{args.temperature:g}, and end to end, on {len(present)} EGDB clips: classifier "
-        f"{args.run}, decoder {args.decoder_config}, config {args.config}; Phase 4's look"
+        f"evaluate_egdb.py, {evidence_part}, on {len(present)} EGDB clips: decoder "
+        f"{args.decoder_config}, config {args.config}; a pre-registered look"
         + (f"; {args.note}" if args.note else "")
     )
 
     clips, _ = load_clips(args.root)  # complete: checked above by name
-    model = StringClassifier()
-    model.load_state_dict(torch.load(args.run / "best.pt", weights_only=True))
-    model.eval()
+    model: StringClassifier | None = None
+    if args.run is not None:
+        model = StringClassifier()
+        model.load_state_dict(torch.load(args.run / "best.pt", weights_only=True))
+        model.eval()
     transcriber = BasicPitchCLITranscriber(
         exe=cfg.transcriber.exe,
         params=cfg.transcriber.params,
@@ -112,20 +121,19 @@ def main() -> None:
         reference = list(clip.notes)
         notes = [note for note, _ in reference]
         signal = np.asarray(librosa.load(clip.direct_input, sr=RATE, mono=True)[0], np.float32)
-        evidence = heard(
-            model, signal, notes, dec.tuning.open_pitches, dec.tuning.max_fret, args.temperature
-        )
-        with_audio = HandSetScorer(
-            weights=replace(dec.weights, acoustic=args.weight), evidence=evidence
-        )
+        modes = [("oracle", plain, notes)]
+        if model is not None:
+            evidence = heard(
+                model, signal, notes, dec.tuning.open_pitches, dec.tuning.max_fret, args.temperature
+            )
+            with_audio = HandSetScorer(
+                weights=replace(dec.weights, acoustic=args.weight), evidence=evidence
+            )
+            modes.append(("audio", with_audio, notes))
         estimated = transcriber.transcribe_file(clip.direct_input)
         heard_notes = note_f1(notes, estimated, cfg.onset_tolerance)
         e1 = [e1[0] + heard_notes.n_match, e1[1] + heard_notes.n_est, e1[2] + heard_notes.n_ref]
-        for mode, scorer, given_notes in (
-            ("oracle", plain, notes),
-            ("audio", with_audio, notes),
-            ("e2e", plain, estimated),
-        ):
+        for mode, scorer, given_notes in [*modes, ("e2e", plain, estimated)]:
             groups = group_notes(given_notes, window_s=dec.group_window_s)
             tab = decode_best_effort(groups, scorer, dec.context)[0] if groups else []
             placed[mode] += len(tab)
@@ -134,10 +142,16 @@ def main() -> None:
             e3 = playability_rate(tab, dec.rules, window_s=dec.group_window_s)
             add_track(report, clip.clip_id, mode, e2, e3)
 
-    print(f"EGDB, {len(clips)} clips, direct input")
+    params = cfg.transcriber.params
+    print(
+        f"EGDB, {len(clips)} clips, direct input; Basic Pitch onset {params.onset_threshold:g},"
+        f" frame {params.frame_threshold:g}, min {params.minimum_note_length_ms:g} ms"
+    )
     print(f"  E1 transcriber (raw): {2 * e1[0] / (e1[1] + e1[2]):.4f}")
     names = {"oracle": "(a) oracle", "audio": f"(c) oracle, acoustic {args.weight:g}", "e2e": "e2e"}
     for mode, name in names.items():
+        if mode not in report.shapes:
+            continue
         right, total = report.counts(mode)
         passed, shapes = report.shapes[mode]
         print(

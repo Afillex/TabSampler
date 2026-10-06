@@ -165,9 +165,17 @@ not clear zero.
 Only candidates with released weights, a licence that allows use, and stated training data that
 excludes EGDB.
 
-- [ ] Survey; one candidate at most per pre-registration.
+- [ ] Survey; one candidate at most per pre-registration. *(Not done in this pass: after Task 4c,
+      Ege's rule sent Phase 5 to its test look. The GAPS model is unreleased.)*
 
 ## Task 6: One look at the test sets
 
-- [ ] Pre-register the chosen transcriber against Basic Pitch's defaults on EGDB, GuitarSet beside
-      it labelled; run once; write Phase 5's result (ADR); README, HANDOFF, devlog; Ege's sign-off.
+**Pre-registered** in `configs/p5_test_eval.yaml` (hypothesis and predictions there), two logged
+looks: `scripts/evaluate_egdb.py --config configs/p5_test_eval.yaml` on EGDB, against Phase 4's
+look with the defaults (end-to-end E2 0.4251), and `tabsampler eval-m1 --split test --config
+configs/p5_test_eval.yaml` on GuitarSet's players 01–05, labelled, against ADR 0045's 0.4418.
+The transcriber: the released Basic Pitch at Task 3's thresholds; fine-tuning closed (Task 4c).
+
+- [x] Pre-register the chosen transcriber against Basic Pitch's defaults on EGDB, GuitarSet beside
+      it labelled.
+- [ ] Run once; write Phase 5's result (ADR); README, HANDOFF, devlog; Ege's sign-off.

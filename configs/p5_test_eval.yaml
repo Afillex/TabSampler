@@ -1,0 +1,33 @@
+# Phase 5's look at the test sets (Task 6, docs/plans/2026-10-06-phase-5-transcriber.md): Basic
+# Pitch at the thresholds chosen on Guitar-TECHS's player 3, through `tabsampler eval-m1 --split
+# test` on GuitarSet and scripts/evaluate_egdb.py on EGDB. Written and committed BEFORE the run;
+# logged looks (ADR 0003, ADR 0037, ADR 0050).
+
+hypothesis: >-
+  Phase 5's evaluation: Basic Pitch at the thresholds chosen on Guitar-TECHS's player 3 (onset
+  0.7, frame 0.4, minimum note length 58 ms; Task 3) against its defaults, the default decoder end
+  to end; oracle mode does not change. (1) EGDB, 240 clips, direct input, audio the transcriber
+  never heard (ADR 0055): end-to-end E2 rises from 0.4251 (Phase 4's look, the defaults) by 0.02
+  to 0.07, and E1 from 0.7230 to between 0.74 and 0.82 -- Phase 5's done-when. (2) GuitarSet's
+  players 01-05, labelled, since Basic Pitch trained on most of them (ADR 0055): end-to-end E2
+  changes from 0.4418 (ADR 0045) by -0.05 to +0.01 -- on acoustic recordings Basic Pitch misses
+  notes more than it adds them, so stricter thresholds should not help there. Metrics: E1, E2,
+  E3 chord shapes, E5. Splits: EGDB and GuitarSet test, both test-only; no interval, nothing
+  chosen.
+
+dataset:
+  name: guitarset
+  data_home: data/guitarset
+  channel: audio_mic
+
+transcriber:
+  exe: basic-pitch
+  cache_dir: cache/note_events
+  onset_threshold: 0.7
+  frame_threshold: 0.4
+  minimum_note_length_ms: 58.0
+  model_serialization: coreml
+  version_tag: basic-pitch-0.4.0
+
+onset_tolerance: 0.05
+seed: 0
