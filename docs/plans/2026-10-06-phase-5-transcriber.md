@@ -133,7 +133,8 @@ take-level interval clears zero with no clear chord-shape drop. **Hypothesis 3:*
 thresholds, fine-tuning helps. **Predictions:** its best onset threshold is 0.9 or above; its E2
 lies within 0.03 of 0.4185; the interval does not clear zero.
 
-- [ ] Run; record.
+- [x] Run; record. *(Best 0.97 / 0.6 / 58 ms: E2 0.3079, −0.1106 [−0.1805, −0.0403] against the
+      released model — a clear loss, not adopted. H3 failed.)*
 
 ## Task 5: Heavier models
 
