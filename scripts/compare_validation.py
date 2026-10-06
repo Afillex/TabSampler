@@ -15,7 +15,7 @@ from pathlib import Path
 
 from tabsampler.data.splits import assert_no_test_tracks
 from tabsampler.errors import TestSetMisuseError
-from tabsampler.eval.bootstrap import paired_bootstrap
+from tabsampler.eval.bootstrap import paired_bootstrap, paired_ratio_bootstrap
 from tabsampler.eval.recovery import RecoveryReport
 
 
@@ -47,7 +47,9 @@ def main() -> None:
         songs = a.song_counts(part)
         if not songs:
             continue
-        diff = paired_bootstrap(songs, b.song_counts(part))
+        # End to end, the two sides may count different notes (ADR 0055's comparisons).
+        compare = paired_ratio_bootstrap if part == "e2e" else paired_bootstrap
+        diff = compare(songs, b.song_counts(part))
         (pa, na), (pb, nb) = shape_counts(a, part), shape_counts(b, part)
         print(
             f"{part or 'all':9s}: {a.share(part):.4f} -> {b.share(part):.4f}   "
@@ -59,7 +61,7 @@ def main() -> None:
         shapes_a, shapes_b = a.song_shape_counts(part), b.song_shape_counts(part)
         if shapes_a and shapes_b:
             # ADR 0039: a drop refuses a challenger only when its whole interval is below zero.
-            change = paired_bootstrap(shapes_a, shapes_b)
+            change = compare(shapes_a, shapes_b)
             verdict = "a clear drop" if change.high < 0 else "no clear drop"
             print(
                 f"           chord-shape change {change.delta:+.6f}  95% interval "

@@ -74,7 +74,10 @@ the winner, so the test look decides nothing either way. **Hypothesis 1:** a str
 wins, as precision is player 3's problem. **Predictions:** the candidate's onset threshold is
 0.6 or above; it gains 0.01 to 0.05 of E2 over the default; its interval clears zero.
 
-- [ ] Run; record.
+- [x] Run; record. *(Default 0.3491 → onset 0.7 / frame 0.4 / min 58 ms 0.4185, +0.0694
+      [+0.0081, +0.1303], no clear chord-shape drop: **adopted**. E1 0.6247 → 0.7737. H1 held; the
+      size prediction failed high. The winner sits at the grid's edge. `compare_validation.py`
+      needed a ratio bootstrap end to end, where the two sides count different notes.)*
 
 ## Task 4: Fine-tune Basic Pitch on Guitar-TECHS
 

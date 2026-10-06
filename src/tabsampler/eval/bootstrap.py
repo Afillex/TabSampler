@@ -50,3 +50,37 @@ def paired_bootstrap(
     deltas = (hits_b[picks].sum(axis=1) - hits_a[picks].sum(axis=1)) / notes[picks].sum(axis=1)
     low, high = (float(v) for v in np.percentile(deltas, [2.5, 97.5]))
     return PairedDifference(delta, low, high, len(songs), int(notes.sum()))
+
+
+def paired_ratio_bootstrap(
+    a: Mapping[str, tuple[int, int]],
+    b: Mapping[str, tuple[int, int]],
+    n_resamples: int = 2000,
+    seed: int = 0,
+) -> PairedDifference:
+    """:func:`paired_bootstrap` for two sides scored over different counts on the same songs.
+
+    End to end, a different transcriber writes a different number of notes, so each side's
+    E2 has its own denominator: each resample pools each side over its own counts, on the same
+    resampled songs. With equal counts it is :func:`paired_bootstrap` exactly.
+
+    Raises:
+        ValueError: if the two cover different songs.
+    """
+    if set(a) != set(b):
+        raise ValueError("a paired comparison needs the same songs on both sides")
+    songs = sorted(a)
+    hits_a = np.array([a[s][0] for s in songs], dtype=float)
+    hits_b = np.array([b[s][0] for s in songs], dtype=float)
+    notes_a = np.array([a[s][1] for s in songs], dtype=float)
+    notes_b = np.array([b[s][1] for s in songs], dtype=float)
+    if np.array_equal(notes_a, notes_b):
+        return paired_bootstrap(a, b, n_resamples, seed)
+    delta = float(hits_b.sum() / notes_b.sum() - hits_a.sum() / notes_a.sum())
+    rng = np.random.default_rng(seed)
+    picks = rng.integers(0, len(songs), size=(n_resamples, len(songs)))
+    deltas = hits_b[picks].sum(axis=1) / notes_b[picks].sum(axis=1) - hits_a[picks].sum(
+        axis=1
+    ) / notes_a[picks].sum(axis=1)
+    low, high = (float(v) for v in np.percentile(deltas, [2.5, 97.5]))
+    return PairedDifference(delta, low, high, len(songs), int(notes_b.sum()))

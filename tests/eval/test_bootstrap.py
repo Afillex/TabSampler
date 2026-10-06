@@ -39,3 +39,30 @@ def test_the_bootstrap_refuses_different_songs() -> None:
 def test_the_bootstrap_refuses_different_note_counts() -> None:
     with pytest.raises(ValueError, match="note counts"):
         paired_bootstrap({"a": (1, 2)}, {"a": (1, 3)})
+
+
+def test_the_ratio_bootstrap_is_the_paired_one_when_the_counts_agree() -> None:
+    from tabsampler.eval.bootstrap import paired_ratio_bootstrap
+
+    a = {"x": (3, 10), "y": (5, 8), "z": (0, 4)}
+    b = {"x": (6, 10), "y": (4, 8), "z": (2, 4)}
+    assert paired_ratio_bootstrap(a, b, seed=3) == paired_bootstrap(a, b, seed=3)
+
+
+def test_the_ratio_bootstrap_pools_each_side_over_its_own_counts() -> None:
+    from tabsampler.eval.bootstrap import paired_ratio_bootstrap
+
+    # End to end, a transcriber that writes fewer notes changes the denominator too.
+    a = {"x": (4, 20), "y": (6, 20)}  # 10 of 40
+    b = {"x": (4, 10), "y": (6, 15)}  # 10 of 25
+    result = paired_ratio_bootstrap(a, b)
+    assert result.delta == pytest.approx(10 / 25 - 10 / 40)
+    assert result.low <= result.delta <= result.high
+    assert result.n_songs == 2
+
+
+def test_the_ratio_bootstrap_refuses_different_songs() -> None:
+    from tabsampler.eval.bootstrap import paired_ratio_bootstrap
+
+    with pytest.raises(ValueError, match="same songs"):
+        paired_ratio_bootstrap({"a": (1, 2)}, {"b": (1, 2)})
