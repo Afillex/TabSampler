@@ -1,6 +1,6 @@
 # ADR 0062: Electric string data — EGFxSet trains; EGSet12 and IDMT-SMT-Guitar validate
 
-Status: proposed (2026-10-06) — point 3 is Ege's decision
+Status: accepted (2026-10-06) — point 3 decided by Ege: player 3 moves to training
 
 Plan: `docs/plans/2026-10-06-electric-audio-evidence.md`, Task 1. Ege chose open data only.
 
@@ -30,7 +30,7 @@ from its open strings' pitch), IDMT's string 1 the low E, EGSet12's `data_source
 2. **Validation is EGSet12 and IDMT's licks**, each reported on its own and pooled. IDMT is used
    for evaluation only, as its licence says; nothing is trained on it. Its 135 takes are 11 licks
    played several ways, so they are far fewer independent pieces than takes.
-3. **Player 3 moves to training** *(proposed; Ege's decision)*. It is Guitar-TECHS's only music,
+3. **Player 3 moves to training** (Ege, 2026-10-06; amends ADR 0051's split for the classifier). It is Guitar-TECHS's only music,
    and as a judge it is spent: three choices made on it, one of which did not carry to EGDB.
    Training stops on a hashed 15% of the training takes instead.
 4. **Every take's label delay is measured from its own audio** (`onset_lag`, as ADR 0052) and taken
