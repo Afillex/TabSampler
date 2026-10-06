@@ -91,3 +91,9 @@ def test_the_page_offers_both_exports(client: TestClient) -> None:
     page = client.get("/").text
     assert 'data-export="musicxml"' in page and 'data-export="gp5"' in page
     assert "/api/export/" in static("app.js")
+
+
+def test_the_page_and_its_files_are_revalidated_on_every_load(client: TestClient) -> None:
+    # A browser that cached last version's app.js would draw this version's data wrongly.
+    for path in ("/", "/static/app.js", "/static/style.css"):
+        assert client.get(path).headers["cache-control"] == "no-cache", path

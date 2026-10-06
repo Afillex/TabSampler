@@ -130,7 +130,11 @@ def create_app(
         if request.url.path == "/api/transcribe" and too_big:
             limit_mb = max_upload_bytes / (1024 * 1024)
             return JSONResponse({"detail": f"the file is larger than {limit_mb:g} MB"}, 413)
-        return await call_next(request)
+        response = await call_next(request)
+        if not request.url.path.startswith("/api/"):
+            # Revalidate the page and its files on every load, so an upgrade is seen at once.
+            response.headers["Cache-Control"] = "no-cache"
+        return response
 
     @app.get("/", include_in_schema=False)
     def index() -> FileResponse:  # pyright: ignore[reportUnusedFunction]
@@ -152,7 +156,8 @@ def create_app(
             try:
                 seconds = audio_duration_s(path)
             except ValueError as exc:
-                raise HTTPException(400, f"the file could not be read as audio ({exc})") from exc
+                reason = str(exc).replace(str(path), audio.filename or "the upload")
+                raise HTTPException(400, f"the file could not be read as audio ({reason})") from exc
             if seconds > max_duration_s:
                 raise HTTPException(
                     413,

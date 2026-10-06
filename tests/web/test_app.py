@@ -114,6 +114,7 @@ def test_a_file_that_is_not_audio_gets_400(client: TestClient, fake: Fake) -> No
     r = post(client, b"not audio")
     assert r.status_code == 400
     assert "could not be read as audio" in r.json()["detail"]
+    assert "tabsampler-upload" not in r.json()["detail"]  # no server paths in the reply
     assert fake.calls == []
 
 

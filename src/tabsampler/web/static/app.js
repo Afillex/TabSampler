@@ -7,7 +7,7 @@
 "use strict";
 
 const SVG = "http://www.w3.org/2000/svg";  // a namespace name, never fetched
-const LEFT = 36;     // room for the string labels
+const LEFT = 60;     // room for the string labels and a note at 0 s
 const TOP = 30;      // room for the time ticks
 const ROW = 30;      // distance between strings
 const RIGHT = 48;
@@ -55,6 +55,23 @@ function ranks(notes) {
   return rank;
 }
 
+// The narrowest zoom at which at most one in twenty neighbouring notes on a string would overlap
+// (a label box is about 30 px wide); the widest zoom when none is that sparse.
+const BOX = 30;
+function fitZoom(doc) {
+  const options = [...$("zoom").options].map((o) => Number(o.value));
+  const gaps = [];
+  const last = new Map();
+  for (const n of [...doc.notes].sort((a, b) => a.onset - b.onset)) {
+    if (last.has(n.string)) gaps.push(n.onset - last.get(n.string));
+    last.set(n.string, n.onset);
+  }
+  for (const pps of options) {
+    if (gaps.filter((g) => g * pps < BOX).length <= gaps.length / 20) return pps;
+  }
+  return options[options.length - 1];
+}
+
 function draw(doc) {
   const svg = $("tab");
   svg.replaceChildren();
@@ -71,14 +88,14 @@ function draw(doc) {
   const y = (string) => TOP + (nStrings - 1 - string) * ROW;  // string 0 is the low E
   const x = (t) => LEFT + t * pps;
 
-  const step = pps >= 160 ? 1 : 2;
+  const step = pps >= 160 ? 1 : 2;  // a tick every one or two seconds
   for (let t = 0; t <= end; t += step) {
     el("line", { class: "tick", x1: x(t), x2: x(t), y1: TOP - 10, y2: y(0) + 10 }, svg);
     el("text", { class: "tick-label", x: x(t) + 3, y: TOP - 14 }, svg).textContent = `${t} s`;
   }
   for (let s = 0; s < nStrings; s++) {
     el("line", { class: "string", x1: LEFT - 8, x2: width - 8, y1: y(s), y2: y(s) }, svg);
-    el("text", { class: "string-label", x: 14, y: y(s) + 4 }, svg).textContent = labels[s];
+    el("text", { class: "string-label", x: 16, y: y(s) + 4 }, svg).textContent = labels[s];
   }
 
   const rank = ranks(doc.notes);
@@ -207,6 +224,7 @@ async function transcribe(file) {
   current = doc;
   setStatus(`${file.name}`);
   summarise(doc);
+  $("zoom").value = String(fitZoom(doc));
   $("result").hidden = false;
   draw(doc);
 }
