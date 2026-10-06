@@ -65,10 +65,11 @@ of the old record to point at its replacement.
 | [0055](0055-transcriber-training-overlap.md) | **Basic Pitch trained on ~90% of GuitarSet** (its paper, Table 1): GuitarSet's end-to-end figures are labelled; transcribers are compared and tuned only on Guitar-TECHS's player 3 and EGDB | §3.4 | accepted |
 | [0056](0056-fine-tuning-basic-pitch.md) | **Fine-tuning Basic Pitch**: a separate Python 3.11 TensorFlow environment; Basic Pitch's own targets and loss; Guitar-TECHS players 1–2 train, player 3 stops; the result converted to CoreML and run by the unchanged CLI (round trip checked) | — | accepted |
 | [0057](0057-phase-5-result.md) | **Phase 5's result**: Basic Pitch at onset 0.7 / frame 0.4 / min 58 ms, chosen on Guitar-TECHS's player 3, raises EGDB's end-to-end E2 0.4251 → 0.4547 (GuitarSet, labelled, 0.4418 → 0.4553); fine-tuning failed twice | — | accepted |
+| [0058](0058-app-surface.md) | **The app surface (D14)**: a local web page served by the package (`tabsampler serve`, FastAPI in a `web` group, localhost only), one pipeline function shared with the CLI, confidences shown as a ranking; MusicXML and Guitar Pro 5 exports per ADR 0017 | D14 | accepted |
 
-Decisions still open, each due at the phase that needs it: D14 (app surface — **now due, M1 is met**), and D15 for corpora other than DadaGP
+Decisions still open, each due at the phase that needs it: D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).
-D2, D11, D12 and D13 are decided by ADRs 0049, 0041, 0043 and 0046.
+D2, D11, D12, D13 and D14 are decided by ADRs 0049, 0041, 0043, 0046 and 0058.
 
 **D10 is settled** by ADR 0016: oracle E2 must reach baseline + 10 points (0.760) at M2.
 
