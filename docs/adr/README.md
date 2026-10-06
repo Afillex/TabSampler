@@ -67,6 +67,7 @@ of the old record to point at its replacement.
 | [0057](0057-phase-5-result.md) | **Phase 5's result**: Basic Pitch at onset 0.7 / frame 0.4 / min 58 ms, chosen on Guitar-TECHS's player 3, raises EGDB's end-to-end E2 0.4251 → 0.4547 (GuitarSet, labelled, 0.4418 → 0.4553); fine-tuning failed twice | — | accepted |
 | [0058](0058-app-surface.md) | **The app surface (D14)**: a local web page served by the package (`tabsampler serve`, FastAPI in a `web` group, localhost only), one pipeline function shared with the CLI, confidences shown as a ranking; MusicXML and Guitar Pro 5 exports per ADR 0017 | D14 | accepted |
 | [0059](0059-export-grid.md) | Exports use a **1/128-note grid** (15.6 ms at 120 BPM) and **one voice**, durations as tied plain note values; supersedes ADR 0017's point 2 (480 divisions) | D5 (gap) | accepted |
+| [0060](0060-tuning-correction-not-adopted.md) | **Automatic tuning correction is not adopted**: on player 3 it costs −0.013 E2 in tune and −0.015 at +0.25, helps +0.056 at +0.45 (interval includes zero), and past ±0.5 corrects the wrong way | — | accepted |
 
 Decisions still open, each due at the phase that needs it: D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).
