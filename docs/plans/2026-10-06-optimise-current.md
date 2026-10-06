@@ -62,9 +62,15 @@ change nothing.
 least 1.5; the chosen t falls between 0.40 and 0.50. (Many end-to-end errors are extra notes,
 which the posterior does not see, so the lift may be lower than in oracle mode.)
 
-- [ ] `scripts/measure_uncertainty.py`; run; record; apply the rule.
-- [ ] If adopted: the config value, the page's wording, `docs/using-the-app.md`; `make check`;
-      commit.
+- [x] `scripts/measure_uncertainty.py`; run; record; apply the rule.
+      *Result:* player 3, 1,941 tab notes, **0.615 wrong overall**. The rule's t is 0.50 (marks
+      0.242): wrong 0.794 if marked, 0.558 if not, **lift 1.42 < 1.5 — not adopted; 0.6 stays.**
+      At 0.6: marks 0.485, lift 1.12. Player 00 (11,100 notes, 0.437 wrong): lift 1.33–1.55
+      across t. Prediction: >40% marked at 0.6 held (0.485); lift ≥ 1.5 there failed (1.12); t in
+      0.40–0.50 held (0.50) but did not qualify. (t = 0.30 reaches 1.51 on player 3; not chosen,
+      by the rule.) **Why:** the posterior measures doubt about the string, and most end-to-end
+      errors on electric guitar are extra notes it cannot see. Reported to Ege.
+- [ ] ~~If adopted: …~~ not adopted.
 
 ## Task 3: Fewer extra notes from Basic Pitch
 
