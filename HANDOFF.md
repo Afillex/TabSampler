@@ -2,7 +2,7 @@
 
 You are picking up Tab Sampler with no prior context. This file is the shortest path to
 being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-06, after
-Phase 4 closed.
+Phase 5 closed.
 
 ## In one paragraph
 
@@ -22,8 +22,10 @@ first richer features did not earn a place (ADR 0034). **GuitarSet's player 00 i
 validation data and players 01–05 the test set (ADR 0037)**, because DadaGP's clean parts
 mispredicted GuitarSet three times. **Phase 2 closed with M2 missed** (ADR 0045), and **Phase 3
 measured audio evidence trained on SynthTab: it costs the decoder on GuitarSet** (ADR 0048).
-What remains is real training audio (Phase 4), a better transcriber, and an app a guitarist
-can use.
+**Phase 4** made clean electric guitar the target and EGDB a second test set; electric-trained
+audio evidence helps on EGDB (ADR 0054). **Phase 5** found Basic Pitch trained on GuitarSet (ADR
+0055) and improved end to end with stricter transcriber thresholds (ADR 0057). What remains:
+full songs (Phase 6), techniques (Phase 7), and an app a guitarist can use (the B track).
 
 ## Where the last session stopped (2026-10-06) — read before anything else
 
@@ -74,9 +76,10 @@ on DadaGP or SynthTab, or started from them, stay unpublished (ADRs 0042, 0046).
   for the log's reason). The access log has 32 lines; lines 31 and 32 are one look at EGDB whose
   first run stopped reading labels before any metric.
 
-`make check` (571 tests) and `make oracle` (13) pass. **Next, Ege's:** an electric decoder config with the audio term
-(needs a validation figure that is not the calibration's own), and the next phase — 5, a better
-transcriber, or the app track (B1–B4).
+Still open from Phase 4: an electric decoder config with the audio term (it needs a validation
+figure that is not the calibration's own).
+
+`make check` (571 tests) and `make oracle` (13) pass on `main`.
 
 Deferred small items, not yet fixed: `fit_weights` silently accepts unknown or empty
 `active` names; `paired_bootstrap({}, {})` fails with a raw numpy error; `CostWeights.
@@ -107,8 +110,8 @@ make oracle                        # the correctness core. Must be green.
 
 `make check` piped into `tail` hides its exit code — check the status, not the output.
 
-Then read, in this order: `docs/spec.md` → `docs/plans/2026-10-06-phase-4-electric.md`
-(Phase 4's plan, every task done) → `docs/devlog/2026-10-06.md` (Phase 4) →
+Then read, in this order: `docs/spec.md` → `docs/devlog/2026-10-06.md` (Phases 4 and 5) →
+`docs/plans/2026-10-06-phase-5-transcriber.md` and `2026-10-06-phase-4-electric.md` (both done) →
 `docs/devlog/2026-10-04.md` (Phase 2's close and Phase 3) → `docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`.
 
 ## Where things stand
@@ -133,18 +136,21 @@ numbers. Likewise, commit ids recorded on 2026-10-02 and 10-03 — in `results.c
 `experiments/test_set_access.log`, ADRs 0026–0028 and that devlog — name commits from before a
 wording clean-up of the history on 2026-10-03. Each has a counterpart with the same message, in
 the same order, with the same code. The run was
-`uv run tabsampler eval-m1 --split test --config configs/m2_c6_eval.yaml`. The hand-set default
-before it (T = 1.5728, measured 2026-10-03) is in brackets:
+`uv run tabsampler eval-m1 --split test --config configs/p5_test_eval.yaml` (Phase 5's look):
+the end-to-end column uses Basic Pitch at the thresholds Phase 5 adopted (ADR 0057); its defaults'
+figures (ADR 0045, `configs/m2_c6_eval.yaml`) are in brackets. **Basic Pitch trained on most of
+these recordings (ADR 0055): the end-to-end column is labelled; EGDB's is the clean figure**
+(oracle 0.6762, end to end 0.4547, E1 0.7416).
 
 | | oracle | end-to-end |
 |---|---|---|
-| E1 note F1, transcriber (raw) | 1.0000 | 0.7493 |
-| E1 note F1, pipeline (placed) | 1.0000 | 0.7507 |
-| **E2 exact tab F1 (headline)** | **0.6819** (0.6559) | **0.4418** (0.4277) |
-| E3 playable groups | 0.9978 (0.9980) | 0.9906 (0.9912) |
-| E3 playable transitions, 48 frets/s rule | 0.9996 (0.9997) | 0.9981 (0.9984) |
+| E1 note F1, transcriber (raw) | 1.0000 | 0.7812 (0.7493) |
+| E1 note F1, pipeline (placed) | 1.0000 | 0.7818 (0.7507) |
+| **E2 exact tab F1 (headline)** | **0.6819** | **0.4553** (0.4418) |
+| E3 playable groups | 0.9978 | 0.9956 (0.9906) |
+| E3 playable transitions, 48 frets/s rule | 0.9996 | 0.9979 (0.9981) |
 | E4 pitch validity | 1.0000 | 1.0000 |
-| E5 calibration error | **0.0792** (0.0794) | 0.2439 (0.2189) |
+| E5 calibration error | **0.0792** | 0.1841 (0.2439) |
 
 E1 = 1.0 in oracle mode is a plumbing check, not a result. **E4 = 1.0 is an invariant, not a
 score: anything below 1.0 is a bug**, because it means a (string, fret) pair does not sound
@@ -314,7 +320,11 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 
 ## Open items that need Ege, not you
 
-- **An electric decoder config with the audio term**, and the next phase: 5 or the app track.
+- **The next phase**: Phase 6 (full songs), the app track (B1–B4; D14, the app surface, is long
+  due), or more of Phase 5 (heavier transcribers; fine-tuning with an intermediate onset weight).
+- **An electric decoder config with the audio term** (Phase 4 loose end).
+- **Disk**: Guitar-TECHS's zips (4.1 GB) and `cache/transcriber/data` (1.3 GB) can go when no
+  longer needed; about 20 GB is free.
 - **More data**: GOAT (access unclear, by request) and more of SynthTab (2 TB) are Ege's calls.
 - **The chord-shape condition** on player 00 is *no clear drop* (Ege, 2026-10-04, ADR
   0039). Still open: whether the same test should re-judge the fitted distorted models,
