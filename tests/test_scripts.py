@@ -893,3 +893,33 @@ def test_the_egdb_look_refuses_a_partial_download_before_logging_anything(
     with pytest.raises(SystemExit, match="incomplete"):
         evaluate.main()
     assert logged == [] and read == []  # no label read, no look logged
+
+
+def test_the_e2e_analysis_splits_reference_notes_into_missed_and_heard() -> None:
+    analyse = load("analyse_e2e")
+
+    def note(onset: float, pitch: int, length: float = 0.5) -> NoteEvent:
+        return NoteEvent(onset=onset, offset=onset + length, pitch=pitch, confidence=1.0)
+
+    a, b = note(0.0, 45), note(1.0, 52)
+    reference = [(a, Position(1, 0)), (b, Position(2, 2))]
+    heard_a, octave_up, stray = note(0.01, 45), note(1.0, 64), note(2.0, 70)
+    oracle = [TabNote(a, Position(1, 0), 1.0), TabNote(b, Position(2, 2), 1.0)]
+    e2e = [TabNote(heard_a, Position(0, 5), 1.0)]
+    counts = analyse.tally(reference, [heard_a, octave_up, stray], oracle, e2e)
+    assert counts["heard"] == 1 and counts["heard, oracle only"] == 1
+    assert counts["missed"] == 1 and counts["missed long"] == 1
+    assert counts["missed, octave near"] == 1
+    assert counts["extra"] == 2
+    assert counts["extra, octave near"] == 1 and counts["extra, none near"] == 1
+    assert counts["oracle right"] == 2
+    parts = analyse.split(counts, oracle_e2=1.0, e2e_e2=0.0)
+    assert parts["E2 of the heard notes strung as in oracle mode"] == pytest.approx(2 / 3)
+    assert parts["note errors"] + parts["context"] == pytest.approx(1.0)
+
+
+def test_the_e2e_analysis_calls_a_short_missed_note_short() -> None:
+    analyse = load("analyse_e2e")
+    short = NoteEvent(onset=0.0, offset=0.1, pitch=50, confidence=1.0)
+    counts = analyse.tally([(short, Position(2, 0))], [], [], [])
+    assert counts["missed short"] == 1 and counts["missed, none near"] == 1
