@@ -38,8 +38,7 @@ pushed). Plan `docs/plans/2026-10-06-app-track.md`; the entry is the end of `doc
 - **Exports** (ADRs 0017, 0059): `-o tab.musicxml`, `-o tab.gp5`, and the page's buttons. A
   1/128-note grid, one voice, the disclaimer inside the file. `render/grid.py` holds the shared
   arithmetic.
-- **Open steps**: the page has not been driven in a browser (the headless browser's VM could not
-  start: its data is on an external drive that was not mounted), and no export has been opened in
+- **Open steps**: the page has not been driven in a browser yet, and no export has been opened in
   MuseScore, TuxGuitar or Guitar Pro (none installed). The README screenshot waits for the first.
 - **The gate is Ege's**: one of Ege's recordings in the page, and the page agreeing with
   `tabsampler transcribe`. Then merge, push, and a tag if wanted.
