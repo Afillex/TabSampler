@@ -157,3 +157,35 @@ def test_transcribe_uses_the_thresholds_phase_5_adopted(
     assert built == [CHOSEN_PARAMS]
     assert (CHOSEN_PARAMS.onset_threshold, CHOSEN_PARAMS.frame_threshold) == (0.7, 0.4)
     assert CHOSEN_PARAMS.minimum_note_length_ms == 58.0
+
+
+def test_transcribe_prints_the_tab_the_shared_pipeline_decodes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # ADR 0058: the CLI and the server both go through transcribe_path.
+    from tabsampler.config import load_phase1_config
+    from tabsampler.pipeline import transcribe_path
+    from tabsampler.render.json_out import render_json
+    from tabsampler.types import NoteEvent
+
+    notes = [
+        NoteEvent(onset=0.0, offset=0.4, pitch=40, confidence=0.9),
+        NoteEvent(onset=0.5, offset=0.9, pitch=57, confidence=0.9),
+    ]
+
+    class Fake:
+        def __init__(self, exe: str, params: object = None) -> None:
+            pass
+
+        def transcribe_file(self, path: Path) -> list[NoteEvent]:
+            return list(notes)
+
+    monkeypatch.setattr(cli, "BasicPitchCLITranscriber", Fake)
+    audio, out = tmp_path / "a.wav", tmp_path / "tab.json"
+    audio.write_bytes(b"")
+    result = CliRunner().invoke(cli.app, ["transcribe", str(audio), "-o", str(out)])
+    assert result.exit_code == 0, result.output
+    cfg = load_phase1_config(Path("configs/decoder_clean.yaml"))
+    expected = transcribe_path(audio, cfg, Fake("x"))
+    assert out.read_text() == render_json(expected.tab, cfg.tuning)
+    assert "2 notes | E3 groups" in result.output

@@ -50,12 +50,11 @@ from tabsampler.eval.harness import (
     evaluate_full,
     evaluate_notes,
 )
-from tabsampler.eval.metrics import pitch_validity_rate, tab_notes_to_placed
-from tabsampler.eval.playability import playability_rate
 from tabsampler.eval.recovery import RecoveryReport, add_track
 from tabsampler.eval.synthetic import round_trip_accuracy, sample_playable_path
 from tabsampler.fingering.candidates import group_notes
 from tabsampler.fingering.costs import HandSetScorer
+from tabsampler.pipeline import transcribe_path
 from tabsampler.render.ascii import render_ascii_with_legend
 from tabsampler.render.json_out import render_json
 from tabsampler.results import append_row, describe_weights, m1_row_notes, results_row
@@ -463,16 +462,12 @@ def transcribe(
     cfg = load_phase1_config(config)
     transcriber = BasicPitchCLITranscriber(exe=exe, params=CHOSEN_PARAMS)  # ADR 0057
 
-    notes = transcriber.transcribe_file(audio)
-    groups = group_notes(notes, window_s=cfg.group_window_s)
-    if not groups:
+    result = transcribe_path(audio, cfg, transcriber)  # the server's pipeline too (ADR 0058)
+    if result.n_notes_detected == 0:
         console.print("[yellow]no notes detected; nothing to render.[/yellow]")
         return
-
-    tab, degradation = decode_best_effort(groups, HandSetScorer(weights=cfg.weights), cfg.context)
-
-    play = playability_rate(tab, cfg.rules, window_s=cfg.group_window_s)
-    validity = pitch_validity_rate(tab_notes_to_placed(tab), cfg.tuning)
+    tab, degradation = list(result.tab), result.degradation
+    validity = result.pitch_validity
 
     if output is not None and output.suffix == ".json":
         text = render_json(tab, cfg.tuning)
@@ -488,8 +483,8 @@ def transcribe(
         console.print(f"[green]wrote {output}[/green]")
 
     console.print(
-        f"{len(tab)} notes | E3 groups {play.group_rate:.3f}, "
-        f"transitions {play.transition_rate:.3f} | E4 {validity:.3f}"
+        f"{len(tab)} notes | E3 groups {result.group_rate:.3f}, "
+        f"transitions {result.transition_rate:.3f} | E4 {validity:.3f}"
     )
     if not degradation.is_clean:
         console.print(
