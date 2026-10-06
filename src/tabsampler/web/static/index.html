@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tab Sampler</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>Tab Sampler</h1>
+    <p class="lede">Turn a recording of isolated guitar into tablature.</p>
+  </header>
+
+  <main>
+    <section id="upload" aria-labelledby="upload-title">
+      <h2 id="upload-title" class="visually-hidden">Choose a recording</h2>
+      <label id="drop" class="drop" for="file">
+        <span class="drop-main">Drop an audio file here, or choose one</span>
+        <span class="drop-sub">WAV, FLAC, OGG or MP3 &middot; up to 5 minutes &middot; isolated guitar only</span>
+        <input id="file" type="file" accept="audio/*,.wav,.flac,.ogg,.mp3">
+      </label>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="result" hidden aria-labelledby="result-title">
+      <div class="result-head">
+        <h2 id="result-title">Tab</h2>
+        <p id="summary" class="summary"></p>
+      </div>
+      <div id="degraded" class="banner" hidden></div>
+      <div class="toolbar">
+        <label>Zoom
+          <select id="zoom">
+            <option value="80">Compact</option>
+            <option value="160" selected>Normal</option>
+            <option value="320">Wide</option>
+          </select>
+        </label>
+        <span class="legend">
+          <svg width="34" height="20" aria-hidden="true"><g class="note"><rect x="1" y="1" width="32" height="18" rx="4"></rect><text x="17" y="14">5</text></g></svg> decoder is fairly sure
+          <svg width="34" height="20" aria-hidden="true"><g class="note uncertain"><rect x="1" y="1" width="32" height="18" rx="4"></rect><text x="17" y="14">(5)</text></g></svg> uncertain: hover or focus it for alternatives
+        </span>
+      </div>
+      <div id="scroller" class="scroller" tabindex="0" aria-label="Tab, scroll sideways for later notes">
+        <svg id="tab" role="img" aria-label="Guitar tablature"></svg>
+      </div>
+      <div id="tip" class="tip" role="tooltip" hidden></div>
+    </section>
+
+    <section class="facts" aria-labelledby="facts-title">
+      <h2 id="facts-title">Read this before trusting the tab</h2>
+      <ul>
+        <li><strong>Rhythm is not transcribed.</strong> Notes are placed by when they start, in
+          proportion to time; there are no bars or note values.</li>
+        <li><strong>Confidences are uncalibrated.</strong> The decoder ranks its notes, and the ones it
+          is least sure of are marked, but its numbers are not probabilities: end to end on
+          GuitarSet's test players its calibration error is 0.1841 (ADR 0057). Use the marks as a
+          ranking, a list of places to check by ear.</li>
+        <li><strong>Isolated guitar only.</strong> One guitar, no band, no vocals. Full songs are a
+          later phase.</li>
+        <li><strong>What to expect.</strong> On EGDB, recordings neither the transcriber nor the
+          decoder was tuned on, the tab scores an F1 of 0.4547 when a note counts only if its
+          start (within 50 ms), its pitch and its string all match the player's (end-to-end E2,
+          ADR 0057). Given the true notes instead of transcribed ones, the decoder alone scores
+          0.6762 (oracle E2, ADR 0054): transcription errors cost 0.22 of the score, and
+          strings chosen differently from the player's cost 0.32.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

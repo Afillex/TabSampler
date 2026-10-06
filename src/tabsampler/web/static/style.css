@@ -1,0 +1,119 @@
+:root {
+  --bg: #f7f6f3;
+  --panel: #ffffff;
+  --ink: #1d1d1b;
+  --muted: #5f5e5a;
+  --line: #b9b6ae;
+  --accent: #2f5d8a;
+  --note-bg: #ffffff;
+  --note-ink: #1d1d1b;
+  --unsure-bg: #fff4d6;
+  --warn-bg: #fff4d6;
+  --warn-ink: #5a4300;
+  --error-ink: #9b1c1c;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161615;
+    --panel: #1f1f1d;
+    --ink: #ecebe6;
+    --muted: #a9a79f;
+    --line: #5c5a54;
+    --accent: #8db8e3;
+    --note-bg: #1f1f1d;
+    --note-ink: #ecebe6;
+    --unsure-bg: #3b3220;
+    --warn-bg: #3b3220;
+    --warn-ink: #f3dca0;
+    --error-ink: #ff9b9b;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+header, main { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 32px; }
+h1 { margin: 0; font-size: 1.75rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.1rem; margin: 0 0 8px; }
+.lede { margin: 4px 0 24px; color: var(--muted); }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+.drop {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 32px 16px; border: 2px dashed var(--line); border-radius: 12px;
+  background: var(--panel); cursor: pointer; text-align: center;
+}
+.drop:hover, .drop.over, .drop:focus-within { border-color: var(--accent); }
+.drop-main { font-weight: 600; }
+.drop-sub { color: var(--muted); font-size: 0.9rem; }
+.drop input { margin-top: 12px; max-width: 100%; }
+
+.status { min-height: 1.5em; color: var(--muted); }
+.status.error { color: var(--error-ink); font-weight: 600; }
+
+#result { margin-top: 8px; }
+.result-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+.summary { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+.banner {
+  margin: 8px 0; padding: 10px 14px; border-radius: 8px;
+  background: var(--warn-bg); color: var(--warn-ink);
+}
+.banner ul { margin: 4px 0 0; padding-left: 20px; font-size: 0.9rem; }
+
+.toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px;
+  margin: 8px 0; font-size: 0.9rem; color: var(--muted);
+}
+.toolbar select { margin-left: 6px; font: inherit; }
+.legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.legend svg { vertical-align: middle; }
+
+.scroller {
+  overflow-x: auto; background: var(--panel); border-radius: 12px;
+  border: 1px solid var(--line); padding: 8px 0;
+}
+.scroller:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#tab { display: block; }
+
+.string { stroke: var(--line); stroke-width: 1; }
+.string-label { fill: var(--muted); font-size: 13px; font-weight: 600; text-anchor: middle; }
+.tick { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+.tick-label { fill: var(--muted); font-size: 11px; }
+
+.note { cursor: default; }
+.note rect { fill: var(--note-bg); stroke: var(--note-bg); stroke-width: 1.5; }
+.note text {
+  fill: var(--note-ink); font-size: 13px; font-weight: 600; text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+/* Uncertain: a dashed outline and parentheses, so it does not depend on colour (ADR 0058). */
+.note.uncertain rect { fill: var(--unsure-bg); stroke: var(--ink); stroke-dasharray: 3 2; }
+.note:hover rect, .note:focus rect { stroke: var(--accent); stroke-width: 2; stroke-dasharray: none; }
+.note:focus { outline: none; }
+
+.tip {
+  position: fixed; z-index: 10; max-width: 280px; padding: 8px 12px; border-radius: 8px;
+  background: var(--ink); color: var(--bg); font-size: 0.85rem; pointer-events: none;
+}
+.tip ol { margin: 4px 0 0; padding-left: 20px; }
+
+.facts {
+  margin: 32px 0 48px; padding: 16px 20px; border-radius: 12px;
+  background: var(--panel); border: 1px solid var(--line);
+}
+.facts ul { margin: 0; padding-left: 20px; }
+.facts li { margin: 6px 0; }

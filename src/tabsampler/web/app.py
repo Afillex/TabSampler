@@ -13,10 +13,13 @@ from __future__ import annotations
 
 import shutil
 import tempfile
+from importlib.resources import files
 from pathlib import Path
 from typing import Any, BinaryIO, Protocol
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from tabsampler.config import Phase1Config
 from tabsampler.errors import TranscriberFailedError, TranscriberUnavailableError
@@ -36,6 +39,9 @@ MAX_DURATION_S = 300.0
 MAX_DETAILS = 20
 
 _CHUNK = 1024 * 1024
+
+#: The page: plain HTML, CSS and JavaScript shipped inside the package (ADR 0058).
+STATIC_DIR = Path(str(files("tabsampler.web").joinpath("static")))
 
 
 class ServerTranscriber(Protocol):
@@ -102,6 +108,11 @@ def create_app(
     max_duration_s: float = MAX_DURATION_S,
 ) -> FastAPI:
     app = FastAPI(title="Tab Sampler", docs_url=None, redoc_url=None)
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    @app.get("/", include_in_schema=False)
+    def index() -> FileResponse:  # pyright: ignore[reportUnusedFunction]
+        return FileResponse(STATIC_DIR / "index.html", media_type="text/html")
 
     @app.get("/api/health")
     def health() -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
