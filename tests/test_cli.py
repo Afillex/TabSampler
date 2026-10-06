@@ -189,3 +189,26 @@ def test_transcribe_prints_the_tab_the_shared_pipeline_decodes(
     expected = transcribe_path(audio, cfg, Fake("x"))
     assert out.read_text() == render_json(expected.tab, cfg.tuning)
     assert "2 notes | E3 groups" in result.output
+
+
+@pytest.mark.parametrize(("suffix", "magic"), [(".musicxml", b"<?xml"), (".gp5", b"FICHIER")])
+def test_transcribe_exports_by_suffix_with_the_disclaimer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, suffix: str, magic: bytes
+) -> None:
+    from tabsampler.types import NoteEvent
+
+    class Fake:
+        def __init__(self, exe: str, params: object = None) -> None:
+            pass
+
+        def transcribe_file(self, path: Path) -> list[NoteEvent]:
+            return [NoteEvent(onset=0.0, offset=0.5, pitch=40, confidence=0.9)]
+
+    monkeypatch.setattr(cli, "BasicPitchCLITranscriber", Fake)
+    audio, out = tmp_path / "a.wav", tmp_path / f"tab{suffix}"
+    audio.write_bytes(b"")
+    result = CliRunner().invoke(cli.app, ["transcribe", str(audio), "-o", str(out)])
+    assert result.exit_code == 0, result.output
+    data = out.read_bytes()
+    assert magic in data[:40]
+    assert b"Rhythm is NOT transcribed" in data

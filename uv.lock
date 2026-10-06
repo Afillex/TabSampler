@@ -40,6 +40,15 @@ wheels = [
 ]
 
 [[package]]
+name = "attrs"
+version = "26.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/8e/82a0fe20a541c03148528be8cac2408564a6c9a0cc7e9171802bc1d26985/attrs-26.1.0.tar.gz", hash = "sha256:d03ceb89cb322a8fd706d4fb91940737b6642aa36998fe130a9bc96c985eff32", size = 952055, upload-time = "2026-03-19T14:22:25.026Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl", hash = "sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309", size = 67548, upload-time = "2026-03-19T14:22:23.645Z" },
+]
+
+[[package]]
 name = "azure-common"
 version = "1.1.28"
 source = { registry = "https://pypi.org/simple" }
@@ -1255,6 +1264,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyguitarpro"
+version = "0.11"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0f/79/24754b4088a0647dc6dbc641534991fc5cb25acb8bdd65654bef42c3da81/pyguitarpro-0.11.tar.gz", hash = "sha256:d8692f9510a80a7c22b43b1c40fcd5ff32ae861241ef95a51cc607c3610f9f01", size = 105427, upload-time = "2026-05-03T12:19:59.018Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/62/5e/58c0b0a61636316a77c1a5106a0a82198bba15f415cc8205fa334d561da9/pyguitarpro-0.11-py3-none-any.whl", hash = "sha256:747d01b580b147a0b726a8f7fafa9e5b0947030c886622831580ef1b6fa99a94", size = 45636, upload-time = "2026-05-03T12:19:57.519Z" },
+]
+
+[[package]]
 name = "pynacl"
 version = "1.6.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1609,6 +1630,7 @@ dependencies = [
     { name = "mir-eval" },
     { name = "mirdata" },
     { name = "numpy" },
+    { name = "pyguitarpro" },
     { name = "pyyaml" },
     { name = "rich" },
     { name = "scipy" },
@@ -1642,6 +1664,7 @@ requires-dist = [
     { name = "mir-eval", specifier = ">=0.8.2" },
     { name = "mirdata", specifier = ">=1.0" },
     { name = "numpy", specifier = ">=2.5" },
+    { name = "pyguitarpro", specifier = ">=0.11" },
     { name = "pyyaml", specifier = ">=6" },
     { name = "rich", specifier = ">=15" },
     { name = "scipy", specifier = ">=1.18" },

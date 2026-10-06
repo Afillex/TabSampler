@@ -79,6 +79,12 @@ h2 { font-size: 1.1rem; margin: 0 0 8px; }
   margin: 8px 0; font-size: 0.9rem; color: var(--muted);
 }
 .toolbar select { margin-left: 6px; font: inherit; }
+.exports { display: inline-flex; gap: 8px; }
+.exports button {
+  font: inherit; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.exports button:hover, .exports button:focus-visible { border-color: var(--accent); }
 .legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .legend svg { vertical-align: middle; }
 

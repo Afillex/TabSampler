@@ -85,3 +85,9 @@ def test_static_assets_are_served(client: TestClient) -> None:
 def test_the_static_files_ship_in_the_package() -> None:
     for name in ("index.html", "app.js", "style.css"):
         assert files("tabsampler.web").joinpath("static", name).is_file()
+
+
+def test_the_page_offers_both_exports(client: TestClient) -> None:
+    page = client.get("/").text
+    assert 'data-export="musicxml"' in page and 'data-export="gp5"' in page
+    assert "/api/export/" in static("app.js")

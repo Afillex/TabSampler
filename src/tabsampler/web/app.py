@@ -13,19 +13,22 @@ from __future__ import annotations
 
 import shutil
 import tempfile
+from collections.abc import Callable, Sequence
 from importlib.resources import files
 from pathlib import Path
 from typing import Any, BinaryIO, Protocol
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import Body, FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from tabsampler.config import Phase1Config
 from tabsampler.errors import TranscriberFailedError, TranscriberUnavailableError
 from tabsampler.pipeline import PipelineResult, transcribe_path
-from tabsampler.render.json_out import tab_to_dict
-from tabsampler.types import NoteEvent
+from tabsampler.render.guitarpro import render_guitarpro
+from tabsampler.render.json_out import tab_from_dict, tab_to_dict
+from tabsampler.render.musicxml import render_musicxml
+from tabsampler.types import NoteEvent, TabNote, Tuning
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
@@ -42,6 +45,13 @@ _CHUNK = 1024 * 1024
 
 #: The page: plain HTML, CSS and JavaScript shipped inside the package (ADR 0058).
 STATIC_DIR = Path(str(files("tabsampler.web").joinpath("static")))
+
+
+#: Export formats (ADRs 0017, 0059): name -> (writer, media type, file suffix).
+EXPORTS: dict[str, tuple[Callable[[Sequence[TabNote], Tuning], bytes], str, str]] = {
+    "musicxml": (render_musicxml, "application/vnd.recordare.musicxml+xml", ".musicxml"),
+    "gp5": (render_guitarpro, "application/octet-stream", ".gp5"),
+}
 
 
 class ServerTranscriber(Protocol):
@@ -150,5 +160,20 @@ def create_app(
             return response_document(result, cfg)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+
+    @app.post("/api/export/{fmt}")
+    def export(fmt: str, doc: dict[str, Any] = Body(...)) -> Response:  # pyright: ignore[reportUnusedFunction]  # noqa: B008
+        if fmt not in EXPORTS:
+            raise HTTPException(404, f"no export format {fmt!r}; try {', '.join(EXPORTS)}")
+        writer, media, suffix = EXPORTS[fmt]
+        try:
+            tab, tuning = tab_from_dict(doc)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        return Response(
+            writer(tab, tuning),
+            media_type=media,
+            headers={"Content-Disposition": f'attachment; filename="tab{suffix}"'},
+        )
 
     return app

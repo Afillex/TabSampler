@@ -182,3 +182,32 @@ def test_serve_defaults_to_localhost() -> None:
     from tabsampler import cli
 
     assert inspect.signature(cli.serve).parameters["host"].default == DEFAULT_HOST
+
+
+@pytest.mark.parametrize(
+    ("fmt", "media", "suffix"),
+    [
+        ("musicxml", "application/vnd.recordare.musicxml+xml", ".musicxml"),
+        ("gp5", "application/octet-stream", ".gp5"),
+    ],
+)
+def test_export_turns_the_document_back_into_a_file(
+    client: TestClient, fmt: str, media: str, suffix: str
+) -> None:
+    doc = post(client, wav_bytes()).json()
+    r = client.post(f"/api/export/{fmt}", json=doc)
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"].startswith(media)
+    assert f'filename="tab{suffix}"' in r.headers["content-disposition"]
+    assert b"Rhythm is NOT transcribed" in r.content
+
+
+def test_export_refuses_a_malformed_document_with_400(client: TestClient) -> None:
+    r = client.post("/api/export/musicxml", json={"schema_version": 1})
+    assert r.status_code == 400
+    assert "not a tab document" in r.json()["detail"]
+
+
+def test_export_refuses_an_unknown_format_with_404(client: TestClient) -> None:
+    doc = post(client, wav_bytes()).json()
+    assert client.post("/api/export/pdf", json=doc).status_code == 404

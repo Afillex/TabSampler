@@ -211,6 +211,27 @@ async function transcribe(file) {
   draw(doc);
 }
 
+// The exports carry the disclaimer inside the file (ADRs 0017, 0059).
+async function download(fmt) {
+  if (!current) return;
+  const response = await fetch(`/api/export/${fmt}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(current),
+  });
+  if (!response.ok) {
+    const doc = await response.json().catch(() => ({ detail: response.statusText }));
+    setStatus(`Could not export: ${doc.detail}`, true);
+    return;
+  }
+  const name = (response.headers.get("Content-Disposition") || "").split('filename="')[1];
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(await response.blob());
+  link.download = name ? name.replace('"', "") : `tab.${fmt}`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 function init() {
   const drop = $("drop");
   const input = $("file");
@@ -228,6 +249,9 @@ function init() {
     e.preventDefault();
     if (e.dataTransfer.files.length) transcribe(e.dataTransfer.files[0]);
   });
+  for (const button of document.querySelectorAll("[data-export]")) {
+    button.addEventListener("click", () => download(button.dataset.export));
+  }
   $("zoom").addEventListener("change", () => current && draw(current));
   $("scroller").addEventListener("scroll", hideTip);
 }

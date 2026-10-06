@@ -56,10 +56,12 @@ from tabsampler.fingering.candidates import group_notes
 from tabsampler.fingering.costs import HandSetScorer
 from tabsampler.pipeline import transcribe_path
 from tabsampler.render.ascii import render_ascii_with_legend
+from tabsampler.render.guitarpro import render_guitarpro
 from tabsampler.render.json_out import render_json
+from tabsampler.render.musicxml import render_musicxml
 from tabsampler.results import append_row, describe_weights, m1_row_notes, results_row
 from tabsampler.transcribe.basic_pitch_cli import CHOSEN_PARAMS, BasicPitchCLITranscriber
-from tabsampler.types import CostWeights, NoteEvent, TabNote
+from tabsampler.types import CostWeights, NoteEvent, TabNote, Tuning
 
 app = typer.Typer(
     add_completion=False,
@@ -69,6 +71,12 @@ app = typer.Typer(
 console = Console()
 
 RESULTS_PATH = Path("experiments/results.csv")
+
+#: `transcribe -o` by suffix (ADR 0058).
+EXPORTERS: dict[str, Callable[[list[TabNote], Tuning], bytes]] = {
+    ".musicxml": render_musicxml,
+    ".gp5": render_guitarpro,
+}
 
 
 @app.command("eval-notes")
@@ -449,7 +457,9 @@ def transcribe(
     audio: Annotated[Path, typer.Argument(help="Guitar audio file (isolated guitar).")],
     output: Annotated[
         Path | None,
-        typer.Option("--output", "-o", help="Write here. .json gives JSON, else ASCII."),
+        typer.Option(
+            "--output", "-o", help="Write here: .json, .musicxml or .gp5 by suffix, else ASCII."
+        ),
     ] = None,
     config: Annotated[Path, typer.Option("--config", "-c", help="Decoder config YAML.")] = Path(
         "configs/decoder_clean.yaml"
@@ -469,18 +479,23 @@ def transcribe(
     tab, degradation = list(result.tab), result.degradation
     validity = result.pitch_validity
 
-    if output is not None and output.suffix == ".json":
-        text = render_json(tab, cfg.tuning)
+    suffix = output.suffix.lower() if output is not None else ""
+    if output is not None and suffix in EXPORTERS:
+        # ADRs 0017, 0059: a fixed grid, the disclaimer inside the file.
+        output.write_bytes(EXPORTERS[suffix](tab, cfg.tuning))
+        console.print(f"[green]wrote {output}[/green] [dim](rhythm is not transcribed)[/dim]")
     else:
-        text = render_ascii_with_legend(
-            tab, cfg.tuning, uncertainty_threshold=cfg.uncertainty_threshold
-        )
-
-    if output is None:
-        console.print(text)
-    else:
-        output.write_text(text)
-        console.print(f"[green]wrote {output}[/green]")
+        if suffix == ".json":
+            text = render_json(tab, cfg.tuning)
+        else:
+            text = render_ascii_with_legend(
+                tab, cfg.tuning, uncertainty_threshold=cfg.uncertainty_threshold
+            )
+        if output is None:
+            console.print(text)
+        else:
+            output.write_text(text)
+            console.print(f"[green]wrote {output}[/green]")
 
     console.print(
         f"{len(tab)} notes | E3 groups {result.group_rate:.3f}, "
