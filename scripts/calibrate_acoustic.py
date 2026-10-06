@@ -12,7 +12,9 @@ weight among ``WEIGHTS``: the default decoder decodes each held-out track in its
 latency corrected, as in training -- and the weight placing the most notes on their labelled
 string is kept, the smaller on a tie. ``--corpus guitartechs`` does the same on Guitar-TECHS's
 player 3 (ADR 0051): its cleaned notes, standard tuning, each take's label delay measured from
-its audio (ADR 0052). Nothing here reads GuitarSet. Writes ``<run>/calibration.json``.
+its audio (ADR 0052). ``--corpus idmt`` calibrates on IDMT-SMT-Guitar's licks instead, both the
+temperature (by their notes' NLL) and the weight, and ``--judge`` then scores that calibration on
+EGSet12 (ADR 0062). Nothing here reads GuitarSet. Writes ``<run>/calibration.json``.
 """
 
 from __future__ import annotations
@@ -39,6 +41,7 @@ from tabsampler.audio.windows import (
     track_cqt,
 )
 from tabsampler.config import load_phase1_config
+from tabsampler.data.electric import aligned, load_egset12, load_idmt_licks
 from tabsampler.data.guitartechs import STANDARD, clean, load_takes, usable
 from tabsampler.data.synthtab import RENDER_LATENCY, is_held_out, load_tracks
 from tabsampler.decode.robust import decode_best_effort
@@ -86,6 +89,67 @@ def guitartechs_pieces(root: Path) -> Iterator[Piece]:
         yield Piece(notes, STANDARD, signal, lag - MEASURE_LAG)
 
 
+def electric_pieces(which: str) -> Iterator[Piece]:
+    """ADR 0062's validation takes, each with its label delay taken off (``aligned``)."""
+    takes = (
+        load_idmt_licks(Path("data/idmt-smt-guitar"))
+        if which == "idmt"
+        else load_egset12(Path("data/egset12"))
+    )
+    for take in takes:
+        take = aligned(take)
+        signal, _ = librosa.load(take.audio, sr=RATE, mono=True)
+        yield Piece(take.notes, STANDARD, np.asarray(signal, dtype=np.float32), 0.0)
+
+
+def piece_log_probs(
+    model: StringClassifier, pieces: list[Piece]
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Untempered log-probabilities and labels for every note more than one string can sound."""
+    windows, pitches, possible, labels = [], [], [], []
+    for piece in pieces:
+        cqt = track_cqt(piece.signal)
+        for note, position in piece.notes:
+            mask = possible_strings(note.pitch, piece.open_pitches, MAX_FRET)
+            if sum(mask) < 2:
+                continue
+            windows.append(note_window(cqt, note.onset + piece.shift, note.pitch))
+            pitches.append(note.pitch)
+            possible.append(mask)
+            labels.append(position.string)
+    with torch.no_grad():
+        log_probs = model(
+            torch.from_numpy(np.stack(windows)), torch.tensor(pitches), torch.tensor(possible)
+        )
+    return log_probs, torch.tensor(labels)
+
+
+def judge(model: StringClassifier, temperature: float, weight: float, default: CostWeights) -> None:
+    """EGSet12's string recovery (oracle E2) without and with the evidence, per take, with a
+    bootstrap interval over takes for the change."""
+    rows: list[tuple[int, int, int]] = []
+    for piece in electric_pieces("egset12"):
+        evidence = evidence_for(model, piece, temperature)
+        without = recovered(piece.notes, piece.open_pitches, replace(default, acoustic=0.0), {})
+        with_ = recovered(
+            piece.notes, piece.open_pitches, replace(default, acoustic=weight), evidence
+        )
+        rows.append((len(piece.notes), without, with_))
+    n = np.array(rows)
+    base, new = n[:, 1].sum() / n[:, 0].sum(), n[:, 2].sum() / n[:, 0].sum()
+    rng = np.random.default_rng(0)
+    deltas = []
+    for _ in range(10000):
+        pick = n[rng.integers(0, len(n), len(n))]
+        deltas.append((pick[:, 2].sum() - pick[:, 1].sum()) / pick[:, 0].sum())
+    low, high = np.percentile(deltas, [2.5, 97.5])
+    print(
+        f"EGSet12, {len(n)} takes, {n[:, 0].sum()} notes: oracle string recovery {base:.4f} -> "
+        f"{new:.4f} (weight {weight:g}, T {temperature:.4f}), change {new - base:+.4f} "
+        f"[{low:+.4f}, {high:+.4f}]"
+    )
+
+
 def evidence_for(
     model: StringClassifier, piece: Piece, temperature: float
 ) -> dict[NoteEvent, tuple[float, ...]]:
@@ -130,28 +194,45 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", type=Path)
     parser.add_argument("--run", type=Path, required=True)
-    parser.add_argument("--corpus", choices=("synthtab", "guitartechs"), default="synthtab")
+    parser.add_argument("--corpus", choices=("synthtab", "guitartechs", "idmt"), default="synthtab")
+    parser.add_argument(
+        "--judge",
+        action="store_true",
+        help="Score the run's calibration on EGSet12 instead of calibrating (ADR 0062).",
+    )
     parser.add_argument("--decoder-config", type=Path, default=Path("configs/decoder_clean.yaml"))
     args = parser.parse_args()
     model = StringClassifier()
     model.load_state_dict(torch.load(args.run / "best.pt", weights_only=True))
     model.eval()
 
-    saved = np.load(args.run / "examples.npz")
-    with torch.no_grad():
-        log_probs = model(
-            torch.from_numpy(saved["held_windows"].astype(np.float32)),
-            torch.from_numpy(saved["held_pitches"].astype(np.int64)),
-            torch.from_numpy(saved["held_possible"]),
-        )
-    labels = torch.from_numpy(saved["held_strings"].astype(np.int64))
+    default = load_phase1_config(args.decoder_config).weights
+    if args.judge:
+        calibration = json.loads((args.run / "calibration.json").read_text())
+        judge(model, calibration["temperature"], calibration["weight"], default)
+        return
+    if args.corpus == "idmt":
+        idmt = list(electric_pieces("idmt"))
+        log_probs, labels = piece_log_probs(model, idmt)
+    else:
+        saved = np.load(args.run / "examples.npz")
+        with torch.no_grad():
+            log_probs = model(
+                torch.from_numpy(saved["held_windows"].astype(np.float32)),
+                torch.from_numpy(saved["held_pitches"].astype(np.int64)),
+                torch.from_numpy(saved["held_possible"]),
+            )
+        labels = torch.from_numpy(saved["held_strings"].astype(np.int64))
     before = float(-log_probs.gather(1, labels.unsqueeze(1)).mean())
     temperature = fit_temperature(log_probs, labels)
     after = float(-tempered(log_probs, temperature).gather(1, labels.unsqueeze(1)).mean())
-    print(f"temperature {temperature:.4f}: held-out NLL {before:.4f} -> {after:.4f}", flush=True)
+    print(f"temperature {temperature:.4f}: NLL {before:.4f} -> {after:.4f}", flush=True)
 
-    pieces = synthtab_pieces if args.corpus == "synthtab" else guitartechs_pieces
-    default = load_phase1_config(args.decoder_config).weights
+    pieces = {
+        "synthtab": synthtab_pieces,
+        "guitartechs": guitartechs_pieces,
+        "idmt": lambda _: iter(idmt),
+    }[args.corpus]
     counts = dict.fromkeys(WEIGHTS, 0)
     total = tracks = 0
     for piece in pieces(args.root):
