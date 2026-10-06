@@ -2,7 +2,8 @@
 
     caffeinate -i uv run python -u scripts/tune_transcriber.py --out cache/validation/p5-grid
 
-For every setting in the grid -- onset threshold, frame threshold, minimum note length -- Basic
+For every setting in the grid -- onset threshold, frame threshold, minimum note length, by default
+Task 3's 30, or as ``--onsets``, ``--frames`` and ``--lengths-ms`` give them -- Basic
 Pitch transcribes player 3's 12 takes (direct input) and the default decoder strings its notes;
 each take's end-to-end E2 and chord-shape counts are written as ``<out>/<setting>.json``, in the
 per-track form ``scripts/compare_validation.py`` compares. Scored against each take's cleaned
@@ -45,6 +46,9 @@ def main() -> None:
     parser.add_argument("--root", type=Path, default=Path("data/guitar-techs"))
     parser.add_argument("--config", type=Path, default=Path("configs/m1_full_eval.yaml"))
     parser.add_argument("--decoder-config", type=Path, default=Path("configs/decoder_clean.yaml"))
+    parser.add_argument("--onsets", type=float, nargs="+", default=list(ONSETS))
+    parser.add_argument("--frames", type=float, nargs="+", default=list(FRAMES))
+    parser.add_argument("--lengths-ms", type=float, nargs="+", default=list(LENGTHS_MS))
     args = parser.parse_args()
     cfg = load_eval_config(args.config)
     dec = load_phase1_config(args.decoder_config)
@@ -53,7 +57,7 @@ def main() -> None:
     references = {take.name: aligned(take) for take in takes}
     args.out.mkdir(parents=True, exist_ok=True)
     print(f"{len(takes)} takes, {sum(len(r) for r in references.values())} reference notes")
-    for onset, frame, length in itertools.product(ONSETS, FRAMES, LENGTHS_MS):
+    for onset, frame, length in itertools.product(args.onsets, args.frames, args.lengths_ms):
         params = replace(
             cfg.transcriber.params,
             onset_threshold=onset,

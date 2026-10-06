@@ -947,11 +947,10 @@ def test_the_transcriber_grid_writes_one_report_per_setting(
     monkeypatch.setattr(tune, "load_takes", lambda *_: ([take, other], []))
     monkeypatch.setattr(tune, "aligned", lambda t: t.notes)
     monkeypatch.setattr(tune, "BasicPitchCLITranscriber", Fake)
-    monkeypatch.setattr(tune, "ONSETS", (0.5, 0.6))
-    monkeypatch.setattr(tune, "FRAMES", (0.3,))
-    monkeypatch.setattr(tune, "LENGTHS_MS", (127.70,))
     out = tmp_path / "grid"
-    monkeypatch.setattr(sys, "argv", ["tune_transcriber.py", "--out", str(out)])
+    argv = ["tune_transcriber.py", "--out", str(out), "--onsets", "0.5", "0.6"]
+    argv += ["--frames", "0.3", "--lengths-ms", "127.70"]
+    monkeypatch.setattr(sys, "argv", argv)
     tune.main()
     assert seen == [(0.5, 0.3, 127.70), (0.6, 0.3, 127.70)]
     report = json.loads((out / "onset0.5_frame0.3_min127.7.json").read_text())

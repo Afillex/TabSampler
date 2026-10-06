@@ -79,6 +79,17 @@ wins, as precision is player 3's problem. **Predictions:** the candidate's onset
       size prediction failed high. The winner sits at the grid's edge. `compare_validation.py`
       needed a ratio bootstrap end to end, where the two sides count different notes.)*
 
+### Task 3b: past the grid's edge
+
+**Pre-registered:** the adopted setting sits at the grid's edge, onset 0.7. `scripts/tune_transcriber.py
+--out cache/validation/p5-grid --onsets 0.75 0.8 0.85 0.9 --frames 0.3 0.4 0.5 --lengths-ms 58` —
+12 settings beyond it. **The rule:** the best of them by end-to-end E2 on player 3 replaces onset
+0.7 / frame 0.4 / min 58 ms only if its take-level interval against that setting lies wholly above
+zero with no clear chord-shape drop. **Prediction:** E2 peaks between 0.7 and 0.8, and nothing
+beyond clears the interval: onset 0.7 / frame 0.4 / min 58 ms stays.
+
+- [ ] Run; record.
+
 ## Task 4: Fine-tune Basic Pitch on Guitar-TECHS
 
 Its training code is in the package; players 1–2 train, player 3 validates (ADR 0051). Designed
