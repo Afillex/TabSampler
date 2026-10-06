@@ -505,6 +505,48 @@ def transcribe(
         )
 
 
+@app.command("serve")
+def serve(
+    host: Annotated[
+        str, typer.Option(help="Interface to bind. Anything but 127.0.0.1 exposes the server.")
+    ] = "127.0.0.1",
+    port: Annotated[int, typer.Option(help="Port.")] = 8000,
+    config: Annotated[Path, typer.Option("--config", "-c", help="Decoder config YAML.")] = Path(
+        "configs/decoder_clean.yaml"
+    ),
+    exe: Annotated[
+        str, typer.Option("--transcriber", help="basic-pitch executable.")
+    ] = "basic-pitch",
+) -> None:
+    """Serve the local web page (ADR 0058). Needs the `web` dependency group."""
+    try:
+        import uvicorn
+
+        from tabsampler.web.app import DEFAULT_HOST, create_app
+    except ImportError as exc:
+        console.print(
+            f"[bold red]the web page needs the `web` dependency group ({exc.name} is missing): "
+            f"run `uv sync --all-groups`.[/bold red]"
+        )
+        raise typer.Exit(1) from exc
+
+    if host != DEFAULT_HOST:
+        console.print(
+            f"[bold yellow]warning: binding {host}. The server has no authentication and runs "
+            f"a subprocess on every upload; anyone who can reach this address can do both."
+            f"[/bold yellow]"
+        )
+    transcriber = BasicPitchCLITranscriber(exe=exe, params=CHOSEN_PARAMS)  # ADR 0057
+    if not transcriber.is_available():
+        console.print(
+            f"[yellow]{exe!r} not found: the page will load but cannot transcribe. "
+            f"Install it with `bash scripts/setup_transcriber.sh`.[/yellow]"
+        )
+    web_app = create_app(load_phase1_config(config), transcriber)
+    console.print(f"Tab Sampler at [bold]http://{host}:{port}[/bold]")
+    uvicorn.run(web_app, host=host, port=port, log_level="warning")
+
+
 @app.command("diagnose")
 def diagnose(
     decoder: Annotated[Path, typer.Option("--decoder-config", help="Decoder config YAML.")] = Path(

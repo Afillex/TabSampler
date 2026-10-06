@@ -330,3 +330,12 @@ def test_the_models_files_are_part_of_the_cache_key(tmp_path: Path) -> None:
     (copy / "Data" / "weights.bin").write_bytes(b"two")
     moved = BasicPitchCLITranscriber(exe="x", cache_dir=tmp_path / "cache", model=copy)
     assert moved.cache_key(audio) == t.cache_key(audio)  # content, not path
+
+
+def test_is_available_says_whether_the_executable_exists(tmp_path: Path) -> None:
+    missing = BasicPitchCLITranscriber(exe=tmp_path / "nope", cache_dir=tmp_path)
+    assert missing.is_available() is False
+    exe = tmp_path / "basic-pitch"
+    exe.write_text("#!/bin/sh\n")
+    exe.chmod(0o755)
+    assert BasicPitchCLITranscriber(exe=exe, cache_dir=tmp_path).is_available() is True

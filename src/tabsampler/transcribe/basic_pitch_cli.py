@@ -194,6 +194,11 @@ class BasicPitchCLITranscriber:
         self.cache_hits = 0
         self.cache_misses = 0
 
+    def is_available(self) -> bool:
+        """Whether the executable exists and can be run -- for a health check, not a guarantee."""
+        exe = Path(self.exe)
+        return exe.is_file() and os.access(exe, os.X_OK)
+
     # ------------------------------------------------------------------ cache
 
     def cache_key(self, audio_path: Path) -> str:

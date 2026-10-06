@@ -27,10 +27,17 @@ dev = [
     "ruff>=0.16",
     "pyright>=1.1.414",
     "pre-commit>=4",
+    "httpx2>=2.13.1",
 ]
 # The learned model of Phase 2 task C4 (ADR 0041). Nothing else imports torch.
 model = [
     "torch>=2.14.1,<2.15",
+]
+# The local web page (ADR 0058). Optional: only tabsampler.web and `tabsampler serve` use it.
+web = [
+    "fastapi>=0.142.2",
+    "python-multipart>=0.0.32",
+    "uvicorn>=0.54.0",
 ]
 
 # Linux, which is CI, takes the CPU-only build: the default Linux wheel brings CUDA
