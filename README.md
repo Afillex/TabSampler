@@ -12,7 +12,9 @@ Status: **Milestone M1 reached. Phase 2 (learned fingering) closed on 2026-10-04
 missed: oracle E2 0.6819 against 0.760** (ADR 0045). **Phase 3 (audio conditioning) closed
 on 2026-10-06 with a negative result: audio evidence trained on SynthTab lowers oracle E2 to
 0.6073** (ADR 0048). **Phase 4 (real electric audio) is measured: on EGDB's electric guitar the
-audio evidence raises oracle E2 from 0.6762 to 0.7200** (ADR 0054); closed on 2026-10-06. The next phase is to be chosen.
+audio evidence raises oracle E2 from 0.6762 to 0.7200** (ADR 0054); closed on 2026-10-06. **Phase 5 (a
+better transcriber) is measured: stricter Basic Pitch thresholds raise EGDB's end-to-end E2 from
+0.4251 to 0.4547** (ADR 0057); closing it awaits sign-off.
 
 ## Results
 
@@ -105,6 +107,22 @@ test players the sign flips from player 00's — no interval is computed there. 
 does about as well on electric as on acoustic guitar (0.6762 against 0.6819). End to end on EGDB:
 Basic Pitch's note F1 0.7230, exact tab F1 0.4251 (530 of 43,700 transcribed notes not placed).
 The default keeps the audio term off.
+
+### Phase 5: a better transcriber (ADRs 0055–0057)
+
+Basic Pitch's released model trained on 90% of GuitarSet (ADR 0055), so transcribers are compared
+on audio it never heard: Guitar-TECHS for choosing, EGDB for testing. Its note thresholds, chosen on
+Guitar-TECHS's validation player — onset 0.7, frame 0.4, minimum note length 58 ms, against its
+defaults 0.5, 0.3, 127.7 ms:
+
+| end-to-end E2 (note F1) | Basic Pitch's defaults | chosen thresholds |
+|---|---|---|
+| EGDB, electric (test, clean) | 0.4251 (0.7230) | **0.4547 (0.7416)** |
+| GuitarSet players 01–05, acoustic (test, labelled) | 0.4418 (0.7493) | 0.4553 (0.7812) |
+
+On electric direct input Basic Pitch writes many notes that were not played, and the stricter
+thresholds remove most of them. Fine-tuning it on Guitar-TECHS (ADR 0056) made it worse both ways
+it was tried.
 
 ### Validation on GuitarSet's own playing (ADRs 0037–0039)
 

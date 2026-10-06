@@ -64,6 +64,7 @@ of the old record to point at its replacement.
 | [0054](0054-phase-4-result.md) | **Phase 4's result**: electric-trained audio evidence raises EGDB's oracle E2 0.6762 → 0.7200 (test); on acoustic GuitarSet −0.023 (player 00), +0.006 (test); the decoder's electric-to-acoustic gap is small (0.6762 vs 0.6819); default unchanged | D2 | accepted |
 | [0055](0055-transcriber-training-overlap.md) | **Basic Pitch trained on ~90% of GuitarSet** (its paper, Table 1): GuitarSet's end-to-end figures are labelled; transcribers are compared and tuned only on Guitar-TECHS's player 3 and EGDB | §3.4 | accepted |
 | [0056](0056-fine-tuning-basic-pitch.md) | **Fine-tuning Basic Pitch**: a separate Python 3.11 TensorFlow environment; Basic Pitch's own targets and loss; Guitar-TECHS players 1–2 train, player 3 stops; the result converted to CoreML and run by the unchanged CLI (round trip checked) | — | accepted |
+| [0057](0057-phase-5-result.md) | **Phase 5's result**: Basic Pitch at onset 0.7 / frame 0.4 / min 58 ms, chosen on Guitar-TECHS's player 3, raises EGDB's end-to-end E2 0.4251 → 0.4547 (GuitarSet, labelled, 0.4418 → 0.4553); fine-tuning failed twice | — | proposed |
 
 Decisions still open, each due at the phase that needs it: D14 (app surface — **now due, M1 is met**), and D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).

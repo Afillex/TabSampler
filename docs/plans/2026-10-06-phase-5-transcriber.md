@@ -178,4 +178,6 @@ The transcriber: the released Basic Pitch at Task 3's thresholds; fine-tuning cl
 
 - [x] Pre-register the chosen transcriber against Basic Pitch's defaults on EGDB, GuitarSet beside
       it labelled.
-- [ ] Run once; write Phase 5's result (ADR); README, HANDOFF, devlog; Ege's sign-off.
+- [x] Run once; write Phase 5's result (ADR); README, HANDOFF, devlog; Ege's sign-off.
+      *(EGDB 0.4251 → 0.4547, held; GuitarSet, labelled, 0.4418 → 0.4553, failed — a gain where
+      none was predicted. ADR 0057.)*

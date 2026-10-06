@@ -27,8 +27,25 @@ can use.
 
 ## Where the last session stopped (2026-10-06) — read before anything else
 
-**Phase 4, real electric audio, is closed (Ege's sign-off, ADR 0054), merged into `main` and
-public.** Plan `docs/plans/2026-10-06-phase-4-electric.md`,
+**Phase 5, a better transcriber, is measured and waits for Ege's sign-off (ADR 0057, proposed).**
+Branch `phase-5-transcriber`, **not merged or pushed**; plan
+`docs/plans/2026-10-06-phase-5-transcriber.md`; the day's entry is `docs/devlog/2026-10-06.md`.
+
+- **Basic Pitch trained on 90% of GuitarSet** (its paper; ADR 0055): GuitarSet's end-to-end
+  figures are labelled, and transcribers are compared and tuned only on Guitar-TECHS's player 3
+  and EGDB.
+- **The result:** Basic Pitch at onset 0.7 / frame 0.4 / minimum note length 58 ms, chosen on
+  player 3 (`scripts/tune_transcriber.py`): EGDB end-to-end E2 0.4251 → **0.4547**; GuitarSet,
+  labelled, 0.4418 → 0.4553. On sign-off the `transcribe` command takes these thresholds.
+- **Fine-tuning failed** (ADR 0056): a separate TensorFlow environment
+  (`scripts/setup_transcriber_training.sh`, `~/.local/share/tabsampler/bp-train`), Basic Pitch's own
+  targets and loss, CoreML export, `--model-path`. **basic-pitch ignores `--model-path` whenever
+  `--model-serialization` is given** — the adapter now passes a model alone, and the cache key
+  hashes the model's files.
+- `scripts/analyse_e2e.py` splits the end-to-end loss into note errors and context;
+  `compare_validation.py` uses a ratio bootstrap end to end, where the sides count different notes.
+
+Phase 4, real electric audio, closed before it (ADR 0054). Plan `docs/plans/2026-10-06-phase-4-electric.md`,
 every task done; the day's entry is `docs/devlog/2026-10-06.md`. Phases 2 and 3 are closed and
 public: Phase 2 with M2 missed (ADR 0045), Phase 3 a negative result (ADR 0048). Weights trained
 on DadaGP or SynthTab, or started from them, stay unpublished (ADRs 0042, 0046).
@@ -53,7 +70,7 @@ on DadaGP or SynthTab, or started from them, stay unpublished (ADRs 0042, 0046).
   for the log's reason). The access log has 32 lines; lines 31 and 32 are one look at EGDB whose
   first run stopped reading labels before any metric.
 
-`make check` (558 tests) and `make oracle` (13) pass. **Next, Ege's:** an electric decoder config with the audio term
+`make check` (570 tests) and `make oracle` (13) pass. **Next, Ege's:** an electric decoder config with the audio term
 (needs a validation figure that is not the calibration's own), and the next phase — 5, a better
 transcriber, or the app track (B1–B4).
 
@@ -80,7 +97,7 @@ the 2026-10-03 devlog). The decisions waiting for Ege are listed under "Open ite
 
 ```bash
 make install                       # uv sync --all-groups, Python 3.13
-make check                         # lint + pyright --strict + 558 tests. Must be green.
+make check                         # lint + pyright --strict + 570 tests. Must be green.
 make oracle                        # the correctness core. Must be green.
 ```
 
@@ -96,9 +113,9 @@ Then read, in this order: `docs/spec.md` → `docs/plans/2026-10-06-phase-4-elec
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | **None on GitHub.** `v0.0-phase0` and `v0.1-m1`, listed here before, exist nowhere; Phase 0's and M1's commits, `d50f4f0` and `1147495`, survive only locally, under the tag `pre-publication-backup` |
-| Tests | 558, all offline — no test needs the dataset or the transcriber |
+| Tests | 570, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
-| Current phase | **Phase 4, real electric audio — closed 2026-10-06 by Ege's sign-off** (ADR 0054); Phase 3 closed, a negative result (ADR 0048) |
+| Current phase | **Phase 5, a better transcriber — measured 2026-10-06, awaiting Ege's sign-off** (ADR 0057); Phase 4 closed (ADR 0054) |
 
 **Current results** — GuitarSet's test players 01–05, 300 tracks, `audio_mic`, today's
 default `configs/decoder_clean.yaml`: the hand-set weights plus ADR 0039's open-string cost,
