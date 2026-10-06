@@ -30,7 +30,20 @@ input or amplified), per-note string and fret labels, a licence that allows trai
 publishing weights, and a working download. Known by name, unverified: GOAT (access unclear),
 IDMT-SMT-Guitar, others the search finds. Every claim gets its source.
 
-- [ ] A table: dataset, audio, labels, size, licence, access, source link. To Ege.
+- [x] A table: dataset, audio, labels, size, licence, access, source link. To Ege (2026-10-06).
+
+| dataset | audio | string labels | size | licence, access | could serve as |
+|---|---|---|---|---|---|
+| **GOAT** (ISMIR 2025) | real electric, **direct input**, several guitars and players | tablature (Guitar Pro) and aligned MIDI | 5.9 h unique (29.5 h with amp renders) | **CC BY-NC 4.0**, restricted: by request, "research purposes only", "not intended for use in any commercial product" | training (weights then non-commercial) |
+| **EGFxSet** (ISMIR 2022) | real Stratocaster, direct input; also through 12 hardware effects | string–fret per file, every note in standard tuning, 5 pickup settings | 8,970 five-second notes in all; clean set 431 MB | **CC BY 4.0**, open | training (isolated notes only) |
+| **EGSet12** (DAFx 2024) | real solo electric music, Telecaster through an amp, **microphone** | Guitar Pro and JAMS per piece | 12 pieces, 380 s, one player | **CC BY 4.0**, open | validation (music, another player and guitar) |
+| **IDMT-SMT-Guitar** (DAFx 2014) | real electric (and acoustic), mostly direct input | XML with `stringNumber`/`fretNumber` per a third-party parser — **to confirm on the files** | subset 1: ~4,700 notes of licks, 3 guitars | **CC BY-NC-ND 4.0**, open, "for evaluation purpose" | validation only (no-derivatives rules out training) |
+
+Sources: github.com/JackJamesLoth/GOAT-Dataset and Zenodo record 15690894 (licence via Zenodo's API);
+egfxset.github.io and Zenodo 7044411; Zenodo 11406378; idmt.fraunhofer.de/en/publications/datasets/guitar.html,
+Zenodo 7544110 and github.com/bakerbass/HarmonicsClassifier (`idmt_parser_prompt.md`).
+Ruled out: hegelespaul/Electric-Guitar-Dataset (no licence, no download); EGDB and GuitarSet (our
+test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
 - [ ] Ege picks; an ADR for each dataset adopted, with its split (validation must contain music).
 
 ## Task 2: Retrain and calibrate the classifier on publishable data only
