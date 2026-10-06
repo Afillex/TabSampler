@@ -51,15 +51,30 @@ results row, nothing chosen.
 less; the missed notes are mostly short — under Basic Pitch's 127.7 ms minimum note length — on
 player 3's musical excerpts.
 
-- [ ] Write it, with tests; run on player 3 and player 00; report.
+- [x] Write it, with tests; run on player 3 and player 00; report. *(Player 3: note errors 0.2137
+      of the 0.2304 gap, context 0.0167; 217 of 353 missed notes short — both predictions held.
+      Basic Pitch writes 2,456 notes against 1,629: 1,180 extras, precision about half. Player 00,
+      labelled: note errors 0.2408, context 0.0966 — 29%, so the context prediction fails there;
+      its misses are mostly long notes, 2,620 of 3,872, most with nothing near.)*
 
 ## Task 3: Basic Pitch's note thresholds
 
 A grid over onset threshold, frame threshold and minimum note length, scored by end-to-end E2 on
-player 3; the rule — and whether the grid is worth running at all — fixed after Task 2 says where
-the loss is.
+player 3. Task 2 says it is worth running: on player 3 nearly all the loss is the transcriber's
+notes, and most of that is notes it adds.
 
-- [ ] Pre-register; run; record.
+**Pre-registered:** `scripts/tune_transcriber.py --out cache/validation/p5-grid`: onset threshold
+0.3, 0.4, 0.5, 0.6, 0.7 × frame threshold 0.3, 0.4, 0.5 × minimum note length 58 and 127.70 ms —
+30 settings, Basic Pitch's defaults (0.5, 0.3, 127.70) among them. **The rule:** the candidate is
+the setting with the highest pooled end-to-end E2 on player 3, the default on a tie; it is
+adopted for Phase 5 only if `scripts/compare_validation.py` (default → candidate) puts its 95%
+take-level interval wholly above zero with no clear chord-shape drop — ADR 0039's rule, Ege's
+chord-shape condition. Otherwise the defaults stay. Picking the best of 30 on 12 takes flatters
+the winner, so the test look decides nothing either way. **Hypothesis 1:** a stricter setting
+wins, as precision is player 3's problem. **Predictions:** the candidate's onset threshold is
+0.6 or above; it gains 0.01 to 0.05 of E2 over the default; its interval clears zero.
+
+- [ ] Run; record.
 
 ## Task 4: Fine-tune Basic Pitch on Guitar-TECHS
 

@@ -12,6 +12,7 @@ import soundfile as sf
 from tabsampler.data.guitartechs import (
     STANDARD,
     GuitarTechsTake,
+    aligned,
     clean,
     load_takes,
     parse_midi,
@@ -120,3 +121,32 @@ def test_bends_and_harmonics_are_not_training_material() -> None:
     assert not usable(take("techniques", "Bendings"))
     assert not usable(take("techniques", "Harmonics"))
     assert not usable(take("techniques", "PinchHarmonics"))
+
+
+def test_aligned_moves_late_labels_onto_the_audio(tmp_path: Path) -> None:
+    rate = 22050
+    onsets = [0.5 + 0.6 * i for i in range(8)]
+    t = np.arange(int(6.0 * rate)) / rate
+    signal = np.zeros_like(t)
+    for i, onset in enumerate(onsets):
+        f0 = 440.0 * 2 ** ((48 + i - 69) / 12)
+        tone = sum(np.sin(2 * np.pi * k * f0 * t) / k for k in range(1, 5))
+        signal += tone * np.exp(-4 * np.clip(t - onset, 0, None)) * (t >= onset)
+    audio = tmp_path / "take.wav"
+    sf.write(audio, (signal / np.abs(signal).max()).astype(np.float32), rate)
+    late = tuple(placed(onset + 0.04, onset + 0.5, 48 + i, 1) for i, onset in enumerate(onsets))
+    take = GuitarTechsTake(3, "music", "01", audio, None, late)
+    shifted = aligned(take)
+    assert len(shifted) == len(late)
+    reference = aligned(
+        GuitarTechsTake(
+            3,
+            "music",
+            "01",
+            audio,
+            None,
+            tuple(placed(onset, onset + 0.46, 48 + i, 1) for i, onset in enumerate(onsets)),
+        )
+    )
+    for (moved, _), (right, _) in zip(shifted, reference, strict=True):
+        assert abs(moved.onset - right.onset) <= 64 / 22050 + 1e-9

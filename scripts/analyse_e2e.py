@@ -27,10 +27,9 @@ import librosa
 import mir_eval
 import numpy as np
 
-from tabsampler.audio.windows import MEASURE_LAG, RATE, onset_lag
 from tabsampler.config import load_eval_config, load_phase1_config
 from tabsampler.data.guitarset import load_dataset, reference_tab
-from tabsampler.data.guitartechs import clean, load_takes, usable
+from tabsampler.data.guitartechs import aligned, load_takes, usable
 from tabsampler.data.splits import guitarset_validation_ids
 from tabsampler.decode.robust import decode_best_effort
 from tabsampler.eval.metrics import exact_tab_f1, tab_notes_to_placed
@@ -135,18 +134,8 @@ def split(counts: Counter[str], oracle_e2: float, e2e_e2: float) -> dict[str, fl
 
 def guitartechs(root: Path) -> Iterator[Piece]:
     for take in load_takes(root)[0]:
-        if take.player != VALIDATION_PLAYER or not usable(take):
-            continue
-        notes, _ = clean(take.notes)
-        signal, _ = librosa.load(take.direct_input, sr=RATE, mono=True)
-        delay = MEASURE_LAG - onset_lag(
-            np.asarray(signal, dtype=np.float32), sorted({n.onset for n, _ in notes})
-        )
-        shifted = [
-            (NoteEvent(n.onset - delay, n.offset - delay, n.pitch, n.confidence), p)
-            for n, p in notes
-        ]
-        yield Piece(f"P3 {take.name}", shifted, take.direct_input)
+        if take.player == VALIDATION_PLAYER and usable(take):
+            yield Piece(f"P3 {take.name}", list(aligned(take)), take.direct_input)
 
 
 def guitarset(tuning: Any) -> Iterator[Piece]:

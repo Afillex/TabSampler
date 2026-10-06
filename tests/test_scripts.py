@@ -923,3 +923,37 @@ def test_the_e2e_analysis_calls_a_short_missed_note_short() -> None:
     short = NoteEvent(onset=0.0, offset=0.1, pitch=50, confidence=1.0)
     counts = analyse.tally([(short, Position(2, 0))], [], [], [])
     assert counts["missed short"] == 1 and counts["missed, none near"] == 1
+
+
+def test_the_transcriber_grid_writes_one_report_per_setting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from tabsampler.data.guitartechs import GuitarTechsTake
+
+    tune = load("tune_transcriber")
+    note = NoteEvent(onset=0.5, offset=1.0, pitch=57, confidence=1.0)
+    take = GuitarTechsTake(3, "music", "01", tmp_path / "x.wav", None, ((note, Position(3, 2)),))
+    other = GuitarTechsTake(1, "scales", "A", tmp_path / "y.wav", None, ())
+    seen: list[tuple[float, float, float]] = []
+
+    class Fake:
+        def __init__(self, exe: str, params: object, cache_dir: Path) -> None:
+            p = params
+            seen.append((p.onset_threshold, p.frame_threshold, p.minimum_note_length_ms))  # type: ignore[attr-defined]
+
+        def transcribe_file(self, path: Path) -> list[NoteEvent]:
+            return [note]
+
+    monkeypatch.setattr(tune, "load_takes", lambda *_: ([take, other], []))
+    monkeypatch.setattr(tune, "aligned", lambda t: t.notes)
+    monkeypatch.setattr(tune, "BasicPitchCLITranscriber", Fake)
+    monkeypatch.setattr(tune, "ONSETS", (0.5, 0.6))
+    monkeypatch.setattr(tune, "FRAMES", (0.3,))
+    monkeypatch.setattr(tune, "LENGTHS_MS", (127.70,))
+    out = tmp_path / "grid"
+    monkeypatch.setattr(sys, "argv", ["tune_transcriber.py", "--out", str(out)])
+    tune.main()
+    assert seen == [(0.5, 0.3, 127.70), (0.6, 0.3, 127.70)]
+    report = json.loads((out / "onset0.5_frame0.3_min127.7.json").read_text())
+    assert report["transcriber"] == {"onset": 0.5, "frame": 0.3, "min_ms": 127.70}
+    assert list(report["per_song"]) == ["P3 01"]

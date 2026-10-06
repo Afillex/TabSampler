@@ -141,3 +141,24 @@ def clean(
 def usable(take: GuitarTechsTake) -> bool:
     """Whether a take's labelled pitches are what its strings sound: not bent, not harmonics."""
     return take.name not in NOT_FRETTED
+
+
+def aligned(take: GuitarTechsTake) -> tuple[tuple[NoteEvent, Position], ...]:
+    """The take's cleaned notes with its label delay, measured from its own direct-input audio
+    (ADR 0052), taken off every onset and offset: the reference a transcriber is scored against
+    (ADR 0055)."""
+    import librosa
+    import numpy as np
+
+    from tabsampler.audio.windows import MEASURE_LAG, RATE, onset_lag
+
+    notes, _ = clean(take.notes)
+    if not notes:
+        return ()
+    signal, _ = librosa.load(take.direct_input, sr=RATE, mono=True)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    lag = onset_lag(np.asarray(signal, dtype=np.float32), sorted({n.onset for n, _ in notes}))
+    delay = MEASURE_LAG - lag
+    return tuple(
+        (replace(note, onset=note.onset - delay, offset=note.offset - delay), position)
+        for note, position in notes
+    )
