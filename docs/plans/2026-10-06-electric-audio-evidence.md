@@ -91,10 +91,17 @@ test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
 
 ## Task 3: The audio term end to end
 
-- [ ] The classifier heard at transcribed notes' onsets, inside `transcribe_path`, behind an
-      electric decoder config; PyTorch imported only on that path.
-- [ ] Pre-registered measurement on the new validation set, oracle and end to end; then one
-      pre-registered look at EGDB.
+- [x] The classifier heard at transcribed notes' onsets, inside `transcribe_path`, behind an
+      electric decoder config; PyTorch imported only on that path. *`model/evidence.py`, the
+      config's `evidence` block, `configs/decoder_electric.yaml` (differs from the default only in
+      the evidence, checked).*
+- [ ] **Pre-registered end-to-end measurement** (this commit): `scripts/evaluate_electric.py` —
+      Basic Pitch at `CHOSEN_PARAMS`, each take decoded with `decoder_clean` and `decoder_electric`.
+      *Single variable:* the evidence. *Metric:* end-to-end E2 on EGSet12 (judges), change with a
+      bootstrap interval over takes; IDMT reported, optimistic. *Prediction:* EGSet12 gains +0.01
+      to +0.05 — less than oracle's +0.068, since the classifier now hears transcribed notes, some
+      of them wrong. *Rule:* one pre-registered look at EGDB if EGSet12's change is above 0.
+- [ ] Then one pre-registered look at EGDB.
 
 ## Task 4: The app
 

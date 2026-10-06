@@ -169,3 +169,30 @@ def test_a_fine_tuned_model_arrives_from_config_and_is_absent_by_default(tmp_pat
     path = write(tmp_path, {"transcriber": {"model_path": "cache/transcriber/ft/model.mlpackage"}})
     model = load_eval_config(path).transcriber.model_path
     assert model == Path("cache/transcriber/ft/model.mlpackage")
+
+
+def test_a_decoder_config_may_name_its_audio_evidence(tmp_path: Path) -> None:
+    from tabsampler.config import EvidenceConfig, load_phase1_config
+
+    path = tmp_path / "d.yaml"
+    path.write_text(
+        "weights:\n  acoustic: 0.5\nevidence:\n  run: cache/acoustic/electric\n  temperature: 6.8\n"
+    )
+    cfg = load_phase1_config(path)
+    assert cfg.evidence == EvidenceConfig(run=Path("cache/acoustic/electric"), temperature=6.8)
+    assert cfg.weights.acoustic == 0.5
+
+
+def test_without_an_evidence_block_there_is_none() -> None:
+    from tabsampler.config import load_phase1_config
+
+    assert load_phase1_config(Path("configs/decoder_clean.yaml")).evidence is None
+
+
+def test_an_evidence_block_with_an_unknown_key_is_refused(tmp_path: Path) -> None:
+    from tabsampler.config import load_phase1_config
+
+    path = tmp_path / "d.yaml"
+    path.write_text("evidence:\n  run: x\n  temperature: 1\n  weight: 0.5\n")
+    with pytest.raises(ValueError, match="weight"):
+        load_phase1_config(path)

@@ -143,6 +143,15 @@ def load_eval_config(path: Path | str) -> EvalConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class EvidenceConfig:
+    """Where the decoder's audio evidence comes from (ADRs 0047, 0062): a string classifier's
+    trained run and the temperature it was calibrated at. Its weight is ``weights.acoustic``."""
+
+    run: Path
+    temperature: float
+
+
+@dataclass(frozen=True, slots=True)
 class Phase1Config:
     """Decoder settings: tuning, grouping, cost weights, rendering."""
 
@@ -154,6 +163,8 @@ class Phase1Config:
     rules: PlayabilityRules = field(default_factory=PlayabilityRules)
     uncertainty_threshold: float = 0.6
     seed: int = 0
+    #: None: the decoder hears nothing, whatever ``weights.acoustic`` says.
+    evidence: EvidenceConfig | None = None
 
     @property
     def context(self) -> Context:
@@ -175,8 +186,17 @@ def load_phase1_config(path: Path | str) -> Phase1Config:
             "rules",
             "uncertainty_threshold",
             "seed",
+            "evidence",
         ),
     )
+
+    evidence_raw: dict[str, Any] | None = raw.get("evidence")
+    evidence = None
+    if evidence_raw is not None:
+        _require_known_keys("evidence", evidence_raw, ("run", "temperature"))
+        evidence = EvidenceConfig(
+            run=Path(str(evidence_raw["run"])), temperature=float(evidence_raw["temperature"])
+        )
 
     tuning_raw: dict[str, Any] = raw.get("tuning") or {}
     _require_known_keys("tuning", tuning_raw, ("open_pitches", "n_frets", "capo"))
@@ -259,4 +279,5 @@ def load_phase1_config(path: Path | str) -> Phase1Config:
         rules=rules,
         uncertainty_threshold=float(raw.get("uncertainty_threshold", 0.6)),
         seed=int(raw.get("seed", 0)),
+        evidence=evidence,
     )

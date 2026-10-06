@@ -106,3 +106,33 @@ def test_the_tuning_check_runs_while_the_transcriber_works() -> None:
 
     result = transcribe_path(Path("x.wav"), CFG, WaitsForTheCheck(NOTES), estimate=estimate)
     assert result.tuning_offset == 0.0 and len(result.tab) == 3
+
+
+def test_audio_evidence_moves_notes_to_the_strings_it_hears() -> None:
+    # A config with an evidence block decodes with what the classifier hears (plan Task 3).
+    from dataclasses import replace
+
+    from tabsampler.config import EvidenceConfig
+
+    g3 = [NoteEvent(onset=0.0, offset=0.4, pitch=55, confidence=0.9)]  # open G, or D fret 5
+    plain = transcribe_path(Path("x.wav"), CFG, Fake(g3), estimate=lambda _: None)
+    assert plain.tab[0].position.string == 3  # the decoder alone plays it open
+
+    def hear(_: Path, notes: list[NoteEvent]) -> dict[NoteEvent, tuple[float, ...]]:
+        sure_d = (-30.0, -30.0, 0.0, -30.0, -30.0, -30.0)  # certain it is the D string
+        return dict.fromkeys(notes, sure_d)
+
+    cfg = replace(
+        CFG,
+        weights=replace(CFG.weights, acoustic=1.0),
+        evidence=EvidenceConfig(run=Path("unused"), temperature=1.0),
+    )
+    heard = transcribe_path(Path("x.wav"), cfg, Fake(g3), estimate=lambda _: None, hear=hear)
+    assert heard.tab[0].position.string == 2
+
+
+def test_without_an_evidence_block_nothing_is_heard() -> None:
+    def hear(_: Path, __: list[NoteEvent]) -> dict[NoteEvent, tuple[float, ...]]:
+        raise AssertionError("no evidence was asked for")
+
+    transcribe_path(Path("x.wav"), CFG, Fake(NOTES), estimate=lambda _: None, hear=hear)
