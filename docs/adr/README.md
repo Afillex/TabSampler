@@ -72,6 +72,7 @@ of the old record to point at its replacement.
 | [0062](0062-electric-string-data.md) | **Electric string data**: EGFxSet (CC BY) trains with Guitar-TECHS; EGSet12 and IDMT-SMT-Guitar's licks validate; each take's label delay measured from its audio; player 3 to training (Ege) | D13 | accepted |
 | [0063](0063-electric-evidence-adopted.md) | **The electric string classifier is adopted as the app's electric option**: open-data classifier, calibrated on IDMT, EGDB end-to-end E2 0.4547 → **0.4992** (+0.0445), oracle 0.6762 → 0.7229; default unchanged | D13 | accepted |
 | [0064](0064-electric-weights-published.md) | **The electric classifier's weights are published** as a release asset under CC BY 4.0 (Guitar-TECHS, EGFxSet), pinned by SHA-256; `make electric-model` | D15 (partial) | accepted |
+| [0065](0065-separation-with-demucs.md) | Full songs are separated with **Demucs `htdemucs_6s`** (MIT, archived), pinned 4.1.0 in a `separate` group; stems cached by audio hash | Phase 6 | accepted |
 
 Decisions still open, each due at the phase that needs it: D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).

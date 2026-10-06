@@ -51,8 +51,11 @@ figure; and the app accepts a full song through a "separate the guitar first" op
 
 ## Task 2: Separation (ADR for the dependency)
 
-- [ ] demucs in its own dependency group; `audio/separate.py` runs `htdemucs_6s` and returns the
-      guitar stem, cached by the audio's hash as transcriptions are.
+- [x] demucs in its own dependency group; `audio/separate.py` runs `htdemucs_6s` and returns the
+      guitar stem, cached by the audio's hash as transcriptions are. *ADR 0065; the project now
+      declares its platforms (Apple-silicon Macs, Linux). First real run, an isolated EGSet12 piece:
+      8 s in 4.1 s, but the guitar stem kept only 0.381 of the input's RMS — on clean electric
+      guitar htdemucs_6s puts much of the guitar elsewhere. Measured in this task, not assumed.*
 - [ ] Pre-registered on validation: end-to-end E2, the mix straight into Basic Pitch against the
       guitar stem. Isolated E2 beside it as the ceiling.
 

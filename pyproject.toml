@@ -34,11 +34,23 @@ dev = [
 model = [
     "torch>=2.14.1,<2.15",
 ]
+# Full songs: Demucs's htdemucs_6s guitar stem (ADR 0065). Needs the `model` group's PyTorch.
+separate = [
+    "demucs==4.1.0",
+]
 # The local web page (ADR 0058). Optional: only tabsampler.web and `tabsampler serve` use it.
 web = [
     "fastapi>=0.142.2",
     "python-multipart>=0.0.32",
     "uvicorn>=0.54.0",
+]
+
+[tool.uv]
+# Apple-silicon Macs and Linux (CI). PyTorch 2.14.1 ships no Intel-Mac wheel, and on Intel Macs
+# demucs 4.1.0 pins numpy<2 against the project's numpy>=2.5 (ADR 0065).
+environments = [
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'linux'",
 ]
 
 # Linux, which is CI, takes the CPU-only build: the default Linux wheel brings CUDA
