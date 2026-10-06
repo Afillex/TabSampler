@@ -40,14 +40,16 @@ figure; and the app accepts a full song through a "separate the guitar first" op
 
 ## Task 1: Building full-song mixes (ADR)
 
-- [ ] Download BabySlakh; check its stems and which are guitars (its metadata's instrument
-      classes).
-- [ ] `data/mixes.py`: for a labelled take and a backing song, the backing's non-guitar stems summed,
+- [x] Download BabySlakh; check its stems and which are guitars (its metadata's instrument
+      classes). *20 songs, 161–348 s, 16 kHz; 1–5 guitar stems each, 3–14 others; "Ethnic"
+      (plucked strings) left out with the guitars.*
+- [x] `data/mixes.py`: for a labelled take and a backing song, the backing's non-guitar stems summed,
       resampled, cut or looped to the take's length, and mixed at a stated guitar-to-backing level;
       pairing by a hash of the take's name, so it never depends on order. Pure, tested.
-- [ ] An ADR: the mix construction, the levels (0 dB and −6 dB guitar-to-backing, both reported),
+- [x] An ADR (0066): the mix construction, the levels (0 dB and −6 dB guitar-to-backing, both reported),
       the backing split, and what the mixes cannot show (no shared key or tempo between guitar and
       backing; 16 kHz backing).
+      *Validation built: 414 mixes (EGSet12 12, IDMT 135, GuitarSet player 00 60, at two levels).*
 
 ## Task 2: Separation (ADR for the dependency)
 
