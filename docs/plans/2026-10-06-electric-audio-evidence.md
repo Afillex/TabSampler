@@ -3,7 +3,7 @@
 > Tasks run in order; steps use checkbox (`- [ ]`) syntax. Every measured choice is
 > pre-registered in a commit before its run.
 
-**Status:** planned 2026-10-06. Ege chose this path after the optimisation round (ADR 0061), over
+**Status:** planned and finished 2026-10-06 (ADRs 0062–0064). Ege chose this path after the optimisation round (ADR 0061), over
 Phase 6.
 
 **Goal:** better string choice on electric guitar — the largest measured loss (EGDB: 0.32 of E2
@@ -116,8 +116,8 @@ test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
 
 ## Task 4: The app
 
-- [ ] An "electric guitar" choice on the page and the CLI (`--config`).
-- [ ] D15 for these weights (Ege): publish with attribution, or keep local.
+- [x] An "electric guitar" choice on the page and the CLI (`--electric`); checked in a browser.
+- [x] D15 for these weights (Ege): a GitHub release under CC BY 4.0 with attribution (ADR 0064).
 
 ## Not in this plan
 
