@@ -937,7 +937,7 @@ def test_the_transcriber_grid_writes_one_report_per_setting(
     seen: list[tuple[float, float, float]] = []
 
     class Fake:
-        def __init__(self, exe: str, params: object, cache_dir: Path) -> None:
+        def __init__(self, exe: str, params: object, cache_dir: Path, model: object) -> None:
             p = params
             seen.append((p.onset_threshold, p.frame_threshold, p.minimum_note_length_ms))  # type: ignore[attr-defined]
 
@@ -956,3 +956,22 @@ def test_the_transcriber_grid_writes_one_report_per_setting(
     report = json.loads((out / "onset0.5_frame0.3_min127.7.json").read_text())
     assert report["transcriber"] == {"onset": 0.5, "frame": 0.3, "min_ms": 127.70}
     assert list(report["per_song"]) == ["P3 01"]
+
+
+def test_transcriber_targets_follow_basic_pitchs_grids() -> None:
+    import numpy as np
+
+    prepare = load("prepare_transcriber_data")
+    grids = {
+        "annotation_hop": 0.1,
+        "freq_bins_notes": 27.5 * 2 ** (np.arange(88) / 12),
+        "freq_bins_contours": 27.5 * 2 ** (np.arange(264) / 36),
+    }
+    a3 = NoteEvent(onset=0.5, offset=1.0, pitch=57, confidence=1.0)  # 220 Hz
+    out = prepare.targets([(a3, Position(2, 7))], duration=2.0, grids=grids)
+    assert out["onsets"].shape == (21, 88) and out["contours"].shape == (21, 264)
+    assert np.argwhere(out["onsets"]).tolist() == [[5, 36]]
+    assert np.argwhere(out["notes"]).tolist() == [[t, 36] for t in range(5, 11)]
+    assert np.argwhere(out["contours"]).tolist() == [[t, 108] for t in range(5, 11)]
+    empty = prepare.targets([], duration=2.0, grids=grids)
+    assert not empty["notes"].any()

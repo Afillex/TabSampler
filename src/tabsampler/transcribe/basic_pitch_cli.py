@@ -142,6 +142,17 @@ def parse_note_events_csv(path: Path | str) -> list[NoteEvent]:
     return notes
 
 
+def _model_digest(model: Path) -> bytes:
+    """SHA-256 over a model's files -- one file, or a directory such as an ``.mlpackage`` --
+    their paths relative to it and their bytes."""
+    digest = hashlib.sha256()
+    files = [model] if model.is_file() else sorted(p for p in model.rglob("*") if p.is_file())
+    for path in files:
+        digest.update(str(path.relative_to(model) if path != model else "").encode())
+        digest.update(path.read_bytes())
+    return digest.digest()
+
+
 class BasicPitchCLITranscriber:
     """A :class:`~tabsampler.types.Transcriber` backed by the basic-pitch CLI."""
 
@@ -151,6 +162,7 @@ class BasicPitchCLITranscriber:
         params: BasicPitchParams | None = None,
         cache_dir: Path | str = DEFAULT_CACHE_DIR,
         timeout_s: float = 900.0,
+        model: Path | str | None = None,
     ) -> None:
         """
         Args:
@@ -160,11 +172,15 @@ class BasicPitchCLITranscriber:
             params: Thresholds and backend. Defaults to basic-pitch's own defaults.
             cache_dir: Where parsed note-event CSVs are kept, content-addressed.
             timeout_s: Abort a single file after this long.
+            model: A model for ``--model-path`` -- a fine-tuned one (ADR 0056) -- or ``None``
+                for the released model. Its files, not its name, enter the cache key, and only
+                when it is given, so every key made with the released model stays valid.
         """
         self.exe = _resolve_exe(exe)
         self.params = params or BasicPitchParams()
         self.cache_dir = Path(cache_dir)
         self.timeout_s = timeout_s
+        self.model = Path(model) if model is not None else None
         #: How many calls were served from disk. E7 is meaningless without knowing
         #: this: a warm cache turns "transcribe and decode" into "decode".
         self.cache_hits = 0
@@ -181,6 +197,8 @@ class BasicPitchCLITranscriber:
         digest = hashlib.sha256()
         digest.update(audio_path.read_bytes())
         digest.update(repr(self.params).encode())
+        if self.model is not None:
+            digest.update(b"model:" + _model_digest(self.model))
         return digest.hexdigest()[:32]
 
     def cache_path(self, audio_path: Path) -> Path:
@@ -203,6 +221,7 @@ class BasicPitchCLITranscriber:
             str(self.params.frame_threshold),
             "--minimum-note-length",
             str(self.params.minimum_note_length_ms),
+            *(["--model-path", str(self.model)] if self.model is not None else []),
         ]
 
     def transcribe_file(self, audio_path: Path | str) -> list[NoteEvent]:

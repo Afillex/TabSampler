@@ -284,3 +284,46 @@ def test_environment_path_is_configurable_because_local_bin_is_not_on_path() -> 
     # default. The adapter must accept an explicit path rather than assume.
     assert "exe" in BasicPitchCLITranscriber.__init__.__code__.co_varnames
     _ = os  # keep the import used
+
+
+# ============================================================ a fine-tuned model (ADR 0056)
+
+
+def test_without_a_model_the_cache_key_is_what_it_always_was(tmp_path: Path) -> None:
+    # Every transcription cached before models existed must still be found.
+    import hashlib
+
+    audio = wav(tmp_path)
+    t = BasicPitchCLITranscriber(exe="x", cache_dir=tmp_path / "cache")
+    digest = hashlib.sha256(audio.read_bytes())
+    digest.update(repr(t.params).encode())
+    assert t.cache_key(audio) == digest.hexdigest()[:32]
+
+
+def test_a_model_path_appears_in_the_command_line(tmp_path: Path) -> None:
+    model = tmp_path / "model.mlpackage"
+    model.mkdir()
+    t = BasicPitchCLITranscriber(exe="basic-pitch", cache_dir=tmp_path, model=model)
+    argv = t.build_argv(Path("/tmp/out"), Path("/tmp/a.wav"))
+    assert argv[argv.index("--model-path") + 1] == str(model)
+    released = BasicPitchCLITranscriber(exe="basic-pitch", cache_dir=tmp_path)
+    assert "--model-path" not in released.build_argv(Path("/tmp/out"), Path("/tmp/a.wav"))
+
+
+def test_the_models_files_are_part_of_the_cache_key(tmp_path: Path) -> None:
+    # Retraining to the same path must never reuse the old model's transcriptions.
+    audio = wav(tmp_path)
+    model = tmp_path / "model.mlpackage"
+    (model / "Data").mkdir(parents=True)
+    weights = model / "Data" / "weights.bin"
+    weights.write_bytes(b"one")
+    t = BasicPitchCLITranscriber(exe="x", cache_dir=tmp_path / "cache", model=model)
+    first = t.cache_key(audio)
+    assert first != BasicPitchCLITranscriber(exe="x", cache_dir=tmp_path / "cache").cache_key(audio)
+    weights.write_bytes(b"two")
+    assert t.cache_key(audio) != first
+    copy = tmp_path / "elsewhere.mlpackage"
+    (copy / "Data").mkdir(parents=True)
+    (copy / "Data" / "weights.bin").write_bytes(b"two")
+    moved = BasicPitchCLITranscriber(exe="x", cache_dir=tmp_path / "cache", model=copy)
+    assert moved.cache_key(audio) == t.cache_key(audio)  # content, not path

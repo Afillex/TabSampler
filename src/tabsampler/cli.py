@@ -119,6 +119,7 @@ def eval_notes(
         exe=cfg.transcriber.exe,
         params=cfg.transcriber.params,
         cache_dir=cfg.transcriber.cache_dir,
+        model=cfg.transcriber.model_path,
     )
 
     def audio_path(track_id: str) -> Path:
@@ -259,6 +260,7 @@ def eval_m1(
         exe=cfg.transcriber.exe,
         params=cfg.transcriber.params,
         cache_dir=cfg.transcriber.cache_dir,
+        model=cfg.transcriber.model_path,
     )
     scorer = HandSetScorer(weights=dec.weights)
 

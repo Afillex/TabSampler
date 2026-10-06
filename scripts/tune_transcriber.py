@@ -49,6 +49,7 @@ def main() -> None:
     parser.add_argument("--onsets", type=float, nargs="+", default=list(ONSETS))
     parser.add_argument("--frames", type=float, nargs="+", default=list(FRAMES))
     parser.add_argument("--lengths-ms", type=float, nargs="+", default=list(LENGTHS_MS))
+    parser.add_argument("--model-path", type=Path, help="A fine-tuned model (ADR 0056).")
     args = parser.parse_args()
     cfg = load_eval_config(args.config)
     dec = load_phase1_config(args.decoder_config)
@@ -65,7 +66,10 @@ def main() -> None:
             minimum_note_length_ms=length,
         )
         transcriber = BasicPitchCLITranscriber(
-            exe=cfg.transcriber.exe, params=params, cache_dir=cfg.transcriber.cache_dir
+            exe=cfg.transcriber.exe,
+            params=params,
+            cache_dir=cfg.transcriber.cache_dir,
+            model=args.model_path,
         )
         report = RecoveryReport()
         e1 = [0, 0]
@@ -82,10 +86,11 @@ def main() -> None:
         setting = name(onset, frame, length)
         payload = {
             "split": "validation",
+            "model": str(args.model_path) if args.model_path else "released",
             "transcriber": {"onset": onset, "frame": frame, "min_ms": length},
             **report.to_dict(),
         }
-        (args.out / f"{setting}.json").write_text(json.dumps(payload))
+        (args.out / f"{setting}.json").write_text(json.dumps(payload))  # one model per --out
         right, total = report.counts("e2e")
         print(f"  {setting:28s} E1 {e1[0] / e1[1]:.4f}  E2 {right / total:.4f}", flush=True)
 

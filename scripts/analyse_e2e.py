@@ -155,7 +155,10 @@ def main() -> None:
     cfg = load_eval_config(args.config)
     dec = load_phase1_config(args.decoder_config)
     transcriber = BasicPitchCLITranscriber(
-        exe=cfg.transcriber.exe, params=cfg.transcriber.params, cache_dir=cfg.transcriber.cache_dir
+        exe=cfg.transcriber.exe,
+        params=cfg.transcriber.params,
+        cache_dir=cfg.transcriber.cache_dir,
+        model=cfg.transcriber.model_path,
     )
     scorer = HandSetScorer(weights=dec.weights)
 

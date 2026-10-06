@@ -161,3 +161,11 @@ def test_a_string_bias_needs_one_entry_per_string(tmp_path: Path) -> None:
     path = write(tmp_path, {"weights": {"string_bias": [0.0, 1.0]}})
     with pytest.raises(ValueError, match="six"):
         load_phase1_config(path)
+
+
+def test_a_fine_tuned_model_arrives_from_config_and_is_absent_by_default(tmp_path: Path) -> None:
+    # ADR 0056: the released model unless a config names another.
+    assert load_eval_config(write(tmp_path, {})).transcriber.model_path is None
+    path = write(tmp_path, {"transcriber": {"model_path": "cache/transcriber/ft/model.mlpackage"}})
+    model = load_eval_config(path).transcriber.model_path
+    assert model == Path("cache/transcriber/ft/model.mlpackage")

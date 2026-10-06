@@ -49,6 +49,8 @@ class TranscriberConfig:
     exe: str = "basic-pitch"
     cache_dir: Path = DEFAULT_CACHE_DIR
     params: BasicPitchParams = field(default_factory=BasicPitchParams)
+    #: A fine-tuned model for ``--model-path`` (ADR 0056); ``None`` is the released model.
+    model_path: Path | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,6 +110,7 @@ def load_eval_config(path: Path | str) -> EvalConfig:
             "minimum_note_length_ms",
             "model_serialization",
             "version_tag",
+            "model_path",
         ),
     )
     defaults = BasicPitchParams()
@@ -125,6 +128,7 @@ def load_eval_config(path: Path | str) -> EvalConfig:
             ),
             version_tag=transcriber_raw.get("version_tag", defaults.version_tag),
         ),
+        model_path=Path(transcriber_raw["model_path"]) if "model_path" in transcriber_raw else None,
     )
 
     limit_raw = raw.get("limit")

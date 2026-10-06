@@ -98,7 +98,10 @@ def main() -> None:
     model.load_state_dict(torch.load(args.run / "best.pt", weights_only=True))
     model.eval()
     transcriber = BasicPitchCLITranscriber(
-        exe=cfg.transcriber.exe, params=cfg.transcriber.params, cache_dir=cfg.transcriber.cache_dir
+        exe=cfg.transcriber.exe,
+        params=cfg.transcriber.params,
+        cache_dir=cfg.transcriber.cache_dir,
+        model=cfg.transcriber.model_path,
     )
     plain = HandSetScorer(weights=replace(dec.weights, acoustic=0.0))
     report = RecoveryReport()
