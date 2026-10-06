@@ -72,7 +72,7 @@ test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
       **0.4555** against 0.4360 (1,890 against 1,809 of 4,149), below the predicted 0.47–0.55.
       **By the rule, Task 3 uses `cache/acoustic/electric`.** On IDMT neither classifier beats the
       decoder alone (0.4234); on EGSet12 the decoder alone (0.6963) is far ahead of both.
-- [ ] **Pre-registered calibration and judgement** (this commit): calibrate on IDMT's licks,
+- [x] **Pre-registered calibration and judgement** (dea1d3f): calibrate on IDMT's licks,
       judge on EGSet12, so the set that chooses is not the set that judges.
       `scripts/calibrate_acoustic.py --corpus idmt` fits the temperature by the NLL of IDMT's notes
       and picks the acoustic weight among 0, 0.1, 0.25, 0.5, 1.0 that recovers the most labelled
@@ -84,6 +84,10 @@ test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
       recovers 0.70 of the ambiguous notes and the classifier 0.52, and EGSet12 is microphone on
       an amplifier, not direct input). *Rule:* Task 3's end-to-end work goes ahead if EGSet12's
       change is above 0; otherwise this path stops and is reported.
+      *Result:* temperature **6.7977** (IDMT NLL 2.2398 → 1.1544: the classifier is badly
+      overconfident on audio unlike its training), weight **0.5** (IDMT 0.4401 → 0.4554).
+      **EGSet12: 0.7250 → 0.7926, +0.0676 [+0.0129, +0.1441]** — the prediction's upper bound
+      failed; the rule's condition held. Task 3 goes ahead.
 
 ## Task 3: The audio term end to end
 
