@@ -3,7 +3,7 @@
 > Tasks run in order; steps use checkbox (`- [ ]`) syntax. Every rule that picks or adopts
 > something is written here and committed before the run it judges.
 
-**Status:** started 2026-10-06, after the app track closed. Ege chose these three, in this order,
+**Status:** started and finished 2026-10-06, after the app track closed; result in ADR 0061. Ege chose these three, in this order,
 over starting Phase 6.
 
 **Goal:** a faster app, uncertainty marks that point at likely errors, and fewer of Basic Pitch's
@@ -115,7 +115,10 @@ its own predictions, logged to `experiments/test_set_access.log`.
       GuitarSet −0.02 to +0.01. *Adoption rule:* the app's pipeline drops octave ghosts if EGDB's
       E2 change is above 0 and GuitarSet's above −0.01; otherwise not, and the result is recorded
       either way.
-- [ ] Run the look; record; apply the rule; ADR.
+- [x] Run the look; record; apply the rule; ADR. **EGDB:** E2 0.4547 (reproduced) → 0.4537
+      (−0.0010), E1 0.7416 → 0.7136; 4,909 of 38,790 notes dropped. **Not adopted** (ADR 0061).
+      GuitarSet's look **not run**: with EGDB failing it could not change the outcome — a deviation
+      from this plan, in the direction of fewer test-set reads.
 
 ## Not in this plan (one line each)
 
