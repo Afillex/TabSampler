@@ -41,6 +41,12 @@ default before it scored 0.6258 / 0.4337 in E2 on the same tracks. 49 253 refere
 guitar's range, 100 more were dropped as unfingerable, and 39 groups (1 in oracle mode) were
 decoded with the span bound relaxed. **The transcriber costs 0.2402 of E2** (0.6819 → 0.4418).
 
+**The transcriber has heard most of these recordings.** Basic Pitch's released model was trained
+on 90% of GuitarSet's audio files, chosen at random (its paper's Table 1; ADR 0055), so the
+end-to-end column and E1 here are partly in-sample for it, and transcription likely costs more
+than 0.2402 on acoustic recordings it has not heard. Oracle mode never calls the transcriber. The
+clean end-to-end figure is EGDB's, which it never saw: E1 0.7230, E2 0.4251, on electric guitar.
+
 **An independent check, the first since the split.** The 300 tracks were part of every earlier
 360-track run, so figures for decoders chosen before ADR 0037 confirm nothing about those
 choices. ADR 0039's open-string cost was chosen on player 00 alone: it gained 0.0209 there,
