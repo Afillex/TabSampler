@@ -88,7 +88,8 @@ wins, as precision is player 3's problem. **Predictions:** the candidate's onset
 zero with no clear chord-shape drop. **Prediction:** E2 peaks between 0.7 and 0.8, and nothing
 beyond clears the interval: onset 0.7 / frame 0.4 / min 58 ms stays.
 
-- [ ] Run; record.
+- [x] Run; record. *(Best past the edge 0.4218, +0.0033 [−0.0459, +0.0791]: not adopted;
+      prediction held. Onset 0.7 / frame 0.4 / min 58 ms stays.)*
 
 ## Task 4: Fine-tune Basic Pitch on Guitar-TECHS
 
