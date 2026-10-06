@@ -20,6 +20,13 @@
         <span class="drop-sub">WAV, FLAC, OGG or MP3 &middot; up to 5 minutes &middot; isolated guitar only</span>
         <input id="file" type="file" accept="audio/*,.wav,.flac,.ogg,.mp3">
       </label>
+      <fieldset class="guitar">
+        <legend>Guitar</legend>
+        <label><input type="radio" name="guitar" value="standard" checked> Acoustic, or not sure</label>
+        <label><input type="radio" name="guitar" value="electric"> Clean electric &mdash; listens
+          to each note's string (ADR 0063)</label>
+        <span id="electric-note" class="field-note"></span>
+      </fieldset>
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
 
@@ -63,6 +70,9 @@
           is least sure of are marked, but its numbers are not probabilities: end to end on
           GuitarSet's test players its calibration error is 0.1841 (ADR 0057). Use the marks as a
           ranking, a list of places to check by ear.</li>
+        <li><strong>Clean electric guitar</strong> can use a string classifier that listens to each
+          note: on EGDB it raised the score from 0.4547 to 0.4992 (ADR 0063). It was trained and
+          tested on electric guitar only, so it is not used for acoustic recordings.</li>
         <li><strong>Isolated guitar only.</strong> One guitar, no band, no vocals. Full songs are a
           later phase.</li>
         <li><strong>What to expect.</strong> On EGDB, recordings neither the transcriber nor the

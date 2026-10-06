@@ -55,7 +55,7 @@ from tabsampler.eval.recovery import RecoveryReport, add_track
 from tabsampler.eval.synthetic import round_trip_accuracy, sample_playable_path
 from tabsampler.fingering.candidates import group_notes
 from tabsampler.fingering.costs import HandSetScorer
-from tabsampler.pipeline import transcribe_path
+from tabsampler.pipeline import electric_option, transcribe_path
 from tabsampler.render.ascii import render_ascii_with_legend
 from tabsampler.render.guitarpro import render_guitarpro
 from tabsampler.render.json_out import render_json
@@ -73,6 +73,9 @@ app = typer.Typer(
 console = Console()
 
 RESULTS_PATH = Path("experiments/results.csv")
+
+#: The electric-guitar decoder: the default plus the string classifier's evidence (ADR 0063).
+ELECTRIC_CONFIG = Path("configs/decoder_electric.yaml")
 
 #: `transcribe -o` by suffix (ADR 0058).
 EXPORTERS: dict[str, Callable[[list[TabNote], Tuning], bytes]] = {
@@ -478,8 +481,17 @@ def transcribe(
     exe: Annotated[
         str, typer.Option("--transcriber", help="basic-pitch executable.")
     ] = "basic-pitch",
+    electric: Annotated[
+        bool,
+        typer.Option(
+            "--electric",
+            help="Clean electric guitar: decode with the string classifier (ADR 0063).",
+        ),
+    ] = False,
 ) -> None:
     """audio -> tab. The end-to-end pipeline (spec 2)."""
+    if electric:
+        config = ELECTRIC_CONFIG
     cfg = load_phase1_config(config)
     transcriber = BasicPitchCLITranscriber(exe=exe, params=CHOSEN_PARAMS)  # ADR 0057
 
@@ -566,12 +578,15 @@ def serve(
             f"[/bold yellow]"
         )
     transcriber = BasicPitchCLITranscriber(exe=exe, params=CHOSEN_PARAMS)  # ADR 0057
+    electric, why = electric_option(ELECTRIC_CONFIG)
+    if electric is None:
+        console.print(f"[yellow]the electric-guitar option is off: {why}.[/yellow]")
     if not transcriber.is_available():
         console.print(
             f"[yellow]{exe!r} not found: the page will load but cannot transcribe. "
             f"Install it with `bash scripts/setup_transcriber.sh`.[/yellow]"
         )
-    web_app = create_app(load_phase1_config(config), transcriber)
+    web_app = create_app(load_phase1_config(config), transcriber, electric=electric)
     console.print(f"Tab Sampler at [bold]http://{host}:{port}[/bold]")
     uvicorn.run(web_app, host=host, port=port, log_level="warning")
 

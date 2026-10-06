@@ -215,6 +215,8 @@ async function transcribe(file) {
   setStatus(`Transcribing ${file.name}... a new file takes a few seconds per minute of audio.`);
   const body = new FormData();
   body.append("audio", file);
+  const choice = document.querySelector('input[name="guitar"]:checked');
+  body.append("guitar", choice ? choice.value : "standard");
   let response;
   try {
     response = await fetch("/api/transcribe", { method: "POST", body });
@@ -267,6 +269,20 @@ async function download(fmt) {
   URL.revokeObjectURL(link.href);
 }
 
+// The electric option needs PyTorch and the trained classifier on the server (ADR 0063).
+async function checkElectric() {
+  const electric = document.querySelector('input[name="guitar"][value="electric"]');
+  try {
+    const health = await (await fetch("/api/health")).json();
+    if (health.electric_available) return;
+  } catch {
+    // An unreachable server shows up on the first upload instead.
+  }
+  electric.disabled = true;
+  $("electric-note").textContent =
+    "Not available on this server: it needs the model dependency group and the trained classifier.";
+}
+
 function init() {
   const drop = $("drop");
   const input = $("file");
@@ -289,6 +305,7 @@ function init() {
   }
   $("zoom").addEventListener("change", () => current && draw(current));
   $("scroller").addEventListener("scroll", hideTip);
+  checkElectric();
 }
 
 init();

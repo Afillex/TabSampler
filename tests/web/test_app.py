@@ -71,7 +71,7 @@ def client(fake: Fake) -> TestClient:
 
 def test_health_reports_whether_the_transcriber_is_available(client: TestClient) -> None:
     body = client.get("/api/health").json()
-    assert body == {"status": "ok", "transcriber_available": True}
+    assert body == {"status": "ok", "transcriber_available": True, "electric_available": False}
     down = TestClient(create_app(CFG, Fake(error=TranscriberUnavailableError("x"))))
     assert down.get("/api/health").json()["transcriber_available"] is False
 
@@ -235,3 +235,63 @@ def test_the_response_reports_the_tuning_offset_and_its_warning_threshold(
     assert body["metrics"]["tuning_offset"] == pytest.approx(0.4, abs=0.05)
     assert body["tuning_warning_threshold"] == 0.25
     assert post(client, wav_bytes()).json()["metrics"]["tuning_offset"] == 0.0  # silence
+
+
+def electric_cfg():
+    from dataclasses import replace
+
+    from tabsampler.config import EvidenceConfig
+
+    return replace(
+        CFG,
+        weights=replace(CFG.weights, acoustic=1.0),
+        evidence=EvidenceConfig(run=Path("unused"), temperature=1.0),
+    )
+
+
+def test_health_says_whether_the_electric_option_is_available(fake: Fake) -> None:
+    without = TestClient(create_app(CFG, fake))
+    assert without.get("/api/health").json()["electric_available"] is False
+
+    def hear(_: Path, notes: list[NoteEvent]) -> dict[NoteEvent, tuple[float, ...]]:
+        return {}
+
+    with_ = TestClient(create_app(CFG, fake, electric=(electric_cfg(), hear)))
+    assert with_.get("/api/health").json()["electric_available"] is True
+
+
+def test_an_electric_request_decodes_with_what_the_classifier_hears(fake: Fake) -> None:
+    # Open G (string 3) by default; the classifier is certain of the D string (ADR 0063).
+    g3 = Fake([NoteEvent(onset=0.0, offset=0.4, pitch=55, confidence=0.9)])
+    heard_notes: list[list[NoteEvent]] = []
+
+    def hear(_: Path, notes: list[NoteEvent]) -> dict[NoteEvent, tuple[float, ...]]:
+        heard_notes.append(notes)
+        return dict.fromkeys(notes, (-30.0, -30.0, 0.0, -30.0, -30.0, -30.0))
+
+    client = TestClient(create_app(CFG, g3, electric=(electric_cfg(), hear)))
+    files = {"audio": ("clip.wav", wav_bytes(), "audio/wav")}
+    standard = client.post("/api/transcribe", files=files).json()
+    electric = client.post("/api/transcribe", files=files, data={"guitar": "electric"}).json()
+    assert standard["notes"][0]["string"] == 3 and standard["guitar"] == "standard"
+    assert electric["notes"][0]["string"] == 2 and electric["guitar"] == "electric"
+    assert len(heard_notes) == 1  # only the electric request listened
+
+
+def test_an_electric_request_without_the_option_gets_503(client: TestClient) -> None:
+    r = client.post(
+        "/api/transcribe",
+        files={"audio": ("clip.wav", wav_bytes(), "audio/wav")},
+        data={"guitar": "electric"},
+    )
+    assert r.status_code == 503
+    assert "electric" in r.json()["detail"]
+
+
+def test_an_unknown_guitar_gets_400(client: TestClient) -> None:
+    r = client.post(
+        "/api/transcribe",
+        files={"audio": ("clip.wav", wav_bytes(), "audio/wav")},
+        data={"guitar": "banjo"},
+    )
+    assert r.status_code == 400

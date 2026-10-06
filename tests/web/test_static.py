@@ -103,3 +103,9 @@ def test_the_page_warns_about_an_off_pitch_recording() -> None:
     script = static("app.js")
     assert "tuning_offset" in script and "tuning_warning_threshold" in script
     assert "A440" in script
+
+
+def test_the_page_offers_the_electric_option_and_says_what_it_needs(client: TestClient) -> None:
+    page = client.get("/").text
+    assert 'name="guitar"' in page and 'value="electric"' in page
+    assert "electric_available" in static("app.js")

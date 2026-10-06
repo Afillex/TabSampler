@@ -77,6 +77,24 @@ def classifier_hearing(cfg: Phase1Config) -> Hearing:
     return hear
 
 
+def electric_option(config: Path) -> tuple[tuple[Phase1Config, Hearing] | None, str]:
+    """The electric-guitar decoder at ``config`` with its classifier loaded (ADR 0063), or None
+    and why not: no evidence block, no trained weights, or no PyTorch."""
+    from tabsampler.config import load_phase1_config
+
+    cfg = load_phase1_config(config)
+    if cfg.evidence is None:
+        return None, f"{config} names no evidence"
+    weights = cfg.evidence.run / "best.pt"
+    if not weights.is_file():
+        return None, f"the trained classifier is missing ({weights})"
+    try:
+        hear = classifier_hearing(cfg)
+    except ImportError as exc:
+        return None, f"PyTorch is missing ({exc.name}): run `uv sync --all-groups`"
+    return (cfg, hear), "ready"
+
+
 def transcribe_path(
     path: Path,
     cfg: Phase1Config,

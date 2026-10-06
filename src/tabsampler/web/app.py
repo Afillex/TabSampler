@@ -18,14 +18,14 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any, BinaryIO, Protocol
 
-from fastapi import Body, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import Body, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from tabsampler.audio.tuning import WARNING_THRESHOLD
 from tabsampler.config import Phase1Config
 from tabsampler.errors import TranscriberFailedError, TranscriberUnavailableError
-from tabsampler.pipeline import PipelineResult, transcribe_path
+from tabsampler.pipeline import Hearing, PipelineResult, transcribe_path
 from tabsampler.render.guitarpro import render_guitarpro
 from tabsampler.render.json_out import tab_from_dict, tab_to_dict
 from tabsampler.render.musicxml import render_musicxml
@@ -119,7 +119,10 @@ def create_app(
     *,
     max_upload_bytes: int = MAX_UPLOAD_BYTES,
     max_duration_s: float = MAX_DURATION_S,
+    electric: tuple[Phase1Config, Hearing] | None = None,
 ) -> FastAPI:
+    """``electric``: the electric-guitar decoder and its string classifier, already loaded
+    (ADR 0063); None when PyTorch or the trained weights are missing."""
     app = FastAPI(title="Tab Sampler", docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -145,12 +148,27 @@ def create_app(
 
     @app.get("/api/health")
     def health() -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]
-        return {"status": "ok", "transcriber_available": transcriber.is_available()}
+        return {
+            "status": "ok",
+            "transcriber_available": transcriber.is_available(),
+            "electric_available": electric is not None,
+        }
 
     # A plain def: FastAPI runs it in a worker thread, so the transcriber's subprocess does
     # not block the event loop.
     @app.post("/api/transcribe")
-    def transcribe(audio: UploadFile = File(...)) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]  # noqa: B008
+    def transcribe(  # pyright: ignore[reportUnusedFunction]
+        audio: UploadFile = File(...),  # noqa: B008
+        guitar: str = Form("standard"),
+    ) -> dict[str, Any]:
+        if guitar not in ("standard", "electric"):
+            raise HTTPException(400, f"guitar must be standard or electric, not {guitar!r}")
+        if guitar == "electric" and electric is None:
+            raise HTTPException(
+                503,
+                "the electric option is not available here: it needs the `model` dependency "
+                "group (PyTorch) and the trained classifier (configs/decoder_electric.yaml)",
+            )
         suffix = Path(audio.filename or "").suffix.lower() or ".wav"
         tmp = Path(tempfile.mkdtemp(prefix="tabsampler-upload-"))
         try:
@@ -168,7 +186,10 @@ def create_app(
                     f"Tab Sampler transcribes isolated guitar takes, not whole recordings",
                 )
             try:
-                result = transcribe_path(path, cfg, transcriber)
+                if guitar == "electric" and electric is not None:
+                    result = transcribe_path(path, electric[0], transcriber, hear=electric[1])
+                else:
+                    result = transcribe_path(path, cfg, transcriber)
             except TranscriberUnavailableError as exc:
                 raise HTTPException(
                     503,
@@ -177,7 +198,9 @@ def create_app(
                 ) from exc
             except TranscriberFailedError as exc:
                 raise HTTPException(502, f"the transcriber failed: {exc}") from exc
-            return response_document(result, cfg)
+            doc = response_document(result, cfg)
+            doc["guitar"] = guitar
+            return doc
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 

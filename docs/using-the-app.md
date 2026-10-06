@@ -26,6 +26,15 @@ upload, so `--host` with any other address is a deliberate choice, and it warns.
 Transcriptions are cached under `cache/note_events/`, keyed by the audio's bytes and the
 transcriber's settings, so the same file a second time comes back in well under a second.
 
+## Clean electric guitar
+
+Choose **Clean electric** on the page, or pass `--electric` to `tabsampler transcribe`, and the
+decoder also listens to each note to judge which string it was played on (ADR 0063). On EGDB's
+clean electric recordings this raised the end-to-end score from 0.4547 to 0.4992. It needs the
+`model` dependency group (PyTorch) and the trained classifier at `cache/acoustic/electric/best.pt`;
+without them the option is greyed out on the page and `tabsampler serve` says why. It was trained
+and tested on electric guitar only, so leave it off for acoustic recordings.
+
 ## What the page shows
 
 - **Six string lines**, high e on top, as tab is written. Notes are placed by when they start,
@@ -60,7 +69,8 @@ transcriber's settings, so the same file a second time comes back in well under 
 ## What to expect
 
 Measured, end to end, on EGDB's 240 clips of clean electric guitar, which neither the
-transcriber nor the decoder was tuned on (ADR 0057): **E2 0.4547**, the F1 of notes whose
+transcriber nor the decoder was tuned on (ADR 0057): **E2 0.4547** (0.4992 with the electric
+option, ADR 0063), the F1 of notes whose
 start (within 50 ms), pitch and string all match the player's. Given the true notes instead of
 transcribed ones, the decoder alone scores 0.6762 (ADR 0054). So transcription errors — missed
 and extra notes — cost 0.22, and strings chosen differently from the player's cost 0.32.

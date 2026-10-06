@@ -136,3 +136,21 @@ def test_without_an_evidence_block_nothing_is_heard() -> None:
         raise AssertionError("no evidence was asked for")
 
     transcribe_path(Path("x.wav"), CFG, Fake(NOTES), estimate=lambda _: None, hear=hear)
+
+
+def test_the_electric_option_explains_why_it_is_missing(tmp_path: Path) -> None:
+    from tabsampler.pipeline import electric_option
+
+    config = tmp_path / "electric.yaml"
+    config.write_text(
+        f"weights:\n  acoustic: 0.5\nevidence:\n  run: {tmp_path / 'nowhere'}\n  temperature: 1\n"
+    )
+    option, reason = electric_option(config)
+    assert option is None and "best.pt" in reason
+
+
+def test_a_config_without_evidence_is_not_an_electric_option() -> None:
+    from tabsampler.pipeline import electric_option
+
+    option, reason = electric_option(Path("configs/decoder_clean.yaml"))
+    assert option is None and "evidence" in reason

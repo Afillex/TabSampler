@@ -123,3 +123,8 @@ h2 { font-size: 1.1rem; margin: 0 0 8px; }
 }
 .facts ul { margin: 0; padding-left: 20px; }
 .facts li { margin: 6px 0; }
+
+.guitar { border: 0; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.guitar legend { font-weight: 600; padding: 0; margin-bottom: 4px; }
+.guitar label { display: inline-flex; align-items: center; gap: 6px; }
+.field-note { color: var(--muted); font-size: 0.85rem; width: 100%; }

@@ -15,7 +15,9 @@ on 2026-10-06 with a negative result: audio evidence trained on SynthTab lowers 
 audio evidence raises oracle E2 from 0.6762 to 0.7200** (ADR 0054); closed on 2026-10-06. **Phase 5 (a
 better transcriber) is measured: stricter Basic Pitch thresholds raise EGDB's end-to-end E2 from
 0.4251 to 0.4547** (ADR 0057); closed on 2026-10-06. **The app track is done**: a local web page and
-MusicXML and Guitar Pro export (ADRs 0058–0060).
+MusicXML and Guitar Pro export (ADRs 0058–0060). **On clean electric guitar, a string classifier
+trained on openly licensed data raises EGDB's end-to-end E2 from 0.4547 to 0.4992** (ADRs
+0062–0063), offered as the app's electric option.
 
 ## Use it
 
