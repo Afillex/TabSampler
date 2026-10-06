@@ -95,12 +95,15 @@ test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
       electric decoder config; PyTorch imported only on that path. *`model/evidence.py`, the
       config's `evidence` block, `configs/decoder_electric.yaml` (differs from the default only in
       the evidence, checked).*
-- [ ] **Pre-registered end-to-end measurement** (this commit): `scripts/evaluate_electric.py` —
+- [x] **Pre-registered end-to-end measurement** (2701afc): `scripts/evaluate_electric.py` —
       Basic Pitch at `CHOSEN_PARAMS`, each take decoded with `decoder_clean` and `decoder_electric`.
       *Single variable:* the evidence. *Metric:* end-to-end E2 on EGSet12 (judges), change with a
       bootstrap interval over takes; IDMT reported, optimistic. *Prediction:* EGSet12 gains +0.01
       to +0.05 — less than oracle's +0.068, since the classifier now hears transcribed notes, some
       of them wrong. *Rule:* one pre-registered look at EGDB if EGSet12's change is above 0.
+      *Result:* **EGSet12 0.4150 → 0.4693, +0.0543 [−0.0132, +0.1286]** — the interval includes
+      zero; the prediction failed narrowly (above). IDMT, optimistic: 0.3166 → 0.3426, +0.0260
+      [−0.0084, +0.0601]. The rule's condition held: the EGDB look goes ahead.
 - [ ] Then one pre-registered look at EGDB.
 
 ## Task 4: The app
