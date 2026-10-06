@@ -76,6 +76,11 @@ def main() -> None:
     parser.add_argument("--root", type=Path, default=Path("data/egdb"))
     parser.add_argument("--note", default="", help="Added to the access log's reason.")
     parser.add_argument(
+        "--e2e-audio",
+        action="store_true",
+        help="Also end to end with --run's evidence heard at the transcribed notes (ADR 0062).",
+    )
+    parser.add_argument(
         "--drop-octave-ghosts",
         action="store_true",
         help="Also end to end with octave ghosts dropped (transcribe/cleanup.py), same notes.",
@@ -95,11 +100,17 @@ def main() -> None:
             f"scripts/download_egdb.py first -- a subset is never quoted"
         )
     evidence_part = (
-        f"oracle with acoustic 0 and {args.weight:g} at temperature {args.temperature:g} "
-        f"(classifier {args.run}), and end to end"
-        if args.run is not None
-        else "oracle and end to end"
-    ) + (", and end to end with octave ghosts dropped" if args.drop_octave_ghosts else "")
+        (
+            f"oracle with acoustic 0 and {args.weight:g} at temperature {args.temperature:g} "
+            f"(classifier {args.run}), and end to end"
+            if args.run is not None
+            else "oracle and end to end"
+        )
+        + (", and end to end with octave ghosts dropped" if args.drop_octave_ghosts else "")
+        + (f", and end to end with the evidence at {args.weight:g}" if args.e2e_audio else "")
+    )
+    if args.e2e_audio and args.run is None:
+        raise SystemExit("--e2e-audio needs --run")
     record_test_set_access(
         f"evaluate_egdb.py, {evidence_part}, on {len(present)} EGDB clips: decoder "
         f"{args.decoder_config}, config {args.config}; a pre-registered look"
@@ -122,8 +133,8 @@ def main() -> None:
     report = RecoveryReport()
     e1 = [0, 0, 0]  # matches, estimated, reference
     e1_ghosts = [0, 0, 0]  # the same, after octave ghosts are dropped
-    placed = dict.fromkeys(("oracle", "audio", "e2e", "e2e-ghosts"), 0)
-    given = dict.fromkeys(("oracle", "audio", "e2e", "e2e-ghosts"), 0)
+    placed = dict.fromkeys(("oracle", "audio", "e2e", "e2e-ghosts", "e2e-audio"), 0)
+    given = dict.fromkeys(("oracle", "audio", "e2e", "e2e-ghosts", "e2e-audio"), 0)
     for clip in clips:
         reference = list(clip.notes)
         notes = [note for note, _ in reference]
@@ -141,6 +152,19 @@ def main() -> None:
         heard_notes = note_f1(notes, estimated, cfg.onset_tolerance)
         e1 = [e1[0] + heard_notes.n_match, e1[1] + heard_notes.n_est, e1[2] + heard_notes.n_ref]
         ends = [("e2e", plain, estimated)]
+        if args.e2e_audio and model is not None:
+            evidence_e2e = heard(
+                model,
+                signal,
+                estimated,
+                dec.tuning.open_pitches,
+                dec.tuning.max_fret,
+                args.temperature,
+            )
+            scorer_e2e = HandSetScorer(
+                weights=replace(dec.weights, acoustic=args.weight), evidence=evidence_e2e
+            )
+            ends.append(("e2e-audio", scorer_e2e, estimated))
         if args.drop_octave_ghosts:
             kept = drop_octave_ghosts(estimated)
             ends.append(("e2e-ghosts", plain, kept))
@@ -169,6 +193,7 @@ def main() -> None:
         "audio": f"(c) oracle, acoustic {args.weight:g}",
         "e2e": "e2e",
         "e2e-ghosts": "e2e, octave ghosts dropped",
+        "e2e-audio": f"e2e, acoustic {args.weight:g}",
     }
     for mode, name in names.items():
         if mode not in report.shapes:
