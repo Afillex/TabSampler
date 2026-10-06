@@ -97,3 +97,9 @@ def test_the_page_and_its_files_are_revalidated_on_every_load(client: TestClient
     # A browser that cached last version's app.js would draw this version's data wrongly.
     for path in ("/", "/static/app.js", "/static/style.css"):
         assert client.get(path).headers["cache-control"] == "no-cache", path
+
+
+def test_the_page_warns_about_an_off_pitch_recording() -> None:
+    script = static("app.js")
+    assert "tuning_offset" in script and "tuning_warning_threshold" in script
+    assert "A440" in script

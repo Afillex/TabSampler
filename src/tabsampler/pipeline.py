@@ -2,15 +2,19 @@
 
 The CLI's ``transcribe`` and the web server's ``/api/transcribe`` both go through
 :func:`transcribe_path`, so the page and the command line agree note for note by
-construction. It does I/O only through the transcriber it is given.
+construction. It reads the file twice: through the transcriber it is given, and once more to
+estimate the recording's offset from A440, which is reported and never corrected (ADR 0060).
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+from tabsampler.audio.io import load_audio
+from tabsampler.audio.tuning import estimate_offset
 from tabsampler.config import Phase1Config
 from tabsampler.decode.robust import Degradation, decode_best_effort
 from tabsampler.eval.metrics import pitch_validity_rate, tab_notes_to_placed
@@ -39,9 +43,26 @@ class PipelineResult:
     #: E4. Anything below 1.0 is a bug.
     pitch_validity: float
     n_notes_detected: int
+    #: Semitones from A440, in [-0.5, 0.5); None when the audio could not be read for it.
+    #: Reported, never corrected (ADR 0060).
+    tuning_offset: float | None = None
 
 
-def transcribe_path(path: Path, cfg: Phase1Config, transcriber: FileTranscriber) -> PipelineResult:
+def offset_from_file(path: Path) -> float | None:
+    """The recording's offset from A440, or None if the file cannot be read as audio."""
+    try:
+        audio, sr = load_audio(path)
+    except Exception:  # an unreadable file must not stop the transcription
+        return None
+    return estimate_offset(audio, sr)
+
+
+def transcribe_path(
+    path: Path,
+    cfg: Phase1Config,
+    transcriber: FileTranscriber,
+    estimate: Callable[[Path], float | None] = offset_from_file,
+) -> PipelineResult:
     """Transcribe ``path`` and decode it with the decoder ``cfg`` describes."""
     notes = transcriber.transcribe_file(path)
     groups = group_notes(notes, window_s=cfg.group_window_s)
@@ -54,4 +75,5 @@ def transcribe_path(path: Path, cfg: Phase1Config, transcriber: FileTranscriber)
         transition_rate=play.transition_rate,
         pitch_validity=pitch_validity_rate(tab_notes_to_placed(tab), cfg.tuning),
         n_notes_detected=len(notes),
+        tuning_offset=estimate(path),
     )

@@ -225,3 +225,13 @@ def test_an_oversized_upload_is_refused_from_its_header_before_it_is_read(fake: 
     )
     assert r.status_code == 413
     assert fake.calls == []
+
+
+def test_the_response_reports_the_tuning_offset_and_its_warning_threshold(
+    client: TestClient,
+) -> None:
+    sharp = Path("tests/fixtures/sharp_take.wav").read_bytes()
+    body = post(client, sharp).json()
+    assert body["metrics"]["tuning_offset"] == pytest.approx(0.4, abs=0.05)
+    assert body["tuning_warning_threshold"] == 0.25
+    assert post(client, wav_bytes()).json()["metrics"]["tuning_offset"] == 0.0  # silence

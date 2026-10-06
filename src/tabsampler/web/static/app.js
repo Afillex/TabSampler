@@ -158,7 +158,24 @@ function hideTip() {
   $("tip").hidden = true;
 }
 
+// A recording far from A440 is reported, never corrected (ADR 0060): the transcriber assumes
+// standard pitch. Same wording as the CLI's warning.
+function tuningWarning(doc) {
+  const offset = doc.metrics.tuning_offset;
+  if (offset === null || Math.abs(offset) < doc.tuning_warning_threshold) return "";
+  const size = Math.abs(offset).toLocaleString("en", { maximumFractionDigits: 2 });
+  return (
+    `The recording is about ${size} semitone ${offset > 0 ? "sharp" : "flat"} of standard ` +
+    "pitch (A440). The transcriber assumes standard pitch, so many notes may be missed or " +
+    "written a semitone off. Tune to A440 and record again for a better tab."
+  );
+}
+
 function summarise(doc) {
+  const warning = tuningWarning(doc);
+  $("tuning").textContent = warning;
+  $("tuning").hidden = !warning;
+
   const m = doc.metrics;
   const unsure = doc.notes.filter((n) => n.posterior < doc.uncertainty_threshold).length;
   $("summary").textContent =
@@ -178,7 +195,7 @@ function summarise(doc) {
   const lines = [];
   if (d.n_notes_out_of_range) lines.push(`${d.n_notes_out_of_range} detected notes are outside the guitar's range and were left out.`);
   if (d.n_notes_dropped) lines.push(`${d.n_notes_dropped} notes were dropped to make an over-full chord playable.`);
-  if (d.n_groups_dropped) lines.push(`${d.n_groups_dropped} chords could not be fingered at all and were left out.`);
+  if (d.n_groups_dropped) lines.push(`${d.n_groups_dropped} chords or single notes were left out entirely, counting any made only of the notes above.`);
   if (d.n_groups_relaxed) lines.push(`${d.n_groups_relaxed} chords needed a wider stretch than usual (up to ${d.max_span_used} frets).`);
   const head = document.createElement("strong");
   head.textContent = lost ? `${lost} notes the transcriber heard are not in this tab.` : "Some chords needed a wider stretch.";
@@ -218,7 +235,7 @@ async function transcribe(file) {
     return;
   }
   if (!doc.notes.length) {
-    setStatus(`No notes were detected in ${file.name}.`);
+    setStatus(`No notes were detected in ${file.name}. ${tuningWarning(doc)}`);
     return;
   }
   current = doc;

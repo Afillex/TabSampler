@@ -26,6 +26,7 @@ from rich.progress import (
 )
 from rich.table import Table
 
+from tabsampler.audio.tuning import WARNING_THRESHOLD, tuning_warning
 from tabsampler.config import EvalConfig, load_eval_config, load_phase1_config
 from tabsampler.data.guitarset import (
     load_dataset,
@@ -513,6 +514,9 @@ def transcribe(
         )
         for line in degradation.details[:5]:
             console.print(f"  [dim]{line}[/dim]")
+    offset = result.tuning_offset
+    if offset is not None and abs(offset) >= WARNING_THRESHOLD:
+        console.print(f"[bold yellow]{tuning_warning(offset)}[/bold yellow]")
     if validity < 1.0:
         console.print(
             "[bold red]E4 below 1.0 is a bug, not a result: a (string, fret) pair "

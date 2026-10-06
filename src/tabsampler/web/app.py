@@ -22,6 +22,7 @@ from fastapi import Body, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from tabsampler.audio.tuning import WARNING_THRESHOLD
 from tabsampler.config import Phase1Config
 from tabsampler.errors import TranscriberFailedError, TranscriberUnavailableError
 from tabsampler.pipeline import PipelineResult, transcribe_path
@@ -105,7 +106,9 @@ def response_document(result: PipelineResult, cfg: Phase1Config) -> dict[str, An
         "transition_rate": result.transition_rate,
         "pitch_validity": result.pitch_validity,
         "n_notes_detected": result.n_notes_detected,
+        "tuning_offset": result.tuning_offset,
     }
+    doc["tuning_warning_threshold"] = WARNING_THRESHOLD
     doc["uncertainty_threshold"] = cfg.uncertainty_threshold
     return doc
 

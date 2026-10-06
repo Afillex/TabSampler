@@ -212,3 +212,22 @@ def test_transcribe_exports_by_suffix_with_the_disclaimer(
     data = out.read_bytes()
     assert magic in data[:40]
     assert b"Rhythm is NOT transcribed" in data
+
+
+def test_transcribe_warns_when_the_recording_is_off_pitch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from tabsampler.types import NoteEvent
+
+    class Fake:
+        def __init__(self, exe: str, params: object = None) -> None:
+            pass
+
+        def transcribe_file(self, path: Path) -> list[NoteEvent]:
+            return [NoteEvent(onset=0.0, offset=0.5, pitch=45, confidence=0.9)]
+
+    monkeypatch.setattr(cli, "BasicPitchCLITranscriber", Fake)
+    result = CliRunner().invoke(cli.app, ["transcribe", "tests/fixtures/sharp_take.wav"])
+    assert result.exit_code == 0, result.output
+    text = " ".join(result.output.split())
+    assert "sharp of standard pitch" in text and "A440" in text

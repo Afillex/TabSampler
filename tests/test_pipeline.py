@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from tabsampler.config import load_phase1_config
 from tabsampler.decode.robust import decode_best_effort
 from tabsampler.fingering.candidates import group_notes
@@ -61,3 +63,26 @@ def test_no_notes_gives_an_empty_tab() -> None:
     assert result.tab == ()
     assert result.n_notes_detected == 0
     assert result.degradation.is_clean
+
+
+def test_the_tuning_offset_is_reported_and_the_tab_is_unchanged() -> None:
+    # ADR 0060: the offset is a warning, never a correction.
+    plain = transcribe_path(Path("x.wav"), CFG, Fake(NOTES), estimate=lambda _: None)
+    sharp = transcribe_path(Path("x.wav"), CFG, Fake(NOTES), estimate=lambda _: 0.45)
+    assert sharp.tuning_offset == 0.45 and plain.tuning_offset is None
+    assert sharp.tab == plain.tab
+
+
+def test_an_unreadable_file_still_transcribes_with_the_offset_unknown(tmp_path: Path) -> None:
+    broken = tmp_path / "broken.wav"
+    broken.write_bytes(b"not audio")
+    result = transcribe_path(broken, CFG, Fake(NOTES))
+    assert result.tuning_offset is None
+    assert len(result.tab) == 3
+
+
+def test_the_offset_is_estimated_from_the_file() -> None:
+    from tabsampler.pipeline import offset_from_file
+
+    take = Path("tests/fixtures/sharp_take.wav")
+    assert offset_from_file(take) == pytest.approx(0.4, abs=0.05)

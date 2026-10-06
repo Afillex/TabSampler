@@ -51,6 +51,10 @@ transcriber's settings, so the same file a second time comes back in well under 
 - **One tuning per run.** The tuning and capo come from the decoder config's `tuning` block
   (`--config`, default `configs/decoder_clean.yaml`: standard, no capo); the page uses the config
   `tabsampler serve` was started with. Every figure below is for standard tuning.
+- **Standard pitch (A440).** The transcriber assumes it. A guitar tuned between semitones loses
+  notes or has them written a semitone off; when a recording is at least a quarter of a semitone
+  off, the page and the CLI say so. Automatic correction was measured and did more harm than good
+  (ADR 0060), so tune to A440 and record again.
 - **No techniques**: bends, slides, hammer-ons, palm mutes and harmonics are not transcribed.
 
 ## What to expect
