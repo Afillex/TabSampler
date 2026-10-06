@@ -1,0 +1,78 @@
+# Phase 6 — Full songs
+
+> Tasks run in order; steps use checkbox (`- [ ]`) syntax. Every rule that picks or adopts
+> something is committed before the run it judges; every test-set look is pre-registered.
+
+**Status:** started 2026-10-07; Ege chose Phase 6 after the electric path (ADRs 0062–0064).
+
+**Spec §6:** "`htdemucs_6s` guitar stem, with an experiment feeding stem + mix. Report results
+separately from isolated mode." ADR 0002: isolated and full-song results are separate tables,
+never merged.
+
+**Done when (proposed; Ege signs off):** on both test sets (EGDB; GuitarSet, labelled), end-to-end
+E2 is reported for full-song mixes three ways — the mix straight into Basic Pitch, the separated
+guitar stem, and the stem with the mix added back as chosen on validation — beside the isolated
+figure; and the app accepts a full song through a "separate the guitar first" option.
+
+## Where this starts
+
+- Isolated guitar, end to end on EGDB: E2 0.4547 (default), 0.4992 (electric option).
+- **No public dataset found has full-band mixes with string labels** (searched 2026-10-07; GOAT,
+  GuitarSet, EGDB, Guitar-TECHS and the rest are guitar alone). So the mixes are built: a labelled
+  guitar take plus backing from a multitrack corpus with its guitars removed, so ours is the only
+  guitar and every guitar note has a label.
+- **Backing (Ege, 2026-10-07): BabySlakh now, MoisesDB later.** BabySlakh (CC BY 4.0, Zenodo
+  4603870): the first 20 songs of Slakh2100, synthesized, **16 kHz** — so separation may look
+  easier than on real songs. MoisesDB (real songs, CC BY-NC-SA, by registration at music.ai) is
+  the later, more realistic check. Ruled out: Slakh2100 whole (104 GB), MUSDB18 and OnAir (their
+  guitars sit inside "other" and cannot be removed).
+- `htdemucs_6s` (demucs 4.1.0) resolves on Python 3.13 with the project's PyTorch 2.14.1 and
+  separates 20 s in 5 s on this CPU (checked in a throwaway environment, 2026-10-07).
+
+## Global constraints
+
+- Isolated and full-song results never share a table or a row.
+- Validation: EGSet12 and IDMT's licks (electric), GuitarSet player 00 (acoustic, labelled);
+  BabySlakh songs 1–10 as their backing. Test: EGDB and GuitarSet's players 01–05 (labelled),
+  BabySlakh songs 11–20 as their backing. A backing song is never in both.
+- The mix's guitar labels are the take's own, delay taken off as before (ADRs 0052, 0062).
+- One variable per measurement; demucs enters only with an ADR.
+
+## Task 1: Building full-song mixes (ADR)
+
+- [ ] Download BabySlakh; check its stems and which are guitars (its metadata's instrument
+      classes).
+- [ ] `data/mixes.py`: for a labelled take and a backing song, the backing's non-guitar stems summed,
+      resampled, cut or looped to the take's length, and mixed at a stated guitar-to-backing level;
+      pairing by a hash of the take's name, so it never depends on order. Pure, tested.
+- [ ] An ADR: the mix construction, the levels (0 dB and −6 dB guitar-to-backing, both reported),
+      the backing split, and what the mixes cannot show (no shared key or tempo between guitar and
+      backing; 16 kHz backing).
+
+## Task 2: Separation (ADR for the dependency)
+
+- [ ] demucs in its own dependency group; `audio/separate.py` runs `htdemucs_6s` and returns the
+      guitar stem, cached by the audio's hash as transcriptions are.
+- [ ] Pre-registered on validation: end-to-end E2, the mix straight into Basic Pitch against the
+      guitar stem. Isolated E2 beside it as the ceiling.
+
+## Task 3: Stem plus mix
+
+- [ ] Pre-registered on validation: Basic Pitch hears the stem with a share α of the mix added back
+      (α in 0, 0.1, 0.25, 0.5; 0 is the stem alone) — a little of the mixture can mask separation
+      artefacts. The rule picks α; the electric option is reported beside it.
+
+## Task 4: The test look
+
+- [ ] One pre-registered look at EGDB and one at GuitarSet's test players, full-song mixes, the
+      three inputs; a results table separate from the isolated one; an ADR.
+
+## Task 5: The app
+
+- [ ] A "full song — separate the guitar first" option on the page and `--full-song` on the CLI;
+      the duration limit reconsidered for songs (ADR 0058's five minutes).
+- [ ] Gate to Ege.
+
+## Not in this plan
+
+- MoisesDB (after Ege registers); distorted guitar; separating two guitars from each other.
