@@ -211,3 +211,16 @@ def test_export_refuses_a_malformed_document_with_400(client: TestClient) -> Non
 def test_export_refuses_an_unknown_format_with_404(client: TestClient) -> None:
     doc = post(client, wav_bytes()).json()
     assert client.post("/api/export/pdf", json=doc).status_code == 404
+
+
+def test_an_oversized_upload_is_refused_from_its_header_before_it_is_read(fake: Fake) -> None:
+    # Starlette reads a multipart body in full before the handler runs; a 2 GB WAV must be
+    # refused on its Content-Length, not after it has been received.
+    client = TestClient(create_app(CFG, fake, max_upload_bytes=1000))
+    r = client.post(
+        "/api/transcribe",
+        content=b"x" * 10,
+        headers={"content-length": str(10**10), "content-type": "multipart/form-data; boundary=b"},
+    )
+    assert r.status_code == 413
+    assert fake.calls == []

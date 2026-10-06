@@ -18,8 +18,8 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any, BinaryIO, Protocol
 
-from fastapi import Body, FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, Response
+from fastapi import Body, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from tabsampler.config import Phase1Config
@@ -119,6 +119,18 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(title="Tab Sampler", docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    # Starlette reads a multipart body in full before the handler runs, so the declared size is
+    # checked first; _save_upload still counts the bytes, as a header can lie. The slack covers
+    # the multipart framing around the file.
+    @app.middleware("http")
+    async def refuse_oversized(request: Request, call_next: Any) -> Any:  # pyright: ignore[reportUnusedFunction]
+        declared = request.headers.get("content-length", "")
+        too_big = declared.isdigit() and int(declared) > max_upload_bytes + _CHUNK
+        if request.url.path == "/api/transcribe" and too_big:
+            limit_mb = max_upload_bytes / (1024 * 1024)
+            return JSONResponse({"detail": f"the file is larger than {limit_mb:g} MB"}, 413)
+        return await call_next(request)
 
     @app.get("/", include_in_schema=False)
     def index() -> FileResponse:  # pyright: ignore[reportUnusedFunction]
