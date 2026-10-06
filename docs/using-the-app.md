@@ -31,8 +31,8 @@ transcriber's settings, so the same file a second time comes back in well under 
 Choose **Clean electric** on the page, or pass `--electric` to `tabsampler transcribe`, and the
 decoder also listens to each note to judge which string it was played on (ADR 0063). On EGDB's
 clean electric recordings this raised the end-to-end score from 0.4547 to 0.4992. It needs the
-`model` dependency group (PyTorch) and the trained classifier at `cache/acoustic/electric/best.pt`;
-without them the option is greyed out on the page and `tabsampler serve` says why. It was trained
+`model` dependency group (PyTorch) and the trained classifier: `make electric-model` downloads it
+(193 KB, CC BY 4.0, checked against its pinned SHA-256; ADR 0064). Without them the option is greyed out on the page and `tabsampler serve` says why. It was trained
 and tested on electric guitar only, so leave it off for acoustic recordings.
 
 ## What the page shows

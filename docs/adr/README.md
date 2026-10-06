@@ -71,6 +71,7 @@ of the old record to point at its replacement.
 | [0061](0061-octave-ghosts-not-adopted.md) | **Octave ghosts, a loudness floor and a new uncertainty threshold: none adopted** — dropping octave ghosts gained +0.025 on player 3 but −0.001 on EGDB (E1 −0.028); the threshold's lift was 1.42, short of 1.5 | — | accepted |
 | [0062](0062-electric-string-data.md) | **Electric string data**: EGFxSet (CC BY) trains with Guitar-TECHS; EGSet12 and IDMT-SMT-Guitar's licks validate; each take's label delay measured from its audio; player 3 to training (Ege) | D13 | accepted |
 | [0063](0063-electric-evidence-adopted.md) | **The electric string classifier is adopted as the app's electric option**: open-data classifier, calibrated on IDMT, EGDB end-to-end E2 0.4547 → **0.4992** (+0.0445), oracle 0.6762 → 0.7229; default unchanged | D13 | accepted |
+| [0064](0064-electric-weights-published.md) | **The electric classifier's weights are published** as a release asset under CC BY 4.0 (Guitar-TECHS, EGFxSet), pinned by SHA-256; `make electric-model` | D15 (partial) | accepted |
 
 Decisions still open, each due at the phase that needs it: D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).

@@ -1,4 +1,4 @@
-.PHONY: install test oracle lint format typecheck check eval-notes eval-m1 check-split serve
+.PHONY: install test oracle lint format typecheck check eval-notes eval-m1 check-split serve electric-model
 
 install:
 	uv sync --all-groups
@@ -42,3 +42,7 @@ serve:
 	@uv run python -c "import fastapi, uvicorn" 2>/dev/null || { \
 		echo "the web page needs the web dependency group: run uv sync --all-groups"; exit 1; }
 	uv run tabsampler serve
+
+# The electric option's classifier (ADRs 0063, 0064): downloaded from the release, hash checked.
+electric-model:
+	bash scripts/get_electric_model.sh
