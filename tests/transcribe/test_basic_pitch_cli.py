@@ -306,6 +306,9 @@ def test_a_model_path_appears_in_the_command_line(tmp_path: Path) -> None:
     t = BasicPitchCLITranscriber(exe="basic-pitch", cache_dir=tmp_path, model=model)
     argv = t.build_argv(Path("/tmp/out"), Path("/tmp/a.wav"))
     assert argv[argv.index("--model-path") + 1] == str(model)
+    # basic-pitch ignores --model-path whenever --model-serialization is given, so a model must
+    # come without it; the CLI infers CoreML from the .mlpackage itself.
+    assert "--model-serialization" not in argv
     released = BasicPitchCLITranscriber(exe="basic-pitch", cache_dir=tmp_path)
     assert "--model-path" not in released.build_argv(Path("/tmp/out"), Path("/tmp/a.wav"))
 

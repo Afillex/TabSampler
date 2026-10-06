@@ -198,7 +198,9 @@ class BasicPitchCLITranscriber:
         digest.update(audio_path.read_bytes())
         digest.update(repr(self.params).encode())
         if self.model is not None:
-            digest.update(b"model:" + _model_digest(self.model))
+            # "model-path:", not the "model:" of an earlier build that ignored the model (ADR 0056),
+            # so the transcriptions it cached under a model's key are never found.
+            digest.update(b"model-path:" + _model_digest(self.model))
         return digest.hexdigest()[:32]
 
     def cache_path(self, audio_path: Path) -> Path:
@@ -207,21 +209,28 @@ class BasicPitchCLITranscriber:
     # ------------------------------------------------------------------ invocation
 
     def build_argv(self, output_dir: Path, audio_path: Path) -> list[str]:
-        """The exact command line. Positional order is ``output_dir`` then audio."""
+        """The exact command line. Positional order is ``output_dir`` then audio.
+
+        basic-pitch ignores ``--model-path`` whenever ``--model-serialization`` is given (its
+        ``predict.py``), so a model (ADR 0056) is passed alone and its type inferred from it.
+        """
+        model = (
+            ["--model-path", str(self.model)]
+            if self.model is not None
+            else ["--model-serialization", self.params.model_serialization]
+        )
         return [
             self.exe,
             str(output_dir),
             str(audio_path),
             "--save-note-events",
-            "--model-serialization",
-            self.params.model_serialization,
+            *model,
             "--onset-threshold",
             str(self.params.onset_threshold),
             "--frame-threshold",
             str(self.params.frame_threshold),
             "--minimum-note-length",
             str(self.params.minimum_note_length_ms),
-            *(["--model-path", str(self.model)] if self.model is not None else []),
         ]
 
     def transcribe_file(self, audio_path: Path | str) -> list[NoteEvent]:

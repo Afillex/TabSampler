@@ -97,8 +97,11 @@ Its training code is in the package; players 1–2 train, player 3 validates (AD
 after Tasks 2 and 3.
 
 - [x] Design (ADR). *(ADR 0056, Ege's route: a separate TensorFlow environment, the result run by
-      the unchanged CLI through `--model-path`. Checked before training: the released weights,
-      exported this way, give identical notes on all 12 of player 3's takes.)*
+      the unchanged CLI through `--model-path`. A check first claimed here — the released weights,
+      exported, give identical notes on all 12 of player 3's takes — **proved nothing**: the
+      adapter passed `--model-serialization`, which makes basic-pitch ignore `--model-path`.
+      Fixed; redone with a negative control: the released export identical on 12 of 12, the
+      fine-tuned model different on 12 of 12.)*
 
 **Pre-registered:** `finetune_basic_pitch.py train --data cache/transcriber/data --run
 cache/transcriber/ft` (86 training takes, 4.48 hours; 12 validation takes) as ADR 0056 fixes it,
@@ -113,7 +116,10 @@ player 3. **Predictions:** player 3's loss falls at least 5% below epoch 0's; E2
 +0.04 — drills (scales, chords, single notes) teach less about music than their hours suggest — and
 the interval does not clear zero.
 
-- [ ] Train; export; measure on player 3; record.
+- [x] Train; export; measure on player 3; record. *(Loss 1.2491 → 1.0149, −18.8%: held. At the
+      released model's thresholds, E2 0.4185 → 0.0946, −0.3239 [−0.4294, −0.2057]: it writes 9,858
+      notes where the released model writes 1,951 — fine-tuning moved the posteriors' scale. H2
+      and its prediction failed.)*
 
 ## Task 5: Heavier models
 
