@@ -84,3 +84,31 @@ def test_egfxset_counts_strings_from_the_high_e(tmp_path: Path) -> None:
     found = sorted((p.name, pitch, pos) for p, pitch, pos in egfxset_notes(tmp_path))
     # Measured from the audio: EGFxSet's string 1 sounds MIDI 64 open, string 6 MIDI 40.
     assert found == [("1-0.wav", 64, Position(5, 0)), ("6-5.wav", 45, Position(0, 5))]
+
+
+def test_aligned_takes_off_the_delay_measured_from_the_audio(tmp_path: Path) -> None:
+    # Plucks sound 40 ms after their labels, as IDMT's do; aligned() moves the labels to them.
+    import numpy as np
+    import soundfile as sf
+
+    from tabsampler.audio.windows import RATE
+    from tabsampler.data.electric import LabelledTake, aligned
+    from tabsampler.types import NoteEvent
+
+    labels = [0.5 + 0.4 * k for k in range(8)]
+    signal = np.zeros(int(RATE * 4.0), dtype=np.float32)
+    t = np.arange(int(RATE * 0.3)) / RATE
+    for onset in labels:
+        start = int((onset + 0.040) * RATE)
+        signal[start : start + len(t)] += (np.sin(2 * np.pi * 220 * t) * np.exp(-8 * t)).astype(
+            np.float32
+        )
+    audio = tmp_path / "take.wav"
+    sf.write(audio, signal, RATE)
+    notes = tuple(
+        (NoteEvent(onset=o, offset=o + 0.3, pitch=57, confidence=1.0), Position(1, 12))
+        for o in labels
+    )
+    shifted = aligned(LabelledTake("x", audio, notes))
+    moved = [n.onset - o for (n, _), o in zip(shifted.notes, labels, strict=True)]
+    assert all(abs(m - 0.040) <= 0.01 for m in moved), moved

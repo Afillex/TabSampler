@@ -635,9 +635,6 @@ def test_the_string_evaluation_reads_only_the_validation_player(
     monkeypatch.setattr(evaluate, "guitarset_validation_ids", lambda: tuple(validation))
     monkeypatch.setattr(evaluate, "load_dataset", lambda *_: Dataset())
     monkeypatch.setattr(evaluate, "reference_tab", reference)
-    monkeypatch.setattr(
-        evaluate, "reference_notes", lambda t: [n for n, _ in reference(t, Tuning())]
-    )
     monkeypatch.setattr(evaluate, "load_audio", lambda _: np.zeros(44100, dtype=np.float32))
     torch.manual_seed(0)
     (tmp_path / "run").mkdir()

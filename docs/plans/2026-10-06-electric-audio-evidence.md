@@ -53,7 +53,19 @@ test sets); SynthTab (rendered, unpublishable); SCORE-SET and DadaGP (no audio).
 
 ## Task 2: Retrain and calibrate the classifier on publishable data only
 
-- [ ] Train from scratch on Guitar-TECHS players 1–2 plus Task 1's training part.
+- [x] Tools: `scripts/train_strings.py --corpus electric`, `scripts/evaluate_strings.py --electric`,
+      `data/electric.py`'s `aligned` (each take's label delay from its audio).
+- [x] **Baseline, measured before this pre-registration:** Phase 4's classifier trained on
+      Guitar-TECHS players 1–2 (`cache/acoustic/gt`), per-note string accuracy on notes with more
+      than one possible string — EGSet12 0.4665 (1,419 notes; decoder alone 0.6963, chance 0.2809),
+      IDMT licks 0.4201 (2,730; decoder alone 0.4234, chance 0.2961).
+- [ ] **Pre-registered training run** (this commit, before it starts): the same network and
+      settings as Phase 4 (Adam 1e-3, batch 256, patience 3, at most 30 epochs, seed 0), trained from
+      scratch on ADR 0062's data — Guitar-TECHS players 1–3 and EGFxSet's clean notes, stopping on a
+      hashed 15% — into `cache/acoustic/electric`. *Single variable:* the training data.
+      *Metric:* the per-note accuracy above, per set and pooled. *Prediction:* above the baseline
+      by at least 0.03 on each set; pooled between 0.47 and 0.55. *Rule:* Task 3 uses the new
+      classifier if its pooled accuracy beats the baseline's, else Phase 4's (also publishable).
 - [ ] Calibrate temperature and acoustic weight on the new validation set (not player 3).
 
 ## Task 3: The audio term end to end

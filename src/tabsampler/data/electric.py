@@ -20,7 +20,7 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from tabsampler.types import NoteEvent, Position
@@ -118,3 +118,25 @@ def egfxset_notes(root: Path) -> Iterator[tuple[Path, int, Position]]:
         string = 6 - int(match.group(1))  # its string 1 is the high e
         fret = int(match.group(2))
         yield wav, STANDARD[string] + fret, Position(string=string, fret=fret)
+
+
+def aligned(take: LabelledTake) -> LabelledTake:
+    """The take with its label delay, measured from its own audio as ADR 0052 does, taken off
+    every onset and offset (ADR 0062): IDMT's labels run about 35 ms ahead of its sound."""
+    import librosa
+    import numpy as np
+
+    from tabsampler.audio.windows import MEASURE_LAG, RATE, onset_lag
+
+    if not take.notes:
+        return take
+    signal, _ = librosa.load(take.audio, sr=RATE, mono=True)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    lag = onset_lag(np.asarray(signal, dtype=np.float32), sorted({n.onset for n, _ in take.notes}))
+    delay = MEASURE_LAG - lag
+    return replace(
+        take,
+        notes=tuple(
+            (replace(note, onset=note.onset - delay, offset=note.offset - delay), position)
+            for note, position in take.notes
+        ),
+    )

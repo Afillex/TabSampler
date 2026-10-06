@@ -12,6 +12,8 @@ a hash of their name: about 15% to stop on, the rest to train. ``--corpus guitar
 Guitar-TECHS's direct-input takes instead, as ADR 0051 has them: players 1 and 2 train and
 player 3 is held out; bent and harmonic takes are left out, the pickup's glitches dropped, and
 each take's label delay, measured from its own audio (ADR 0052), corrected where windows are cut.
+``--corpus electric`` reads ADR 0062's data from a root holding ``guitar-techs/`` and ``egfxset/``:
+all three Guitar-TECHS players and EGFxSet's clean notes, stopping on a hashed 15% of the takes.
 ``--init`` starts from another run's weights. Adam 1e-3, batch 256, stopping when the held-out
 NLL has not fallen for three epochs, at most 30; seed 0. A run checkpoints after
 every epoch and resumes when started again; weights trained on SynthTab, or started from them,
@@ -39,6 +41,7 @@ from tabsampler.audio.windows import (
     possible_strings,
     track_cqt,
 )
+from tabsampler.data.electric import egfxset_notes
 from tabsampler.data.guitartechs import STANDARD, clean, load_takes, usable
 from tabsampler.data.synthtab import RENDER_LATENCY, is_held_out, load_tracks
 from tabsampler.model.strings import StringClassifier
@@ -55,6 +58,8 @@ def examples_for(root: Path, corpus: str = "synthtab") -> tuple[Examples, Exampl
     """(training, held-out) examples: windows (float16), pitches, possible strings, strings."""
     if corpus == "guitartechs":
         return guitartechs_examples(root)
+    if corpus == "electric":
+        return electric_examples(root)
     tracks, skipped = load_tracks(root)
     print(f"{len(tracks)} tracks ({len(skipped)} skipped)", flush=True)
     sides: dict[bool, dict[str, list[NDArray[np.generic]]]] = {
@@ -115,6 +120,56 @@ def guitartechs_examples(root: Path) -> tuple[Examples, Examples]:
     )
 
 
+def electric_examples(root: Path) -> tuple[Examples, Examples]:
+    """ADR 0062's training data: Guitar-TECHS's three players and EGFxSet's clean notes, under
+    ``root`` as ``guitar-techs/`` and ``egfxset/``. Training stops on a hashed 15% of the takes
+    (EGFxSet: of the files); EGSet12 and IDMT, the validation sets, are not read here."""
+    takes, skipped = load_takes(root / "guitar-techs")
+    takes = [take for take in takes if usable(take)]
+    print(f"Guitar-TECHS: {len(takes)} usable takes ({len(skipped)} skipped)", flush=True)
+    sides: dict[bool, dict[str, list[NDArray[np.generic]]]] = {
+        side: {"windows": [], "pitches": [], "possible": [], "strings": []}
+        for side in (False, True)
+    }
+
+    def add(side: bool, cqt: NDArray[np.float32], onset: float, pitch: int, string: int) -> None:
+        possible = possible_strings(pitch, STANDARD, MAX_FRET)
+        if sum(possible) < 2:
+            return
+        sides[side]["windows"].append(note_window(cqt, onset, pitch).astype(np.float16))
+        sides[side]["pitches"].append(np.int16(pitch))
+        sides[side]["possible"].append(np.array(possible))
+        sides[side]["strings"].append(np.int8(string))
+
+    for take in takes:
+        signal = np.asarray(librosa.load(take.direct_input, sr=RATE, mono=True)[0], np.float32)
+        notes, _ = clean(take.notes)
+        if not notes:
+            continue
+        delay = MEASURE_LAG - onset_lag(signal, sorted({n.onset for n, _ in notes}))
+        cqt = track_cqt(signal)
+        side = is_held_out(f"gt P{take.player} {take.name}")
+        for note, position in notes:
+            add(side, cqt, note.onset - delay, note.pitch, position.string)
+    files = list(egfxset_notes(root / "egfxset"))
+    print(f"EGFxSet: {len(files)} clean notes", flush=True)
+    for wav, pitch, position in files:
+        signal = np.asarray(librosa.load(wav, sr=RATE, mono=True)[0], np.float32)
+        onsets = librosa.onset.onset_detect(y=signal, sr=RATE, units="time")
+        if not len(onsets):
+            continue
+        add(
+            is_held_out(f"egfx {wav.parent.name} {wav.name}"),
+            track_cqt(signal),
+            float(onsets[0]),
+            pitch,
+            position.string,
+        )
+    return tuple(  # type: ignore[return-value]
+        {key: np.stack(values) for key, values in sides[side].items()} for side in (False, True)
+    )
+
+
 def batches(examples: Examples, size: int, order: NDArray[np.int64]):  # type: ignore[no-untyped-def]
     for start in range(0, len(order), size):
         pick = order[start : start + size]
@@ -146,7 +201,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", type=Path)
     parser.add_argument("--run", type=Path, required=True)
-    parser.add_argument("--corpus", choices=("synthtab", "guitartechs"), default="synthtab")
+    parser.add_argument(
+        "--corpus", choices=("synthtab", "guitartechs", "electric"), default="synthtab"
+    )
     parser.add_argument("--init", type=Path, help="A run's best.pt to start from.")
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
