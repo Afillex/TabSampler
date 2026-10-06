@@ -42,8 +42,10 @@ pushed). Plan `docs/plans/2026-10-06-app-track.md`; the entry is the end of `doc
   downloads byte-identical to the CLI's exports. **Still open:** no export has been opened in
   MuseScore, TuxGuitar or Guitar Pro (none installed); the uncertainty threshold marks 125 of
   217 notes on that take — a decision for Ege.
-- **The gate is Ege's**: one of Ege's recordings in the page, and the page agreeing with
-  `tabsampler transcribe`. Then merge, push, and a tag if wanted.
+- **The gate failed once** (devlog): Ege's recording was 0.43 semitone sharp of A440 and the tab
+  did not resemble it. Automatic correction was measured on player 3 and **not adopted** (ADR
+  0060); the CLI and page now **warn** at |offset| ≥ 0.25. **Waiting on Ege** to re-record in tune
+  and re-try the gate. Then merge, push, and a tag if wanted.
 
 ## Before that: Phase 5 (2026-10-06)
 
