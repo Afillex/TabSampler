@@ -155,7 +155,10 @@ Guitar-TECHS helps. **Predictions:** its best onset threshold lies between 0.5 a
 posteriors back near the released model's scale; its E2 within 0.03 of 0.4185; the interval does
 not clear zero.
 
-- [ ] Train; export; run; record.
+- [x] Train; export; run; record. *(E2 0.3052, −0.1132 [−0.1813, −0.0440]: not adopted;
+      fine-tuning closes as a negative result. Its onset head never passes 0.405, so the onset
+      threshold did nothing; run 1's weighted loss had the opposite fault — 18.7% of onset frames
+      above 0.5, against the released model's 0.35%.)*
 
 ## Task 5: Heavier models
 
