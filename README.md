@@ -11,7 +11,8 @@ audio -> note events -> string/fret candidates -> fingering scorer -> decoder ->
 Status: **Milestone M1 reached. Phase 2 (learned fingering) closed on 2026-10-04 with M2
 missed: oracle E2 0.6819 against 0.760** (ADR 0045). **Phase 3 (audio conditioning) closed
 on 2026-10-06 with a negative result: audio evidence trained on SynthTab lowers oracle E2 to
-0.6073** (ADR 0048). The next phase is to be chosen.
+0.6073** (ADR 0048). **Phase 4 (real electric audio) is measured: on EGDB's electric guitar the
+audio evidence raises oracle E2 from 0.6762 to 0.7200** (ADR 0054); closing it awaits sign-off.
 
 ## Results
 
@@ -80,6 +81,24 @@ player 00. On SynthTab's own held-out tracks it raised the share of notes placed
 string by 3 points — on the tracks its weight was chosen on, so an optimistic figure. The default
 keeps the audio term off. Whether the gap is rendered guitar against real or electric against
 acoustic, Phase 3 cannot say; training on real recordings is the spec's Phase 4.
+
+### Phase 4: electric guitar, a second test set (ADRs 0049–0054)
+
+Clean electric guitar is the target (ADR 0049), and **EGDB** — 240 clips of electric guitar, direct
+input — is a second test set beside GuitarSet, under the same guard (ADR 0050). The string
+classifier, fine-tuned on Guitar-TECHS's real electric recordings and calibrated on a third player:
+
+| oracle E2, default decoder | without audio | with audio |
+|---|---|---|
+| EGDB, electric (test) | 0.6762 | **0.7200** |
+| GuitarSet players 01–05, acoustic (test) | 0.6819 | 0.6876 |
+| GuitarSet player 00, acoustic (validation) | 0.8273 | 0.8044, −0.023 [−0.047, −0.004] |
+
+On the sound it was trained on, the evidence helps; on acoustic guitar it does not, and on the
+test players the sign flips from player 00's — no interval is computed there. The decoder alone
+does about as well on electric as on acoustic guitar (0.6762 against 0.6819). End to end on EGDB:
+Basic Pitch's note F1 0.7230, exact tab F1 0.4251 (530 of 43,700 transcribed notes not placed).
+The default keeps the audio term off.
 
 ### Validation on GuitarSet's own playing (ADRs 0037–0039)
 

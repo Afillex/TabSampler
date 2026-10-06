@@ -2,7 +2,7 @@
 
 You are picking up Tab Sampler with no prior context. This file is the shortest path to
 being useful. Written 2026-09-27 after Milestone M1; last updated 2026-10-06, after
-Phase 3 closed.
+Phase 4's measurement.
 
 ## In one paragraph
 
@@ -27,34 +27,36 @@ can use.
 
 ## Where the last session stopped (2026-10-06) — read before anything else
 
-**Phase 3, audio conditioning, is closed (Ege's sign-off, ADR 0048) as a negative result, and
-merged into `main` and public.**
-Phase 2 closed before it (ADR 0045): ADR 0039's open-string cost is in the default;
-Ege's chord-shape rule for a challenger on player 00 is *no clear drop*; a learned model was not
-preferred (ADRs 0041–0044); weights trained on DadaGP or SynthTab stay unpublished (ADRs 0042,
-0046). Every task of Phase 3's plan,
-`docs/plans/2026-10-04-phase-3-audio.md`, is done:
+**Phase 4, real electric audio, is measured and waits for Ege's sign-off (ADR 0054, proposed).**
+Branch `phase-4-electric`, **not merged or pushed**; plan `docs/plans/2026-10-06-phase-4-electric.md`,
+every task done; the day's entry is `docs/devlog/2026-10-06.md`. Phases 2 and 3 are closed and
+public: Phase 2 with M2 missed (ADR 0045), Phase 3 a negative result (ADR 0048). Weights trained
+on DadaGP or SynthTab, or started from them, stay unpublished (ADRs 0042, 0046).
 
-- **The evidence (ADRs 0046, 0047):** a small CNN (`src/tabsampler/model/strings.py`) gives each
-  note a probability per string from a constant-Q window around its onset
-  (`src/tabsampler/audio/windows.py`); `HandSetScorer` adds `acoustic × −log P(string)` per note.
-  At `acoustic` 0 the decoder is Phase 2's exactly, and the brute-force oracle covers the term.
-- **Trained on SynthTab's development set** (`data/synthtab/`, gitignored, CC BY-NC 4.0, 0.82 GB;
-  8.9 h, 0.93 h of it acoustic). Its audio lags its labels by about 17 ms (electric) and 29 ms
-  (acoustic), corrected by `RENDER_LATENCY` in `data/synthtab.py`; GuitarSet's onsets are trusted.
-- **Measured:** alone it picks the right string for 0.4736 of player 00's ambiguous notes (chance
-  0.2758, the decoder 0.8181). In the decoder it loses: player 00 −0.1273 uncalibrated, −0.0408
-  calibrated (T 1.8985, weight 0.25, both chosen on SynthTab); **the test players 0.6819 → 0.6073,
-  −0.0746**, one logged look. On SynthTab's held-out tracks it gains about 3 points, where its
-  weight was chosen. Rendered-against-real and electric-against-acoustic are confounded, so which
-  gap costs it is not known.
-- **The pipeline, in order:** `scripts/train_strings.py` → `evaluate_strings.py` →
-  `calibrate_acoustic.py` → `evaluate_acoustic.py --split validation` (each docstring has its
-  command); the run lives in `cache/acoustic/dev` (`best.pt`, `examples.npz`, `calibration.json`).
+- **D2 is clean electric first** (Ege, ADR 0049); acoustic stays measured, on GuitarSet.
+- **EGDB is the second test set** (ADR 0050): all 240 clips, direct input, in a committed
+  snapshot under the same guard as GuitarSet (`data/splits.py`, `egdb_test_ids`). Its string is
+  the **MIDI channel** (0 high e … 5 low E), not the track name (ADR 0053). Google Drive throttles
+  `scripts/download_egdb.py` after a few dozen files; Ege downloaded it in a browser.
+- **Guitar-TECHS** (`data/guitar-techs/`, CC BY 4.0, 4.1 GB zipped): players 1–2 train, player 3
+  validates (ADR 0051). Its pickup MIDI needs cleaning: glitches under 60 ms dropped, overlaps
+  trimmed, bends and harmonics left out, and **each take's label delay measured from its own
+  audio** (`onset_lag`, ADR 0052) — some of player 2's takes are 50–65 ms early, most 10–25 late.
+  `scripts/check_guitartechs.py` checks labels against audio, GuitarSet's player 00 the control.
+- **Measured** (ADR 0054): the classifier fine-tuned on Guitar-TECHS from SynthTab
+  (`cache/acoustic/gt-ft`, T 0.6957, weight 0.25) is only 0.37 accurate per note on player 3, no
+  better than SynthTab's, yet in the decoder: **EGDB (electric, test) 0.6762 → 0.7200**;
+  GuitarSet player 00 −0.0230 (a clear loss), test players +0.0057. The decoder alone: EGDB
+  0.6762 against GuitarSet's 0.6819. End to end on EGDB: E1 0.7230, E2 0.4251.
+- **Scripts:** `train_strings.py --corpus guitartechs [--init]`, `calibrate_acoustic.py --corpus
+  guitartechs`, `evaluate_strings.py --examples`, `evaluate_egdb.py` (the one logged look; `--note`
+  for the log's reason). The access log has 32 lines; lines 31 and 32 are one look at EGDB whose
+  first run stopped reading labels before any metric.
 
-`make check` (536 tests) and `make oracle` (13) pass. **Next: Ege chooses the next phase.** The spec's order is Phase 4, real-data
-fine-tuning, which first needs D2 (which guitar sound comes first) and its data; the app track
-(B1–B4) has been open since M1.
+`make check` (558 tests) and `make oracle` (13) pass. **Next: Ege's sign-off on Phase 4, then the
+merge and push** (Ege confirms). Then Ege's: an electric decoder config with the audio term
+(needs a validation figure that is not the calibration's own), and the next phase — 5, a better
+transcriber, or the app track (B1–B4).
 
 Deferred small items, not yet fixed: `fit_weights` silently accepts unknown or empty
 `active` names; `paired_bootstrap({}, {})` fails with a raw numpy error; `CostWeights.
@@ -79,15 +81,15 @@ the 2026-10-03 devlog). The decisions waiting for Ege are listed under "Open ite
 
 ```bash
 make install                       # uv sync --all-groups, Python 3.13
-make check                         # lint + pyright --strict + 536 tests. Must be green.
+make check                         # lint + pyright --strict + 558 tests. Must be green.
 make oracle                        # the correctness core. Must be green.
 ```
 
 `make check` piped into `tail` hides its exit code — check the status, not the output.
 
-Then read, in this order: `docs/spec.md` → `docs/plans/2026-10-04-phase-3-audio.md`
-(Phase 3's plan, every task done) → `docs/devlog/2026-10-04.md` (Phase 2's close and all of
-Phase 3) → `docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`.
+Then read, in this order: `docs/spec.md` → `docs/plans/2026-10-06-phase-4-electric.md`
+(Phase 4's plan, every task done) → `docs/devlog/2026-10-06.md` (Phase 4) →
+`docs/devlog/2026-10-04.md` (Phase 2's close and Phase 3) → `docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`.
 
 ## Where things stand
 
@@ -95,9 +97,9 @@ Phase 3) → `docs/plans/2026-09-27-rest-of-project.md` → `docs/adr/README.md`
 |---|---|
 | Repo | `https://github.com/Afillex/TabSampler` — **public**, MIT (ADR 0020) |
 | Tags | **None on GitHub.** `v0.0-phase0` and `v0.1-m1`, listed here before, exist nowhere; Phase 0's and M1's commits, `d50f4f0` and `1147495`, survive only locally, under the tag `pre-publication-backup` |
-| Tests | 536, all offline — no test needs the dataset or the transcriber |
+| Tests | 558, all offline — no test needs the dataset or the transcriber |
 | CI | GitHub Actions, green, ~30 s |
-| Current phase | **Phase 3, audio conditioning — closed 2026-10-06 by Ege's sign-off, a negative result** (ADR 0048); Phase 2 closed with M2 missed by 7.8 points (ADR 0045) |
+| Current phase | **Phase 4, real electric audio — measured 2026-10-06, awaiting Ege's sign-off** (ADR 0054); Phase 3 closed, a negative result (ADR 0048) |
 
 **Current results** — GuitarSet's test players 01–05, 300 tracks, `audio_mic`, today's
 default `configs/decoder_clean.yaml`: the hand-set weights plus ADR 0039's open-string cost,
@@ -292,9 +294,9 @@ Read the ADR before proposing a change to any of these. `docs/adr/README.md` is 
 
 ## Open items that need Ege, not you
 
-- **The next phase**: Phase 4 (real-data fine-tuning) or the app track (B1–B4).
-- **D2, the primary guitar sound**, due at Phase 4: Phase 3's evidence was trained mostly on
-  electric tones and lost on an acoustic guitar. More of SynthTab (2 TB) is also Ege's call.
+- **Signing off Phase 4** on ADR 0054, then merging `phase-4-electric` (Ege confirms each push).
+- **An electric decoder config with the audio term**, and the next phase: 5 or the app track.
+- **More data**: GOAT (access unclear, by request) and more of SynthTab (2 TB) are Ege's calls.
 - **The chord-shape condition** on player 00 is *no clear drop* (Ege, 2026-10-04, ADR
   0039). Still open: whether the same test should re-judge the fitted distorted models,
   which the fixed 0.0005 blocked on DadaGP, each 7.7 to 10.3 points better at recovering

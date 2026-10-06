@@ -147,5 +147,6 @@ decoder has not changed.
 
 - [x] Pre-register: GuitarSet players 01–05 and EGDB, oracle E2 with and without the evidence;
       end to end beside it.
-- [ ] Run once; write Phase 4's result (ADR) with the electric-to-acoustic
+- [x] Run once; write Phase 4's result (ADR) with the electric-to-acoustic
       gap; README, HANDOFF, devlog. Phase 4 then goes to Ege for sign-off.
+      *(GuitarSet test 0.6819 → 0.6876; EGDB 0.6762 → 0.7200, e2e 0.4251. ADR 0054.)*
