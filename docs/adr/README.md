@@ -24,7 +24,7 @@ of the old record to point at its replacement.
 | [0014](0014-brute-force-oracle.md) | **The brute-force oracle is the decoder's specification** | 2.2 (gap) | accepted |
 | [0015](0015-no-cpp-decoder.md) | No C/C++ decoder port — decode is 3% of runtime | D16 | accepted |
 | [0016](0016-headline-target.md) | D10 target: **oracle E2 >= baseline + 10 points** at M2, with E3/E4/E5 guardrails | D10 | accepted |
-| [0017](0017-rhythm-for-exports.md) | Exports use a fixed 120 BPM grid and carry "rhythm is not transcribed" **in the file** | D5 (gap) | accepted |
+| [0017](0017-rhythm-for-exports.md) | Exports use a fixed 120 BPM grid and carry "rhythm is not transcribed" **in the file** | D5 (gap) | accepted; grid superseded by 0059 |
 | [0018](0018-hand-position-carry.md) | Carry the hand position across all-open shapes; `transition_cost_from` added to the scorer contract | 2.1/2.2 (defect) | accepted; hand position superseded by 0025 |
 | [0019](0019-barre-chords-in-e3.md) | E3 counts **fingers**, not fretted notes, so barre chords are playable (supersedes ADR 0011's fourth rule) | D9 (defect) | accepted |
 | [0020](0020-licensing-and-publication.md) | **MIT for the code, public repo**; weights decided per training corpus | D15 (partial) | accepted |
@@ -66,6 +66,7 @@ of the old record to point at its replacement.
 | [0056](0056-fine-tuning-basic-pitch.md) | **Fine-tuning Basic Pitch**: a separate Python 3.11 TensorFlow environment; Basic Pitch's own targets and loss; Guitar-TECHS players 1–2 train, player 3 stops; the result converted to CoreML and run by the unchanged CLI (round trip checked) | — | accepted |
 | [0057](0057-phase-5-result.md) | **Phase 5's result**: Basic Pitch at onset 0.7 / frame 0.4 / min 58 ms, chosen on Guitar-TECHS's player 3, raises EGDB's end-to-end E2 0.4251 → 0.4547 (GuitarSet, labelled, 0.4418 → 0.4553); fine-tuning failed twice | — | accepted |
 | [0058](0058-app-surface.md) | **The app surface (D14)**: a local web page served by the package (`tabsampler serve`, FastAPI in a `web` group, localhost only), one pipeline function shared with the CLI, confidences shown as a ranking; MusicXML and Guitar Pro 5 exports per ADR 0017 | D14 | accepted |
+| [0059](0059-export-grid.md) | Exports use a **1/128-note grid** (15.6 ms at 120 BPM) and **one voice**, durations as tied plain note values; supersedes ADR 0017's point 2 (480 divisions) | D5 (gap) | accepted |
 
 Decisions still open, each due at the phase that needs it: D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).
