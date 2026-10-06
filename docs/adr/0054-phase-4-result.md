@@ -1,6 +1,6 @@
 # ADR 0054: Phase 4's result — on electric guitar the audio evidence helps; on acoustic it does not
 
-Status: proposed — Phase 4 closes on this record if Ege signs off
+Status: accepted (2026-10-06) — **Phase 4 closed on this record by Ege's sign-off**
 
 Reports Phase 4 (`docs/plans/2026-10-06-phase-4-electric.md`), clean electric first (ADR 0049).
 The spec's "done when": results on both test sets, including the gap between electric and
@@ -44,7 +44,7 @@ predicted) and EGDB's gain (above the predicted −0.02 to +0.04, by 0.004).
   has (ADR 0032) — is Ege's decision, and the only electric validation figure for it is the
   calibration's own, so it would need a fresh validation measurement first.
 - **The spec's Phase 4 deliverable exists**: both test sets reported, with the electric-to-acoustic
-  gap. Closing the phase on it is Ege's decision.
+  gap. Ege signed off on closing the phase on it.
 
 ## What it does not settle
 

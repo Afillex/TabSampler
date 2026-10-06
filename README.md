@@ -12,7 +12,7 @@ Status: **Milestone M1 reached. Phase 2 (learned fingering) closed on 2026-10-04
 missed: oracle E2 0.6819 against 0.760** (ADR 0045). **Phase 3 (audio conditioning) closed
 on 2026-10-06 with a negative result: audio evidence trained on SynthTab lowers oracle E2 to
 0.6073** (ADR 0048). **Phase 4 (real electric audio) is measured: on EGDB's electric guitar the
-audio evidence raises oracle E2 from 0.6762 to 0.7200** (ADR 0054); closing it awaits sign-off.
+audio evidence raises oracle E2 from 0.6762 to 0.7200** (ADR 0054); closed on 2026-10-06. The next phase is to be chosen.
 
 ## Results
 
