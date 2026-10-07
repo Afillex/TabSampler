@@ -154,3 +154,11 @@ def test_a_config_without_evidence_is_not_an_electric_option() -> None:
 
     option, reason = electric_option(Path("configs/decoder_clean.yaml"))
     assert option is None and "evidence" in reason
+
+
+def test_the_separation_option_is_ready_when_demucs_is_installed() -> None:
+    from tabsampler.pipeline import separation_option
+
+    pytest.importorskip("demucs")
+    separate, reason = separation_option()
+    assert separate is not None and reason == "ready"

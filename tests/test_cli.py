@@ -244,3 +244,41 @@ def test_a_look_with_octave_ghosts_dropped_says_so_in_the_log(looks: list[str]) 
 
 def test_eval_m1_keeps_every_transcribed_note_by_default() -> None:
     assert inspect.signature(cli.eval_m1).parameters["drop_octave_ghosts"].default is False
+
+
+def test_transcribe_full_song_hands_the_guitar_stem_to_the_transcriber(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Phase 6: --full-song separates first; the stem, not the song, is transcribed.
+    from tabsampler.types import NoteEvent
+
+    heard: list[Path] = []
+    stem = tmp_path / "stem.wav"
+    stem.write_bytes(b"")
+
+    class Fake:
+        def __init__(self, exe: str, params: object = None) -> None:
+            pass
+
+        def transcribe_file(self, path: Path) -> list[NoteEvent]:
+            heard.append(path)
+            return [NoteEvent(onset=0.0, offset=0.5, pitch=45, confidence=0.9)]
+
+    monkeypatch.setattr(cli, "BasicPitchCLITranscriber", Fake)
+    monkeypatch.setattr(cli, "separation_option", lambda: (lambda _: stem, "ready"))
+    song = tmp_path / "song.wav"
+    song.write_bytes(b"")
+    result = CliRunner().invoke(cli.app, ["transcribe", str(song), "--full-song"])
+    assert result.exit_code == 0, result.output
+    assert heard == [stem]
+
+
+def test_transcribe_full_song_without_demucs_says_how_to_get_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(cli, "separation_option", lambda: (None, "Demucs is missing"))
+    song = tmp_path / "song.wav"
+    song.write_bytes(b"")
+    result = CliRunner().invoke(cli.app, ["transcribe", str(song), "--full-song"])
+    assert result.exit_code == 1
+    assert "Demucs is missing" in " ".join(result.output.split())

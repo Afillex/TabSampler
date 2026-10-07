@@ -120,9 +120,11 @@ def create_app(
     max_upload_bytes: int = MAX_UPLOAD_BYTES,
     max_duration_s: float = MAX_DURATION_S,
     electric: tuple[Phase1Config, Hearing] | None = None,
+    separate: Callable[[Path], Path] | None = None,
 ) -> FastAPI:
     """``electric``: the electric-guitar decoder and its string classifier, already loaded
-    (ADR 0063); None when PyTorch or the trained weights are missing."""
+    (ADR 0063); None when PyTorch or the trained weights are missing. ``separate``: a song's
+    path to its guitar stem's (Phase 6); None when Demucs is missing."""
     app = FastAPI(title="Tab Sampler", docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -152,6 +154,7 @@ def create_app(
             "status": "ok",
             "transcriber_available": transcriber.is_available(),
             "electric_available": electric is not None,
+            "full_song_available": separate is not None,
         }
 
     # A plain def: FastAPI runs it in a worker thread, so the transcriber's subprocess does
@@ -160,7 +163,14 @@ def create_app(
     def transcribe(  # pyright: ignore[reportUnusedFunction]
         audio: UploadFile = File(...),  # noqa: B008
         guitar: str = Form("standard"),
+        full_song: bool = Form(False),
     ) -> dict[str, Any]:
+        if full_song and separate is None:
+            raise HTTPException(
+                503,
+                "full-song mode is not available here: it needs the `separate` dependency group "
+                "(Demucs) — run `uv sync --all-groups`",
+            )
         if guitar not in ("standard", "electric"):
             raise HTTPException(400, f"guitar must be standard or electric, not {guitar!r}")
         if guitar == "electric" and electric is None:
@@ -185,6 +195,11 @@ def create_app(
                     f"the audio is {seconds:.0f} s, longer than the {max_duration_s:.0f} s limit; "
                     f"Tab Sampler transcribes isolated guitar takes, not whole recordings",
                 )
+            if full_song and separate is not None:
+                try:
+                    path = separate(path)
+                except Exception as exc:  # Demucs raises its own errors; none should be a 500
+                    raise HTTPException(502, f"separating the guitar failed: {exc}") from exc
             try:
                 if guitar == "electric" and electric is not None:
                     result = transcribe_path(path, electric[0], transcriber, hear=electric[1])
@@ -200,6 +215,7 @@ def create_app(
                 raise HTTPException(502, f"the transcriber failed: {exc}") from exc
             doc = response_document(result, cfg)
             doc["guitar"] = guitar
+            doc["full_song"] = full_song
             return doc
         finally:
             shutil.rmtree(tmp, ignore_errors=True)

@@ -95,6 +95,17 @@ def electric_option(config: Path) -> tuple[tuple[Phase1Config, Hearing] | None, 
     return (cfg, hear), "ready"
 
 
+def separation_option() -> tuple[Callable[[Path], Path] | None, str]:
+    """A song's path to its htdemucs_6s guitar stem's (Phase 6, ADR 0065), or None and why not."""
+    import importlib.util
+
+    if importlib.util.find_spec("demucs") is None:
+        return None, "Demucs is missing: run `uv sync --all-groups` (the `separate` group)"
+    from tabsampler.audio.separate import GuitarSeparator
+
+    return GuitarSeparator().stem, "ready"
+
+
 def transcribe_path(
     path: Path,
     cfg: Phase1Config,

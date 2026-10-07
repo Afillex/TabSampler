@@ -9,7 +9,7 @@
 <body>
   <header>
     <h1>Tab Sampler</h1>
-    <p class="lede">Turn a recording of isolated guitar into tablature.</p>
+    <p class="lede">Turn a guitar recording into tablature: one guitar, alone or in a full song.</p>
   </header>
 
   <main>
@@ -17,7 +17,7 @@
       <h2 id="upload-title" class="visually-hidden">Choose a recording</h2>
       <label id="drop" class="drop" for="file">
         <span class="drop-main">Drop an audio file here, or choose one</span>
-        <span class="drop-sub">WAV, FLAC, OGG or MP3 &middot; up to 5 minutes &middot; isolated guitar only</span>
+        <span class="drop-sub">WAV, FLAC, OGG or MP3 &middot; up to 5 minutes &middot; one guitar, alone or in a full song</span>
         <input id="file" type="file" accept="audio/*,.wav,.flac,.ogg,.mp3">
       </label>
       <fieldset class="guitar">
@@ -26,6 +26,12 @@
         <label><input type="radio" name="guitar" value="electric"> Clean electric &mdash; listens
           to each note's string (ADR 0063)</label>
         <span id="electric-note" class="field-note"></span>
+      </fieldset>
+      <fieldset class="guitar">
+        <legend>Recording</legend>
+        <label><input type="checkbox" id="full-song"> Full song &mdash; separate the guitar from the
+          band first (slower; see the note below)</label>
+        <span id="full-song-note" class="field-note"></span>
       </fieldset>
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
@@ -73,8 +79,11 @@
         <li><strong>Clean electric guitar</strong> can use a string classifier that listens to each
           note: on EGDB it raised the score from 0.4547 to 0.4992 (ADR 0063). It was trained and
           tested on electric guitar only, so it is not used for acoustic recordings.</li>
-        <li><strong>Isolated guitar only.</strong> One guitar, no band, no vocals. Full songs are a
-          later phase.</li>
+        <li><strong>Full songs are harder.</strong> Ticking "Full song" separates the guitar from the
+          band with Demucs (htdemucs_6s) before transcribing. It helps a lot on recorded guitar, but
+          the separator handles clean direct-input electric guitar poorly, and with several guitars
+          in a song it cannot tell them apart. Measured figures are in the project's notes; expect
+          a rougher draft than from a guitar alone.</li>
         <li><strong>What to expect.</strong> On EGDB, recordings neither the transcriber nor the
           decoder was tuned on, the tab scores an F1 of 0.4547 when a note counts only if its
           start (within 50 ms), its pitch and its string all match the player's (end-to-end E2,

@@ -71,7 +71,12 @@ def client(fake: Fake) -> TestClient:
 
 def test_health_reports_whether_the_transcriber_is_available(client: TestClient) -> None:
     body = client.get("/api/health").json()
-    assert body == {"status": "ok", "transcriber_available": True, "electric_available": False}
+    assert body == {
+        "status": "ok",
+        "transcriber_available": True,
+        "electric_available": False,
+        "full_song_available": False,
+    }
     down = TestClient(create_app(CFG, Fake(error=TranscriberUnavailableError("x"))))
     assert down.get("/api/health").json()["transcriber_available"] is False
 
@@ -295,3 +300,57 @@ def test_an_unknown_guitar_gets_400(client: TestClient) -> None:
         data={"guitar": "banjo"},
     )
     assert r.status_code == 400
+
+
+def stem_writer(tmp_path: Path, calls: list[Path]):
+    """A stand-in separator: records the song and returns a 'stem' file beside it."""
+
+    def separate(song: Path) -> Path:
+        calls.append(song)
+        stem = tmp_path / f"stem-{len(calls)}.wav"
+        stem.write_bytes(song.read_bytes())
+        return stem
+
+    return separate
+
+
+def test_health_says_whether_full_songs_can_be_separated(fake: Fake, tmp_path: Path) -> None:
+    assert (
+        TestClient(create_app(CFG, fake)).get("/api/health").json()["full_song_available"] is False
+    )
+    with_ = TestClient(create_app(CFG, fake, separate=stem_writer(tmp_path, [])))
+    assert with_.get("/api/health").json()["full_song_available"] is True
+
+
+def test_a_full_song_is_separated_and_its_guitar_stem_transcribed(
+    fake: Fake, tmp_path: Path
+) -> None:
+    # Phase 6: the guitar stem, not the mix, goes to the transcriber (ADR 0067).
+    songs: list[Path] = []
+    client = TestClient(create_app(CFG, fake, separate=stem_writer(tmp_path, songs)))
+    r = client.post(
+        "/api/transcribe",
+        files={"audio": ("song.mp3", wav_bytes(), "audio/mpeg")},
+        data={"full_song": "true"},
+    )
+    assert r.status_code == 200, r.text
+    assert len(songs) == 1 and songs[0].suffix == ".mp3"
+    assert fake.calls == [tmp_path / "stem-1.wav"]
+    assert r.json()["full_song"] is True
+
+
+def test_an_isolated_take_is_not_separated(fake: Fake, tmp_path: Path) -> None:
+    songs: list[Path] = []
+    client = TestClient(create_app(CFG, fake, separate=stem_writer(tmp_path, songs)))
+    body = post(client, wav_bytes()).json()
+    assert songs == [] and body["full_song"] is False
+
+
+def test_a_full_song_without_the_separator_gets_503(client: TestClient) -> None:
+    r = client.post(
+        "/api/transcribe",
+        files={"audio": ("song.wav", wav_bytes(), "audio/wav")},
+        data={"full_song": "true"},
+    )
+    assert r.status_code == 503
+    assert "separate" in r.json()["detail"]

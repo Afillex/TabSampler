@@ -50,8 +50,10 @@ def test_the_page_states_that_rhythm_is_not_transcribed(client: TestClient) -> N
     assert "rhythm is not transcribed" in client.get("/").text.lower()  # ADR 0009
 
 
-def test_the_page_states_it_is_for_isolated_guitar(client: TestClient) -> None:
-    assert "isolated guitar" in client.get("/").text.lower()  # ADR 0002
+def test_the_page_states_what_full_song_mode_cannot_do(client: TestClient) -> None:
+    # ADR 0002 kept full songs for Phase 6; the page says what separation costs (ADR 0067).
+    text = client.get("/").text.lower()
+    assert "full songs are harder" in text and "direct-input" in text
 
 
 def test_the_page_shows_no_percentages() -> None:
@@ -109,3 +111,10 @@ def test_the_page_offers_the_electric_option_and_says_what_it_needs(client: Test
     page = client.get("/").text
     assert 'name="guitar"' in page and 'value="electric"' in page
     assert "electric_available" in static("app.js")
+
+
+def test_the_page_offers_full_song_mode(client: TestClient) -> None:
+    page = client.get("/").text
+    assert 'id="full-song"' in page
+    script = static("app.js")
+    assert "full_song_available" in script and '"full_song"' in script

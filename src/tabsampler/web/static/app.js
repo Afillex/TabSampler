@@ -212,11 +212,16 @@ function summarise(doc) {
 async function transcribe(file) {
   $("result").hidden = true;
   hideTip();
-  setStatus(`Transcribing ${file.name}... a new file takes a few seconds per minute of audio.`);
+  setStatus(
+    $("full-song").checked
+      ? `Separating the guitar in ${file.name}, then transcribing... about a quarter of the song's length.`
+      : `Transcribing ${file.name}... a new file takes a few seconds per minute of audio.`,
+  );
   const body = new FormData();
   body.append("audio", file);
   const choice = document.querySelector('input[name="guitar"]:checked');
   body.append("guitar", choice ? choice.value : "standard");
+  body.append("full_song", $("full-song").checked ? "true" : "false");
   let response;
   try {
     response = await fetch("/api/transcribe", { method: "POST", body });
@@ -269,18 +274,25 @@ async function download(fmt) {
   URL.revokeObjectURL(link.href);
 }
 
-// The electric option needs PyTorch and the trained classifier on the server (ADR 0063).
-async function checkElectric() {
-  const electric = document.querySelector('input[name="guitar"][value="electric"]');
+// The electric option needs PyTorch and the trained classifier (ADR 0063); full-song mode needs
+// Demucs (Phase 6). Each is greyed out, with the reason, when the server lacks it.
+async function checkOptions() {
+  let health = {};
   try {
-    const health = await (await fetch("/api/health")).json();
-    if (health.electric_available) return;
+    health = await (await fetch("/api/health")).json();
   } catch {
     // An unreachable server shows up on the first upload instead.
   }
-  electric.disabled = true;
-  $("electric-note").textContent =
-    "Not available on this server: it needs the model dependency group and the trained classifier.";
+  if (!health.electric_available) {
+    document.querySelector('input[name="guitar"][value="electric"]').disabled = true;
+    $("electric-note").textContent =
+      "Not available on this server: it needs the model dependency group and the trained classifier.";
+  }
+  if (!health.full_song_available) {
+    $("full-song").disabled = true;
+    $("full-song-note").textContent =
+      "Not available on this server: it needs the separate dependency group (Demucs).";
+  }
 }
 
 function init() {
@@ -305,7 +317,7 @@ function init() {
   }
   $("zoom").addEventListener("change", () => current && draw(current));
   $("scroller").addEventListener("scroll", hideTip);
-  checkElectric();
+  checkOptions();
 }
 
 init();
