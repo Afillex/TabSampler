@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import functools
 import hashlib
+import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -79,15 +80,23 @@ class GuitarSeparator:
         stem_path = self.cache_dir / f"{key}.wav"
         if not stem_path.is_file():
             self.cache_dir.mkdir(parents=True, exist_ok=True)
-            sf.write(stem_path, self.separate(_stereo(path)).T, SEPARATED_RATE)
+            _write_whole(stem_path, self.separate(_stereo(path)).T)
         if add_mix == 0:
             return stem_path
         blended_path = self.cache_dir / f"{key}_mix{add_mix:g}.wav"
         if not blended_path.is_file():
             stem, _ = sf.read(stem_path, dtype="float32", always_2d=True)
             mixture = _stereo(path).T[: len(stem)]
-            sf.write(blended_path, stem + add_mix * mixture, SEPARATED_RATE)
+            _write_whole(blended_path, stem + add_mix * mixture)
         return blended_path
+
+
+def _write_whole(path: Path, audio: NDArray[np.floating[Any]]) -> None:
+    """Write ``audio`` so that ``path`` exists only once complete: a write cut short (the machine
+    lost power during Phase 6's test look) leaves a ``.partial`` file the cache never reads."""
+    partial = path.with_name(f"{path.stem}.partial.wav")
+    sf.write(partial, audio, SEPARATED_RATE)
+    os.replace(partial, path)
 
 
 def _stereo(path: Path) -> NDArray[np.float32]:

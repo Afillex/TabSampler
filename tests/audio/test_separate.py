@@ -81,3 +81,24 @@ def test_the_model_is_loaded_once_per_process(monkeypatch: pytest.MonkeyPatch) -
     assert separate._model() is first  # pyright: ignore[reportPrivateUsage]
     assert loads == ["htdemucs_6s"]
     separate._model.cache_clear()  # pyright: ignore[reportPrivateUsage]
+
+
+def test_an_interrupted_write_never_leaves_a_stem_to_reuse(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The machine lost power during Phase 6's test look; a stem half-written into the cache
+    # would have been reused as if whole by every later run.
+    path = song(tmp_path)
+    separator = GuitarSeparator(cache_dir=tmp_path / "cache", separate=Fake())
+    real_write = sf.write
+
+    def interrupted(file: object, data: np.ndarray, rate: int, *args: object, **kw: object) -> None:
+        real_write(file, data[: len(data) // 2], rate)  # half the samples reach the disk
+        raise OSError("power lost")
+
+    monkeypatch.setattr(sf, "write", interrupted)
+    with pytest.raises(OSError, match="power lost"):
+        separator.stem(path)
+    monkeypatch.setattr(sf, "write", real_write)
+    stem, _ = sf.read(separator.stem(path), dtype="float32", always_2d=True)
+    assert len(stem) == SEPARATED_RATE  # the whole second, separated again
