@@ -122,6 +122,12 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       *Rule:* the look continues on the GPU (`--device mps`) if all three are within 0.02 of the
       CPU's figures — demucs's own random shift already moves stems from run to run — and on the
       CPU otherwise. Both the check and the look run only when Ege says so.
+      *The check (Ege said run, 2026-10-07; 3 min 14 s):* GPU against CPU — stem at 0 dB 0.2887
+      against 0.2935 (−0.0048), stem at −6 dB 0.2413 against 0.2209 (**+0.0204**), isolated through
+      the separator 0.3838 against 0.4046 (**−0.0208**). Two of three miss the 0.02 bound, by 0.0004
+      and 0.0008, in opposite directions. **By the rule, the look stays on the CPU.** How far a second
+      CPU run would move these figures (demucs's random shift) was never measured, so whether 0.02 was
+      wider or narrower than a rerun's own noise is not known. Reported to Ege.
 
 ## Task 5: The app
 
