@@ -8,9 +8,11 @@ cover separation artefacts (Phase 6, Task 3). Demucs is imported only when a rea
 
 from __future__ import annotations
 
+import functools
 import hashlib
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import soundfile as sf
@@ -25,18 +27,26 @@ DEFAULT_CACHE_DIR = Path("cache/stems")
 Separate = Callable[[NDArray[np.float32]], NDArray[np.float32]]
 
 
+@functools.cache
+def _model() -> Any:
+    """``htdemucs_6s``, loaded once per process: loading it checks its files online every time."""
+    from demucs.pretrained import (
+        get_model,  # pyright: ignore[reportMissingImports, reportUnknownVariableType]
+    )
+
+    model: Any = get_model(MODEL)
+    model.eval()
+    return model
+
+
 def demucs_guitar(mixture: NDArray[np.float32]) -> NDArray[np.float32]:
     """``htdemucs_6s``'s guitar stem (needs the ``separate`` dependency group)."""
     import torch
     from demucs.apply import (
         apply_model,  # pyright: ignore[reportMissingImports, reportUnknownVariableType]
     )
-    from demucs.pretrained import (
-        get_model,  # pyright: ignore[reportMissingImports, reportUnknownVariableType]
-    )
 
-    model = get_model(MODEL)  # pyright: ignore[reportUnknownVariableType]
-    model.eval()  # pyright: ignore[reportUnknownMemberType]
+    model = _model()
     stereo = mixture if mixture.shape[0] == 2 else np.repeat(mixture[:1], 2, axis=0)
     with torch.no_grad():
         sources = apply_model(  # pyright: ignore[reportUnknownVariableType]

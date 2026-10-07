@@ -57,3 +57,27 @@ def test_a_negative_share_is_refused(tmp_path: Path) -> None:
     separator = GuitarSeparator(cache_dir=tmp_path / "cache", separate=Fake())
     with pytest.raises(ValueError):
         separator.stem(song(tmp_path), add_mix=-0.1)
+
+
+def test_the_model_is_loaded_once_per_process(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Loading htdemucs_6s checks its files online; once per song made a 414-mix run slow and
+    # dependent on the network (Phase 6, Task 2).
+    pretrained = pytest.importorskip("demucs.pretrained")
+    from tabsampler.audio import separate
+
+    loads: list[str] = []
+
+    class Model:
+        def eval(self) -> None:
+            pass
+
+    def get_model(name: str) -> Model:
+        loads.append(name)
+        return Model()
+
+    monkeypatch.setattr(pretrained, "get_model", get_model)
+    separate._model.cache_clear()  # pyright: ignore[reportPrivateUsage]
+    first = separate._model()  # pyright: ignore[reportPrivateUsage]
+    assert separate._model() is first  # pyright: ignore[reportPrivateUsage]
+    assert loads == ["htdemucs_6s"]
+    separate._model.cache_clear()  # pyright: ignore[reportPrivateUsage]
