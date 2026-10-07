@@ -103,11 +103,22 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       costs the isolated take at least 0.05 (from 0.4547). **GuitarSet** (microphone, as player 00): the
       stem beats the mix by +0.10 to +0.20 at each level. Nothing is chosen from the test sets; the
       results go in their own table, with ADR 0066's limits beside them.
+      *Run log:* the mixes were built (log line 37) and the scoring started (line 38); the machine
+      lost power two minutes in, at EGDB clip 3. The seven stems written by then were checked whole
+      (frames equal to their sources). The stem cache now writes a file whole or not at all
+      (a test simulates the cut). The scoring restarted from its caches (line 39).
+      *Two facts found on the way:* separation here runs at about real time (PyTorch uses the M4's 4
+      performance cores, as on validation), so the look takes about nine hours across restarts; and
+      demucs's `apply_model` applies one **random** time shift by default (`shifts=1`, unseeded), so
+      a stem is not bit-reproducible from scratch — every figure is for the stems as cached.
 
 ## Task 5: The app
 
-- [ ] A "full song — separate the guitar first" option on the page and `--full-song` on the CLI;
-      the duration limit reconsidered for songs (ADR 0058's five minutes).
+- [x] A "full song — separate the guitar first" option on the page and `--full-song` on the CLI;
+      the duration limit reconsidered for songs (ADR 0058's five minutes). *Built (e7425c6): the
+      server loads the separator when Demucs is installed and greys the option out with the reason
+      otherwise; checked in a browser on a validation mix — page and CLI agree on all 116 notes. The
+      five-minute limit is kept for now: separation runs at about real time on this CPU.*
 - [ ] Gate to Ege.
 
 ## Not in this plan
