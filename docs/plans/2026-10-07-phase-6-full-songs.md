@@ -78,13 +78,17 @@ figure; and the app accepts a full song through a "separate the guitar first" op
 
 ## Task 3: Stem plus mix
 
-- [ ] **Pre-registered on validation** (this commit): `scripts/evaluate_mixes.py --add-mix 0 0.1
+- [x] **Pre-registered on validation** (efb8972): `scripts/evaluate_mixes.py --add-mix 0 0.1
       0.25 0.5` — Basic Pitch hears the stem with a share α of the mix added back (0 is the stem
       alone). *Single variable:* α. *Metric:* end-to-end E2 pooled over the three validation sets,
       averaged over the two levels. *Rule:* the α with the highest such E2 is adopted if it beats the
       stem alone (α = 0) by at least +0.01; otherwise the stem alone stays. *Prediction:* the best α
       is 0.1 or 0.25, ahead of the stem by 0 to +0.02, most of it on IDMT, where separation alone
       lost 0.12; α = 0.5 falls back towards the mix. The electric option is reported in Task 4.
+      *Result:* every share lowers E2, monotonically — pooled at 0 dB stem 0.3180, +0.1 0.2845,
+      +0.25 0.2556, +0.5 0.2338; at −6 dB 0.2572, 0.2188, 0.1886, 0.1724. **The stem alone stays**
+      (α = 0); the prediction failed. Only IDMT gains a little from 0.25 (+0.019 at 0 dB). The stem
+      figures reproduce Task 2's to four decimals.
 
 ## Task 4: The test look
 
