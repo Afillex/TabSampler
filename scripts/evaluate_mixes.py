@@ -35,6 +35,19 @@ TOLERANCE = 0.05
 Counts = tuple[int, int]  # 2 x matches, reference + estimated notes
 
 
+def test_labels() -> dict[str, list[tuple[NoteEvent, Position]]]:
+    """EGDB's labels as they are (ADR 0050) and GuitarSet's players 01-05."""
+    from tabsampler.data.egdb import load_clips
+    from tabsampler.data.guitarset import load_dataset, reference_tab
+    from tabsampler.data.splits import guitarset_test_ids
+
+    out = {clip.clip_id: list(clip.notes) for clip in load_clips(Path("data/egdb"))[0]}
+    dataset: Any = load_dataset(Path("data/guitarset"))
+    for track_id in guitarset_test_ids():
+        out[track_id] = list(reference_tab(dataset.track(track_id)))
+    return out
+
+
 def labels() -> dict[str, list[tuple[NoteEvent, Position]]]:
     out: dict[str, list[tuple[NoteEvent, Position]]] = {}
     for take in [
@@ -72,13 +85,29 @@ def interval(pairs: list[tuple[Counts, Counts]]) -> tuple[float, float, float]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--add-mix", type=float, nargs="+", default=[0.0])
-    parser.add_argument("--index", type=Path, default=Path("cache/mixes/validation/index.json"))
+    parser.add_argument("--split", choices=("validation", "test"), default="validation")
+    parser.add_argument("--note", default="", help="The pre-registration, for the access log.")
+    parser.add_argument(
+        "--electric",
+        action="store_true",
+        help="Also EGDB's stems with configs/decoder_electric.yaml (reported, not judged).",
+    )
     args = parser.parse_args()
+    index = Path(f"cache/mixes/{args.split}/index.json")
     cfg = load_phase1_config("configs/decoder_clean.yaml")
     transcriber = BasicPitchCLITranscriber(params=CHOSEN_PARAMS)
     separator = GuitarSeparator()
-    reference = labels()
-    rows: list[dict[str, Any]] = json.loads(args.index.read_text())
+    if args.split == "test":
+        from tabsampler.data.splits import record_test_set_access
+
+        record_test_set_access(
+            "evaluate_mixes.py --split test: full-song mixes of EGDB and GuitarSet's players "
+            "01-05 (ADR 0066), mix and htdemucs_6s stem end to end; a pre-registered look. "
+            f"{args.note}".strip()
+        )
+    reference = test_labels() if args.split == "test" else labels()
+    electric_cfg = load_phase1_config("configs/decoder_electric.yaml") if args.electric else None
+    rows: list[dict[str, Any]] = json.loads(index.read_text())
 
     def score(path: Path, take: str) -> Counts:
         result = transcribe_path(path, cfg, transcriber, estimate=lambda _: None)
@@ -100,6 +129,14 @@ def main() -> None:
         for share in args.add_mix:
             name = "stem" if share == 0 else f"stem + {share:g} mix"
             table[(group, level, name)][take] = score(separator.stem(mix, add_mix=share), take)
+        if electric_cfg is not None and group == "egdb":
+            stem = separator.stem(mix)
+            result = transcribe_path(stem, electric_cfg, transcriber, estimate=lambda _: None)
+            prf = exact_tab_f1(reference[take], tab_notes_to_placed(result.tab), TOLERANCE)
+            table[(group, level, "stem, electric option")][take] = (
+                2 * prf.n_match,
+                prf.n_ref + prf.n_est,
+            )
         if i % 50 == 0:
             print(f"  {i} of {len(rows)} mixes", flush=True)
 
@@ -126,6 +163,9 @@ def main() -> None:
                 d, lo, hi = interval([(mix_counts[t], c[t]) for t in c])
                 e2 = pooled(c)
                 line.append(f"{name} {e2:.4f} ({d:+.4f} [{lo:+.4f}, {hi:+.4f}] vs mix)")
+            electric = pick("stem, electric option")
+            if electric:
+                line.append(f"stem, electric option {pooled(electric):.4f}")
             print("  ".join(line), flush=True)
 
 

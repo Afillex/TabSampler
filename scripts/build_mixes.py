@@ -8,7 +8,8 @@ BabySlakh's validation songs (1-10), its guitars removed, started ``OFFSET_S`` i
 44.1 kHz and mixed under the take at each level in ``LEVELS_DB`` (guitar against backing, RMS).
 Writes ``cache/mixes/<split>/<level>/<set>/<take>.wav`` and an index of each take's backing and
 gain. Labels stay the take's own: a mix scales the guitar by one gain and adds other instruments.
-The test split is built only at its pre-registered look.
+The test split -- EGDB, GuitarSet's players 01-05 -- is built only at its pre-registered look,
+which is logged before any test audio is read.
 """
 
 from __future__ import annotations
@@ -48,16 +49,41 @@ def validation_takes() -> Iterator[tuple[str, str, Path]]:
         yield "guitarset00", track_id, Path(dataset.track(track_id).audio_mic_path)
 
 
+def test_takes() -> Iterator[tuple[str, str, Path]]:
+    """(set, take name, audio path) for every test take: EGDB's direct input, GuitarSet's players
+    01-05 (microphone). Only at the pre-registered look; the caller logs it."""
+    from tabsampler.data.egdb import load_clips
+
+    clips, _ = load_clips(Path("data/egdb"))
+    for clip in clips:
+        yield "egdb", clip.clip_id, clip.direct_input
+    from tabsampler.data.guitarset import load_dataset
+    from tabsampler.data.splits import guitarset_test_ids
+
+    dataset: Any = load_dataset(Path("data/guitarset"))
+    for track_id in guitarset_test_ids():
+        yield "guitarset_test", track_id, Path(dataset.track(track_id).audio_mic_path)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--split", choices=("validation",), required=True)
+    parser.add_argument("--split", choices=("validation", "test"), required=True)
+    parser.add_argument("--note", default="", help="The pre-registration, for the access log.")
     parser.add_argument("--out", type=Path, default=Path("cache/mixes"))
     args = parser.parse_args()
     backing_songs = songs(SLAKH, args.split)
     names = [s.name for s in backing_songs]
     cache: dict[str, np.ndarray] = {}
     index: list[dict[str, Any]] = []
-    for group, name, audio in validation_takes():
+    if args.split == "test":
+        from tabsampler.data.splits import record_test_set_access
+
+        record_test_set_access(
+            "build_mixes.py --split test: EGDB's 240 clips and GuitarSet's players 01-05 mixed "
+            f"over BabySlakh songs 11-20 (ADR 0066); a pre-registered look. {args.note}".strip()
+        )
+    takes = test_takes() if args.split == "test" else validation_takes()
+    for group, name, audio in takes:
         guitar = np.asarray(librosa.load(audio, sr=RATE, mono=True)[0], np.float32)
         song = backing_for(name, names)
         if song not in cache:

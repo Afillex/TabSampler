@@ -92,8 +92,17 @@ figure; and the app accepts a full song through a "separate the guitar first" op
 
 ## Task 4: The test look
 
-- [ ] One pre-registered look at EGDB and one at GuitarSet's test players, full-song mixes, the
-      three inputs; a results table separate from the isolated one; an ADR.
+- [ ] **The test look, pre-registered here** (this commit): `scripts/build_mixes.py --split test`,
+      then `scripts/evaluate_mixes.py --split test --add-mix 0 --electric` — EGDB's 240 clips and
+      GuitarSet's 300 test tracks (labelled, ADR 0055) over BabySlakh songs 11–20, at 0 and −6 dB;
+      inputs: the mix and the htdemucs_6s stem (Task 3 kept α = 0), the isolated take and the isolated
+      take through the separator beside them; the electric option on EGDB's stems reported, not
+      judged. Both scripts log the look; if the 2-hour job limit stops the scoring, it restarts from
+      its caches and the extra log line says so. *Predictions,* from validation: **EGDB** (direct
+      input, as IDMT): the stem against the mix between −0.04 and +0.04 at each level; separation alone
+      costs the isolated take at least 0.05 (from 0.4547). **GuitarSet** (microphone, as player 00): the
+      stem beats the mix by +0.10 to +0.20 at each level. Nothing is chosen from the test sets; the
+      results go in their own table, with ADR 0066's limits beside them.
 
 ## Task 5: The app
 
