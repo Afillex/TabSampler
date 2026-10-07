@@ -128,6 +128,11 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       and 0.0008, in opposite directions. **By the rule, the look stays on the CPU.** How far a second
       CPU run would move these figures (demucs's random shift) was never measured, so whether 0.02 was
       wider or narrower than a rerun's own noise is not known. Reported to Ege.
+      *Ege's call: measure that noise first.* Rule fixed before it runs (this commit): the same
+      EGSet12 check on the CPU into a fresh cache (`--device cpu --stems-dir cache/cpu2`). If this
+      rerun moves any of the three figures by at least 0.02 from the first CPU run (0.2935, 0.2209,
+      0.4046), the GPU's differences are the size of a rerun's own noise and the look runs on the
+      GPU; otherwise on the CPU.
 
 ## Task 5: The app
 
