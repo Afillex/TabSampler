@@ -2,6 +2,7 @@
 
     caffeinate -i uv run python -u scripts/evaluate_mixes.py --add-mix 0
     caffeinate -i uv run python -u scripts/evaluate_mixes.py --add-mix 0 0.1 0.25 0.5
+    uv run python -u scripts/evaluate_mixes.py --sets egset12 --device mps --stems-dir cache/mps
 
 Reads ``cache/mixes/validation/index.json`` (``scripts/build_mixes.py``). For every take, Basic
 Pitch at ``CHOSEN_PARAMS`` hears in turn the isolated take (the ceiling), the isolated take
@@ -86,6 +87,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--add-mix", type=float, nargs="+", default=[0.0])
     parser.add_argument("--split", choices=("validation", "test"), default="validation")
+    parser.add_argument(
+        "--device", choices=("cpu", "mps"), default="cpu", help="Where htdemucs_6s runs."
+    )
+    parser.add_argument(
+        "--stems-dir", type=Path, default=Path("cache/stems"), help="The separator's cache."
+    )
+    parser.add_argument(
+        "--sets", nargs="+", help="Only these sets (e.g. egset12), all if not given."
+    )
     parser.add_argument("--note", default="", help="The pre-registration, for the access log.")
     parser.add_argument(
         "--electric",
@@ -96,7 +106,7 @@ def main() -> None:
     index = Path(f"cache/mixes/{args.split}/index.json")
     cfg = load_phase1_config("configs/decoder_clean.yaml")
     transcriber = BasicPitchCLITranscriber(params=CHOSEN_PARAMS)
-    separator = GuitarSeparator()
+    separator = GuitarSeparator(cache_dir=args.stems_dir, device=args.device)
     if args.split == "test":
         from tabsampler.data.splits import record_test_set_access
 
@@ -108,6 +118,8 @@ def main() -> None:
     reference = test_labels() if args.split == "test" else labels()
     electric_cfg = load_phase1_config("configs/decoder_electric.yaml") if args.electric else None
     rows: list[dict[str, Any]] = json.loads(index.read_text())
+    if args.sets:
+        rows = [row for row in rows if row["set"] in args.sets]
 
     def score(path: Path, take: str) -> Counts:
         result = transcribe_path(path, cfg, transcriber, estimate=lambda _: None)

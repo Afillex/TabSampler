@@ -111,6 +111,17 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       performance cores, as on validation), so the look takes about nine hours across restarts; and
       demucs's `apply_model` applies one **random** time shift by default (`shifts=1`, unseeded), so
       a stem is not bit-reproducible from scratch — every figure is for the stems as cached.
+      *Moving separation to the Mac's GPU (Ege, 2026-10-07), checked first.* Re-measured, the CPU
+      would need about 15 more hours: 13 h of test audio to separate (EGDB 5.4 h, GuitarSet 7.6 h)
+      at about real time. The GPU ("mps") separated an 18 s test mix in 6.4 s while the CPU run was
+      still going. The CPU run was stopped with 44 of 1,620 test stems cached; they are kept.
+      **Check before switching, on validation only:** EGSet12's 24 mixes and its 12 isolated takes,
+      separated on the GPU into a separate cache — `scripts/evaluate_mixes.py --sets egset12
+      --device mps --stems-dir cache/mps --add-mix 0` — and scored as Task 2 scored the CPU's
+      stems: stem 0.2935 at 0 dB, 0.2209 at −6 dB, isolated through the separator 0.4046.
+      *Rule:* the look continues on the GPU (`--device mps`) if all three are within 0.02 of the
+      CPU's figures — demucs's own random shift already moves stems from run to run — and on the
+      CPU otherwise. Both the check and the look run only when Ege says so.
 
 ## Task 5: The app
 

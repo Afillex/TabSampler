@@ -40,8 +40,9 @@ def _model() -> Any:
     return model
 
 
-def demucs_guitar(mixture: NDArray[np.float32]) -> NDArray[np.float32]:
-    """``htdemucs_6s``'s guitar stem (needs the ``separate`` dependency group)."""
+def demucs_guitar(mixture: NDArray[np.float32], device: str = "cpu") -> NDArray[np.float32]:
+    """``htdemucs_6s``'s guitar stem, computed on ``device`` -- "cpu", or "mps" for the Mac's GPU,
+    about three times faster on Phase 6's test mixes. Needs the ``separate`` dependency group."""
     import torch
     from demucs.apply import (
         apply_model,  # pyright: ignore[reportMissingImports, reportUnknownVariableType]
@@ -53,7 +54,7 @@ def demucs_guitar(mixture: NDArray[np.float32]) -> NDArray[np.float32]:
         sources = apply_model(  # pyright: ignore[reportUnknownVariableType]
             model,
             torch.from_numpy(stereo)[None],  # pyright: ignore[reportUnknownMemberType]
-            device="cpu",
+            device=device,
             split=True,
             overlap=0.25,
         )[0]
@@ -64,9 +65,22 @@ def demucs_guitar(mixture: NDArray[np.float32]) -> NDArray[np.float32]:
 class GuitarSeparator:
     """Separates a song's guitar and keeps the stem on disk."""
 
-    def __init__(self, cache_dir: Path = DEFAULT_CACHE_DIR, separate: Separate = demucs_guitar):
+    def __init__(
+        self,
+        cache_dir: Path = DEFAULT_CACHE_DIR,
+        separate: Separate | None = None,
+        device: str = "cpu",
+    ):
+        """``device`` is where Demucs runs; it cannot be given with a ``separate`` of one's own.
+
+        Raises:
+            ValueError: if both ``separate`` and a device other than the CPU are given.
+        """
+        if separate is not None and device != "cpu":
+            raise ValueError("a device is for Demucs; a separator of one's own runs where it runs")
         self.cache_dir = cache_dir
-        self.separate = separate
+        self.device = device
+        self.separate: Separate = separate or functools.partial(demucs_guitar, device=device)
 
     def stem(self, path: Path, add_mix: float = 0.0) -> Path:
         """The guitar stem of ``path`` as a WAV file, with ``add_mix`` of the mixture added back.

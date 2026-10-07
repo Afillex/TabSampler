@@ -102,3 +102,19 @@ def test_an_interrupted_write_never_leaves_a_stem_to_reuse(
     monkeypatch.setattr(sf, "write", real_write)
     stem, _ = sf.read(separator.stem(path), dtype="float32", always_2d=True)
     assert len(stem) == SEPARATED_RATE  # the whole second, separated again
+
+
+def test_the_separator_runs_demucs_on_the_device_it_is_given(tmp_path: Path) -> None:
+    # Phase 6's test look moves separation to the Mac's GPU ("mps"); the CPU stays the default.
+    from tabsampler.audio import separate
+
+    assert GuitarSeparator(cache_dir=tmp_path).device == "cpu"
+    on_gpu = GuitarSeparator(cache_dir=tmp_path, device="mps")
+    assert on_gpu.device == "mps"
+    assert on_gpu.separate.func is separate.demucs_guitar
+    assert on_gpu.separate.keywords == {"device": "mps"}
+
+
+def test_a_device_given_with_a_separator_of_its_own_is_refused(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="device"):
+        GuitarSeparator(cache_dir=tmp_path, separate=Fake(), device="mps")
