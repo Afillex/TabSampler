@@ -58,7 +58,7 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       declares its platforms (Apple-silicon Macs, Linux). First real run, an isolated EGSet12 piece:
       8 s in 4.1 s, but the guitar stem kept only 0.381 of the input's RMS — on clean electric
       guitar htdemucs_6s puts much of the guitar elsewhere. Measured in this task, not assumed.*
-- [ ] **Pre-registered on validation** (this commit): `scripts/evaluate_mixes.py --add-mix 0` on the
+- [x] **Pre-registered on validation** (28f40bc): `scripts/evaluate_mixes.py --add-mix 0` on the
       414 validation mixes. *Single variable:* Basic Pitch's input — the mix, or its htdemucs_6s
       guitar stem. Beside them: the isolated take (ceiling) and the isolated take through the
       separator (separation's own cost). Default decoder, `CHOSEN_PARAMS`. *Metric:* end-to-end E2
@@ -68,6 +68,13 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       pooled, with intervals above zero; (3) the stem stays below the isolated take; (4) separating
       the isolated take costs 0.02 to 0.10 (its first stem kept 0.38 of the RMS). *Rule:* Task 3
       starts from the stem if it beats the mix pooled at both levels; otherwise reported to Ege.
+      *Result (pooled E2):* isolated 0.4666; isolated through the separator 0.4541; **0 dB: mix
+      0.1902, stem 0.3180 (+0.1278 [+0.1032, +0.1497]); −6 dB: mix 0.1252, stem 0.2572 (+0.1320
+      [+0.1039, +0.1562])**. Predictions 1–3 held; 4 failed — pooled, separation alone cost only
+      0.0125, but **IDMT's direct-input takes lost 0.1226 to separation alone** (0.3166 → 0.1940),
+      and on IDMT the stem does not beat the mix (0 dB −0.0172 [−0.0426, +0.0082]). EGSet12 and
+      GuitarSet (microphone) gain +0.08 and +0.17. htdemucs_6s handles clean direct-input guitar
+      poorly; EGDB is direct input too. By the rule, Task 3 starts from the stem.
 
 ## Task 3: Stem plus mix
 
