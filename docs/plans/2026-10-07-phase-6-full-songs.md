@@ -133,6 +133,12 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       rerun moves any of the three figures by at least 0.02 from the first CPU run (0.2935, 0.2209,
       0.4046), the GPU's differences are the size of a rerun's own noise and the look runs on the
       GPU; otherwise on the CPU.
+      *Result (5 min 25 s):* the CPU rerun gives 0.2921 (−0.0014), 0.2385 (+0.0176), 0.4060
+      (+0.0014). Largest 0.0176 < 0.02: **the look runs on the CPU.** The −6 dB difference is
+      rerun noise (the rerun moved nearly as far as the GPU); on the isolated takes the GPU moved
+      0.0208 against a rerun's 0.0014, so it may separate a little differently. The rerun also ran
+      at about three times real time, against about real time in the test run's first minutes —
+      when the battery was at 4%; the look's pace is measured, not assumed.
 
 ## Task 5: The app
 
