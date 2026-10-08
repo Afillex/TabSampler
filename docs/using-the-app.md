@@ -35,6 +35,17 @@ clean electric recordings this raised the end-to-end score from 0.4547 to 0.4992
 (193 KB, CC BY 4.0, checked against its pinned SHA-256; ADR 0064). Without them the option is greyed out on the page and `tabsampler serve` says why. It was trained
 and tested on electric guitar only, so leave it off for acoustic recordings.
 
+## Full songs
+
+Tick **Full song** on the page, or pass `--full-song`, and Demucs (`htdemucs_6s`) separates the
+guitar from the band before transcription (ADRs 0065, 0067). It needs the `separate` dependency
+group (installed by `uv sync --all-groups`); without it the option is greyed out. Separation takes
+about a third of the song's length on an Apple M4's CPU, and the separated guitar is cached. On
+mixes built from labelled takes over backing tracks, at equal guitar and backing levels, it raised
+the score from 0.2578 to 0.3598 on EGDB (the guitar alone scores 0.4547). Demucs shifts the audio
+by a random amount each time, so separating the same song twice can give slightly different tab;
+the cached stem is reused.
+
 ## What the page shows
 
 - **Six string lines**, high e on top, as tab is written. Notes are placed by when they start,
@@ -49,7 +60,8 @@ and tested on electric guitar only, so leave it off for acoustic recordings.
 
 ## What it cannot do
 
-- **Isolated guitar only** (ADR 0002). One guitar, no band, no vocals; up to 5 minutes and
+- **One guitar.** Without **Full song**, the recording must be the guitar alone; with it, the
+  band is removed first, but two guitars in one song are not told apart. Up to 5 minutes and
   100 MB per file.
 - **No rhythm** (ADR 0009). There are no bars or note values in the tab. The exports need them,
   so they place notes on a fixed 120 BPM grid of 1/128 notes and say inside the file that the

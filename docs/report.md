@@ -197,7 +197,7 @@ Calibrated on IDMT and judged on EGSet12, it raised oracle E2 0.7250 → 0.7926 
 predictions committed beforehand (ADR 0063). It became the app's opt-in electric option, and its
 weights are published under CC BY 4.0 (ADR 0064).
 
-## 13. Phase 6 — full songs (in progress)
+## 13. Phase 6 — full songs
 
 No public dataset I could find pairs full-band mixes with string labels, so I build them: a labelled
 guitar take over **BabySlakh** backing tracks with their guitars removed, at two levels, with
@@ -215,8 +215,21 @@ Separation raises the score on mixes by about two-thirds at 0 dB and doubles it 
 separator alone cost 0.12 even with no backing, and it did not beat the mix. Adding a share of the
 mix back to the stem made every case worse. Two practical findings: Demucs applies a random time
 shift by default, so a stem is reproducible only from its cache; and on validation the Mac's GPU did
-not match the CPU closely enough by my own pre-set rule, so the test evaluation runs on the CPU. The
-app has a "full song" option. The test evaluation is running.
+not match the CPU closely enough by my own pre-set rule, so the test evaluation ran on the CPU. The
+app has a "full song" option.
+
+On the test sets (one pre-registered look; ADR 0067):
+
+| E2, test | mix 0 dB | separated 0 dB | mix −6 dB | separated −6 dB | guitar alone |
+|---|---|---|---|---|---|
+| EGDB | 0.2578 | **0.3598** | 0.1690 | **0.3322** | 0.4547 |
+| GuitarSet 01–05 (labelled) | 0.2281 | **0.3769** | 0.1476 | **0.3298** | 0.4553 |
+
+Separation helped on both test sets at both levels, by +0.10 to +0.18. I had predicted no gain on
+EGDB, because on validation the separator did not help IDMT's direct-input licks; EGDB's
+direct-input clips gained anyway, and separation alone cost them only 0.03. The validation set was
+a poor stand-in, in the stem's favour. These mixes are built, not real songs (no shared key or
+tempo, synthesized 16 kHz backing), so real recordings may separate worse.
 
 ## 14. What I learnt
 
@@ -234,7 +247,6 @@ app has a "full song" option. The test evaluation is running.
 
 ## 15. What comes next
 
-- Finish Phase 6's test evaluation and report full-song results beside the isolated ones.
 - Real full-song recordings (MoisesDB) to check the synthetic mixes.
 - A stronger transcriber, the largest remaining loss end to end.
 - Rhythm, and playing techniques (bends, slides, hammer-ons).

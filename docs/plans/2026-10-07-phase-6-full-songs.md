@@ -92,7 +92,7 @@ figure; and the app accepts a full song through a "separate the guitar first" op
 
 ## Task 4: The test look
 
-- [ ] **The test look, pre-registered here** (this commit): `scripts/build_mixes.py --split test`,
+- [x] **The test look, pre-registered here** (this commit): `scripts/build_mixes.py --split test`,
       then `scripts/evaluate_mixes.py --split test --add-mix 0 --electric` — EGDB's 240 clips and
       GuitarSet's 300 test tracks (labelled, ADR 0055) over BabySlakh songs 11–20, at 0 and −6 dB;
       inputs: the mix and the htdemucs_6s stem (Task 3 kept α = 0), the isolated take and the isolated
@@ -139,6 +139,16 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       0.0208 against a rerun's 0.0014, so it may separate a little differently. The rerun also ran
       at about three times real time, against about real time in the test run's first minutes —
       when the battery was at 4%; the look's pace is measured, not assumed.
+      *Finished (2026-10-08).* Paused overnight to spare the battery; the paused process was lost
+      and the scoring restarted from its caches on mains power (log line 42); the last 180 mixes
+      separated at about six stems a minute. **Result (E2, test):** EGDB isolated 0.4547, isolated
+      through the separator 0.4269; 0 dB mix 0.2578, stem 0.3598 (+0.1019 [+0.0801, +0.1232]);
+      −6 dB mix 0.1690, stem 0.3322 (+0.1632 [+0.1379, +0.1878]); electric option on the stems 0.3843
+      and 0.3528. GuitarSet 01–05 (labelled) isolated 0.4553, separated 0.4521; 0 dB mix 0.2281, stem
+      0.3769 (+0.1488 [+0.1322, +0.1649]); −6 dB mix 0.1476, stem 0.3298 (+0.1823 [+0.1624, +0.2012]).
+      Predictions: EGDB stem within ±0.04 of the mix **failed** (+0.10, +0.16); separation alone
+      costing EGDB ≥ 0.05 **failed** (0.0278); GuitarSet +0.10 to +0.20 **held**. Both failures favour
+      the stem: IDMT's licks were a poor stand-in for EGDB. ADR 0067.
 
 ## Task 5: The app
 
@@ -147,7 +157,7 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       server loads the separator when Demucs is installed and greys the option out with the reason
       otherwise; checked in a browser on a validation mix — page and CLI agree on all 116 notes. The
       five-minute limit is kept for now: separation runs at about real time on this CPU.*
-- [ ] Gate to Ege.
+- [ ] Gate to Ege — brought 2026-10-08 with ADR 0067 (proposed); not merged before sign-off.
 
 ## Not in this plan
 

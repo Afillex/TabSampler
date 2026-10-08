@@ -89,8 +89,10 @@ first draft to check by ear.
 
 **Full songs** are measured on mixes built from labelled guitar takes over backing tracks with their
 guitars removed. On validation data, pooled over three sets: the mix fed straight to the
-transcriber scores 0.1902, the separated guitar 0.3180, and the guitar alone 0.4666. Test-set
-figures are being measured.
+transcriber scores 0.1902, the separated guitar 0.3180, and the guitar alone 0.4666. On the test
+sets, at equal guitar and backing levels: EGDB 0.2578 for the mix against 0.3598 separated (0.4547
+alone), GuitarSet 0.2281 against 0.3769 (0.4553 alone, labelled). The mixes are built, not real
+songs (no shared key or tempo, synthesized backing), so real recordings may score differently.
 
 **Speed:** a 3-minute recording takes about 5 seconds on an Apple M4 (transcription with a cold
 cache, the tuning check and decoding); full-song separation adds roughly a third of the song's
