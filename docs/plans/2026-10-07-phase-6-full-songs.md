@@ -3,7 +3,7 @@
 > Tasks run in order; steps use checkbox (`- [ ]`) syntax. Every rule that picks or adopts
 > something is committed before the run it judges; every test-set look is pre-registered.
 
-**Status:** started 2026-10-07; Ege chose Phase 6 after the electric path (ADRs 0062–0064).
+**Status:** closed 2026-10-08 by Ege's sign-off (ADR 0067); started 2026-10-07 after the electric path (ADRs 0062–0064).
 
 **Spec §6:** "`htdemucs_6s` guitar stem, with an experiment feeding stem + mix. Report results
 separately from isolated mode." ADR 0002: isolated and full-song results are separate tables,
@@ -157,7 +157,7 @@ figure; and the app accepts a full song through a "separate the guitar first" op
       server loads the separator when Demucs is installed and greys the option out with the reason
       otherwise; checked in a browser on a validation mix — page and CLI agree on all 116 notes. The
       five-minute limit is kept for now: separation runs at about real time on this CPU.*
-- [ ] Gate to Ege — brought 2026-10-08 with ADR 0067 (proposed); not merged before sign-off.
+- [x] Gate to Ege — **Phase 6 closed by Ege's sign-off, 2026-10-08** (ADR 0067).
 
 ## Not in this plan
 

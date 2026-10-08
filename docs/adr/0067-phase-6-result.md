@@ -1,6 +1,6 @@
 # ADR 0067: Phase 6's result — separating the guitar first raises full-song E2 on both test sets
 
-Status: proposed — Phase 6's gate, for Ege's sign-off
+Status: accepted (2026-10-08) — **Phase 6 closed on this record by Ege's sign-off**
 
 Reports Phase 6 (`docs/plans/2026-10-07-phase-6-full-songs.md`). Every rule was committed before
 its run; the test look was pre-registered in 59cccb8 and run on the CPU by two pre-registered
@@ -41,7 +41,7 @@ back to the stem lowered E2 at every share, so the stem alone is what the app us
    (α = 0, Task 3) — the page's "full song" option and `--full-song` (Task 5, e7425c6).
 2. **Full-song figures are their own table**, never merged with isolated ones (ADR 0002), always
    with ADR 0066's limits beside them.
-3. **Phase 6's done-when** (proposed in the plan) is met if Ege signs off: on both test sets the mix,
+3. **Phase 6's done-when** (proposed in the plan) is met, signed off by Ege: on both test sets the mix,
    the stem and the chosen stem-plus-mix (the stem alone) are reported beside the isolated figure,
    and the app accepts a full song.
 

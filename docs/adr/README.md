@@ -74,7 +74,7 @@ of the old record to point at its replacement.
 | [0064](0064-electric-weights-published.md) | **The electric classifier's weights are published** as a release asset under CC BY 4.0 (Guitar-TECHS, EGFxSet), pinned by SHA-256; `make electric-model` | D15 (partial) | accepted |
 | [0065](0065-separation-with-demucs.md) | Full songs are separated with **Demucs `htdemucs_6s`** (MIT, archived), pinned 4.1.0 in a `separate` group; stems cached by audio hash | Phase 6 | accepted |
 | [0066](0066-full-song-mixes.md) | **Full-song mixes are built**: a labelled take over BabySlakh backing without guitars, at 0 and −6 dB; songs 1–10 validate, 11–20 test | Phase 6 | accepted |
-| [0067](0067-phase-6-result.md) | **Phase 6's result**: separating the guitar first raises full-song E2 on both test sets (pooled 0 dB mix 0.2410 → stem 0.3695; −6 dB 0.1567 → 0.3309; isolated 0.4550); the stem alone is used | Phase 6 | proposed (gate) |
+| [0067](0067-phase-6-result.md) | **Phase 6's result**: separating the guitar first raises full-song E2 on both test sets (pooled 0 dB mix 0.2410 → stem 0.3695; −6 dB 0.1567 → 0.3309; isolated 0.4550); the stem alone is used | Phase 6 | accepted |
 
 Decisions still open, each due at the phase that needs it: D15 for corpora other than DadaGP
 and SynthTab (code and publication settled by ADR 0020; DadaGP-trained weights by ADR 0042).
